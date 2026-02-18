@@ -5,8 +5,10 @@
 *.so
 *.dylib
 api/server
+api/extract
 api/air
 api/cmd/server/server
+api/cmd/extract/extract
 
 # Test binary
 *.test
