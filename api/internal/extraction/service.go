@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
 )
@@ -135,9 +134,12 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk database.Chunk) (*
 		return nil, fmt.Errorf("empty response from Claude")
 	}
 
+	// Strip markdown code blocks if present
+	responseText := stripMarkdownCodeBlocks(apiResp.Content[0].Text)
+
 	// Parse JSON response
 	var resp ExtractionResponse
-	if err := json.Unmarshal([]byte(apiResp.Content[0].Text), &resp); err != nil {
+	if err := json.Unmarshal([]byte(responseText), &resp); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
@@ -294,8 +296,27 @@ func (s *Service) storeRelationship(ctx context.Context, documentID database.UUI
 	return created.ID.String(), nil
 }
 
-// parseUUID converts a string to database.UUID.
-func parseUUID(s string) database.UUID {
-	id, _ := uuid.Parse(s)
-	return database.UUID(id)
+// stripMarkdownCodeBlocks removes markdown code block formatting from text.
+// Handles both ```json and ``` formats.
+func stripMarkdownCodeBlocks(text string) string {
+	// Check if text starts with code block
+	trimmed := strings.TrimSpace(text)
+
+	// Remove opening ```json or ```
+	if strings.HasPrefix(trimmed, "```") {
+		firstNewline := strings.Index(trimmed, "\n")
+		if firstNewline != -1 {
+			// Find the closing ```
+			closingIndex := strings.LastIndex(trimmed, "```")
+			if closingIndex > firstNewline {
+				// Extract content between code blocks
+				trimmed = strings.TrimSpace(trimmed[firstNewline+1 : closingIndex])
+			} else {
+				// No closing block, just remove first line
+				trimmed = strings.TrimSpace(trimmed[firstNewline+1:])
+			}
+		}
+	}
+
+	return trimmed
 }

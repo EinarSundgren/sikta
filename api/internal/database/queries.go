@@ -584,3 +584,283 @@ type CreateSourceReferenceParams struct {
 	CharStart      *int32
 	CharEnd        *int32
 }
+
+// Inconsistency-related types and queries
+
+// Inconsistency represents a detected inconsistency in the document.
+type Inconsistency struct {
+	ID               UUID
+	DocumentID       UUID
+	InconsistencyType string
+	Severity         string
+	Title            string
+	Description      string
+	ResolutionStatus string
+	ResolutionNote   *string
+	Metadata         interface{}
+	CreatedAt        interface{}
+	UpdatedAt        interface{}
+}
+
+// InconsistencyItem links an inconsistency to events or entities.
+type InconsistencyItem struct {
+	ID              UUID
+	InconsistencyID UUID
+	EventID         *UUID
+	EntityID        *UUID
+	Side            *string
+	Description     string
+	CreatedAt       interface{}
+}
+
+// CreateInconsistencyParams defines parameters for creating an inconsistency.
+type CreateInconsistencyParams struct {
+	ID               UUID
+	DocumentID       UUID
+	InconsistencyType string
+	Severity         string
+	Title            string
+	Description      string
+	ResolutionStatus string
+	ResolutionNote   interface{}
+	Metadata         interface{}
+}
+
+// CreateInconsistencyItemParams defines parameters for creating an inconsistency item.
+type CreateInconsistencyItemParams struct {
+	ID              UUID
+	InconsistencyID UUID
+	EventID         *UUID
+	EntityID        *UUID
+	Side            *string
+	Description     string
+}
+
+// UpdateInconsistencyResolutionParams defines parameters for updating inconsistency resolution.
+type UpdateInconsistencyResolutionParams struct {
+	ID               UUID
+	ResolutionStatus string
+	ResolutionNote   interface{}
+}
+
+// CreateInconsistency creates a new inconsistency.
+func (q *Queries) CreateInconsistency(ctx context.Context, arg CreateInconsistencyParams) (Inconsistency, error) {
+	sql := `INSERT INTO inconsistencies (id, document_id, inconsistency_type, severity, title, description, resolution_status, resolution_note, metadata)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, document_id, inconsistency_type, severity, title, description, resolution_status, resolution_note, metadata, created_at, updated_at`
+	row := q.db.QueryRow(ctx, sql,
+		arg.ID,
+		arg.DocumentID,
+		arg.InconsistencyType,
+		arg.Severity,
+		arg.Title,
+		arg.Description,
+		arg.ResolutionStatus,
+		arg.ResolutionNote,
+		arg.Metadata,
+	)
+	var inc Inconsistency
+	err := row.Scan(
+		&inc.ID,
+		&inc.DocumentID,
+		&inc.InconsistencyType,
+		&inc.Severity,
+		&inc.Title,
+		&inc.Description,
+		&inc.ResolutionStatus,
+		&inc.ResolutionNote,
+		&inc.Metadata,
+		&inc.CreatedAt,
+		&inc.UpdatedAt,
+	)
+	return inc, err
+}
+
+// ListInconsistenciesByDocument retrieves all inconsistencies for a document.
+func (q *Queries) ListInconsistenciesByDocument(ctx context.Context, documentID UUID) ([]Inconsistency, error) {
+	sql := `SELECT id, document_id, inconsistency_type, severity, title, description, resolution_status, resolution_note, metadata, created_at, updated_at
+		FROM inconsistencies
+		WHERE document_id = $1
+		ORDER BY
+			CASE severity
+				WHEN 'conflict' THEN 1
+				WHEN 'warning' THEN 2
+				WHEN 'info' THEN 3
+			END,
+			created_at DESC`
+	rows, err := q.db.Query(ctx, sql, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var inconsistencies []Inconsistency
+	for rows.Next() {
+		var inc Inconsistency
+		if err := rows.Scan(
+			&inc.ID,
+			&inc.DocumentID,
+			&inc.InconsistencyType,
+			&inc.Severity,
+			&inc.Title,
+			&inc.Description,
+			&inc.ResolutionStatus,
+			&inc.ResolutionNote,
+			&inc.Metadata,
+			&inc.CreatedAt,
+			&inc.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		inconsistencies = append(inconsistencies, inc)
+	}
+	return inconsistencies, rows.Err()
+}
+
+// GetInconsistency retrieves a single inconsistency by ID.
+func (q *Queries) GetInconsistency(ctx context.Context, id UUID) (Inconsistency, error) {
+	sql := `SELECT id, document_id, inconsistency_type, severity, title, description, resolution_status, resolution_note, metadata, created_at, updated_at
+		FROM inconsistencies
+		WHERE id = $1`
+	row := q.db.QueryRow(ctx, sql, id)
+	var inc Inconsistency
+	err := row.Scan(
+		&inc.ID,
+		&inc.DocumentID,
+		&inc.InconsistencyType,
+		&inc.Severity,
+		&inc.Title,
+		&inc.Description,
+		&inc.ResolutionStatus,
+		&inc.ResolutionNote,
+		&inc.Metadata,
+		&inc.CreatedAt,
+		&inc.UpdatedAt,
+	)
+	return inc, err
+}
+
+// ListInconsistencyItems retrieves all items for an inconsistency with event/entity details.
+func (q *Queries) ListInconsistencyItems(ctx context.Context, inconsistencyID UUID) ([]InconsistencyItem, error) {
+	sql := `
+		SELECT 
+			ii.id,
+			ii.inconsistency_id,
+			ii.event_id,
+			ii.entity_id,
+			ii.side,
+			ii.description,
+			e.title as event_title,
+			e.event_type,
+			en.name as entity_name,
+			en.entity_type
+		FROM inconsistency_items ii
+		LEFT JOIN events e ON ii.event_id = e.id
+		LEFT JOIN entities en ON ii.entity_id = en.id
+		WHERE ii.inconsistency_id = $1
+		ORDER BY ii.side, ii.id
+	`
+	rows, err := q.db.Query(ctx, sql, inconsistencyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []InconsistencyItem
+	for rows.Next() {
+		var item InconsistencyItem
+		var eventTitle, eventType *string
+		var entityName, entityType *string
+		if err := rows.Scan(
+			&item.ID,
+			&item.InconsistencyID,
+			&item.EventID,
+			&item.EntityID,
+			&item.Side,
+			&item.Description,
+			&eventTitle,
+			&eventType,
+			&entityName,
+			&entityType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+// CreateInconsistencyItem links an inconsistency to an event or entity.
+func (q *Queries) CreateInconsistencyItem(ctx context.Context, arg CreateInconsistencyItemParams) (InconsistencyItem, error) {
+	sql := `INSERT INTO inconsistency_items (id, inconsistency_id, event_id, entity_id, side, description)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, inconsistency_id, event_id, entity_id, side, description, created_at`
+	row := q.db.QueryRow(ctx, sql,
+		arg.ID,
+		arg.InconsistencyID,
+		arg.EventID,
+		arg.EntityID,
+		arg.Side,
+		arg.Description,
+	)
+	var item InconsistencyItem
+	err := row.Scan(
+		&item.ID,
+		&item.InconsistencyID,
+		&item.EventID,
+		&item.EntityID,
+		&item.Side,
+		&item.Description,
+		&item.CreatedAt,
+	)
+	return item, err
+}
+
+// UpdateInconsistencyResolution updates the resolution status and note.
+func (q *Queries) UpdateInconsistencyResolution(ctx context.Context, arg UpdateInconsistencyResolutionParams) (Inconsistency, error) {
+	sql := `UPDATE inconsistencies
+		SET resolution_status = $2,
+		    resolution_note = $3,
+		    updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, document_id, inconsistency_type, severity, title, description, resolution_status, resolution_note, metadata, created_at, updated_at`
+	row := q.db.QueryRow(ctx, sql, arg.ID, arg.ResolutionStatus, arg.ResolutionNote)
+	var inc Inconsistency
+	err := row.Scan(
+		&inc.ID,
+		&inc.DocumentID,
+		&inc.InconsistencyType,
+		&inc.Severity,
+		&inc.Title,
+		&inc.Description,
+		&inc.ResolutionStatus,
+		&inc.ResolutionNote,
+		&inc.Metadata,
+		&inc.CreatedAt,
+		&inc.UpdatedAt,
+	)
+	return inc, err
+}
+
+// CountInconsistenciesByDocument counts inconsistencies by severity for a document.
+func (q *Queries) CountInconsistenciesByDocument(ctx context.Context, documentID UUID) (CountInconsistenciesByDocumentRow, error) {
+	sql := `SELECT
+			COUNT(*) as total,
+			SUM(CASE WHEN severity = 'conflict' THEN 1 ELSE 0 END) as conflicts,
+			SUM(CASE WHEN severity = 'warning' THEN 1 ELSE 0 END) as warnings,
+			SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info
+		FROM inconsistencies
+		WHERE document_id = $1`
+	queryRow := q.db.QueryRow(ctx, sql, documentID)
+	var result CountInconsistenciesByDocumentRow
+	err := queryRow.Scan(&result.Total, &result.Conflicts, &result.Warnings, &result.Info)
+	return result, err
+}
+
+// CountInconsistenciesByDocumentRow represents the result of counting inconsistencies.
+type CountInconsistenciesByDocumentRow struct {
+	Total    int64
+	Conflicts int64
+	Warnings  int64
+	Info      int64
+}

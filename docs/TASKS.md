@@ -250,33 +250,68 @@ Make it demo-ready. Pre-loaded data, landing experience, visual polish.
 
 ## Future Phases (Post-MVP)
 
-> Do not build these until the novel demo is validated and shown to potential buyers.
+> **North Star Vision:** Multi-document, multi-type projects with unified timeline and cross-document anomaly detection.
+>
+> **Phasing:**
+> - **Now (MVP):** Single document (novel) → prove extraction + timeline + review works brilliantly
+> - **Phase 8:** Multiple documents of same type (e.g., 5 years of board protocols)
+> - **Phase 9:** Mixed document types (protocols + invoices + emails) → unified timeline with cross-document anomaly detection
+> - **Phase 10:** Multiple LLM provider support (OpenAI, Azure, local models)
+>
+> The data model already supports this trajectory: documents table is type-agnostic, source_references link to specific chunks, and inconsistencies can span documents via inconsistency_items.
 
-### Phase 8: Multi-Document Support
-- Upload multiple documents into one project
-- Cross-document entity resolution (same person in different docs)
-- Cross-document event deduplication (same event, multiple sources → one entry with N references)
-- Cross-document inconsistency detection
+### Phase 8: Multi-Document Projects (Same Document Type)
+- **Projects table:** Group multiple documents together (e.g., 5 years of board protocols)
+- **Cross-document entity resolution:** "John Smith" in protocol 2020 and protocol 2024 → same entity
+- **Cross-document event deduplication:** Same event mentioned in multiple sources → one entry with multiple source references
+- **Unified timeline across project:** All events from all documents on one timeline
+- **Project-based access control:** All documents in a project share permissions
 
-### Phase 9: Board Protocol Mode
-- Specialized extraction prompts for Swedish board protocols (decisions, amounts, responsible persons)
+### Phase 9: Mixed Document Types + Cross-Document Anomaly Detection
+- **Document-type-specific extraction:**
+  - Board protocols → decisions, votes, action items
+  - Invoices → line items, totals, due dates
+  - Emails → senders, recipients, attachments
+  - Interviews → questions, answers, evidence
+  - Legal docs → clauses, obligations, deadlines
+  - CSV/Excel → data rows, calculations, references
+- **Cross-document anomaly detection:**
+  - Temporal contradictions: "Event A says March 15, Event B says March 16"
+  - Entity conflicts: Same name, different roles/contexts across documents
+  - Missing references: Invoice mentions PO that doesn't exist in any document
+  - Duplicate events: Similar events across different documents
+  - Data inconsistencies: Excel total ≠ sum of rows
+- **Unified event model:** All document types map to common event/entity/relationship structures
+- **Anomaly resolution workflow:** Flag conflicts, show both sources, human picks correct side
+
+### Phase 10: Multiple LLM Provider Support
+- **Provider abstraction layer:** Support Anthropic, OpenAI, Azure OpenAI, local models
+- **Configuration:** LLM_PROVIDER=anthropic|openai|azure|local
+- **Model selection per task:** Configure which model to use for extraction, classification, chronology
+- **Cost optimization:** Use cheaper models (Haiku/GPT-4o-mini) for classification, premium models (Opus/GPT-4) for complex extraction
+- **Fallback and redundancy:** Failover between providers, rate limiting across multiple API keys
+
+### Phase 11: Board Protocol Mode (Swedish Market Focus)
+- Specialized extraction prompts for Swedish board protocols (styrelsebeslut, protokoll)
 - Decision trail view: follow one topic across multiple meetings
 - Budget tracking across protocols
 - Swedish UI option
 
-### Phase 10: Export & Sharing
+### Phase 12: Export & Sharing
+
+### Phase 12: Export & Sharing
 - Export timeline as PDF/PNG
 - Export data as JSON/CSV
 - Shareable link (read-only view)
 - Embeddable timeline widget
 
-### Phase 11: Authentication & Multi-Tenant
+### Phase 13: Authentication & Multi-Tenant
 - User accounts
 - Project management (multiple document collections)
 - Sharing and collaboration
 - Billing (Stripe)
 
-### Phase 12: Legal / Due Diligence Mode
+### Phase 14: Legal / Due Diligence Mode
 - Contract obligation extraction
 - Deadline tracking
 - Entity relationship mapping across corporate documents

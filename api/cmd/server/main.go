@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/einarsundgren/sikta/internal/config"
+	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/handlers"
 	"github.com/einarsundgren/sikta/internal/middleware"
 )
@@ -47,14 +48,17 @@ func main() {
 	// Document handlers
 	docHandler := handlers.NewDocumentHandler(pool, logger)
 	mux.HandleFunc("POST /api/documents", docHandler.UploadDocument)
-	mux.HandleFunc("GET /api/documents/", docHandler.GetDocument)
 	mux.HandleFunc("GET /api/documents", docHandler.ListDocuments)
-	mux.HandleFunc("DELETE /api/documents/", docHandler.DeleteDocument)
-	mux.HandleFunc("GET /api/documents/", docHandler.GetDocumentStatus)
+	mux.HandleFunc("GET /api/documents/{id}", docHandler.GetDocument)
+	mux.HandleFunc("DELETE /api/documents/{id}", docHandler.DeleteDocument)
 
-	// Start background document processor
-	stopCh := make(chan struct{})
-	go docHandler.ProcessDocuments(stopCh)
+	// Inconsistency handlers
+	db := database.New(pool)
+	incHandler := handlers.NewInconsistencyHandler(db, cfg, logger)
+	mux.HandleFunc("GET /api/documents/{id}/inconsistencies", incHandler.GetInconsistencies)
+	mux.HandleFunc("POST /api/documents/{id}/detect-inconsistencies", incHandler.TriggerInconsistencyDetection)
+	mux.HandleFunc("GET /api/inconsistencies/{id}/items", incHandler.GetInconsistencyItems)
+	mux.HandleFunc("PUT /api/inconsistencies/{id}/resolve", incHandler.ResolveInconsistency)
 
 	handler := middleware.CORS(cfg.AllowedOrigins)(mux)
 
