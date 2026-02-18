@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
 )
@@ -209,7 +210,7 @@ func (s *Service) storeEntity(ctx context.Context, documentID database.UUID, chu
 		Name:                entity.Name,
 		EntityType:          entity.Type,
 		Aliases:             entity.Aliases,
-		Description:         &entity.Description,
+		Description:         nil, // TODO: extract from entity.Description
 		FirstAppearanceChunk: &chunk.ChunkIndex,
 		LastAppearanceChunk:  &chunk.ChunkIndex,
 		Confidence:          entity.Confidence,
@@ -293,5 +294,6 @@ func (s *Service) storeRelationship(ctx context.Context, documentID database.UUI
 
 // parseUUID converts a string to database.UUID.
 func parseUUID(s string) database.UUID {
-	return database.UUID(s)
+	id, _ := uuid.Parse(s)
+	return database.UUID(id)
 }

@@ -170,8 +170,6 @@ func (e *ChronologicalEstimator) extractCharacters(event database.Event) []strin
 	// For now, extract from title and description
 	var characters []string
 
-	text := fmt.Sprintf("%s %s", event.Title, safeString(event.Description))
-
 	// Common name patterns (Mr., Mrs., Miss, etc.)
 	// This is a very simplified implementation
 	return characters
@@ -215,12 +213,12 @@ func (e *ChronologicalEstimator) findOverlappingEvents(events []database.Event) 
 // eventsConflict checks if two events temporally conflict.
 func (e *ChronologicalEstimator) eventsConflict(eventA, eventB database.Event) bool {
 	// If no date information, can't determine conflict
-	if eventA.DateStart == nil && eventB.DateStart == nil {
+	if !eventA.DateStart.Valid && !eventB.DateStart.Valid {
 		return false
 	}
 
 	// If both have date information, check for overlap
-	if eventA.DateStart != nil && eventB.DateStart != nil {
+	if eventA.DateStart.Valid && eventB.DateStart.Valid {
 		// Same date and different locations could be a conflict
 		// This is simplified - real implementation would need location info
 		return false
@@ -283,8 +281,8 @@ func (e *ChronologicalEstimator) extractLocation(text string) string {
 // sameTime checks if two events occur at the same time.
 func (e *ChronologicalEstimator) sameTime(eventA, eventB database.Event) bool {
 	// If both have date information, compare
-	if eventA.DateStart != nil && eventB.DateStart != nil {
-		return eventA.DateStart.Equal(*eventB.DateStart)
+	if eventA.DateStart.Valid && eventB.DateStart.Valid {
+		return eventA.DateStart.Time.Equal(eventB.DateStart.Time)
 	}
 
 	// If both have date text, compare

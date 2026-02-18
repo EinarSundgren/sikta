@@ -283,9 +283,10 @@ func (n *DateNormalizer) ResolveRelativeDate(dateText string, referenceDate time
 	return time.Time{}, fmt.Errorf("unrecognized relative date pattern")
 }
 
-// date creates a time.Time for a given date.
-func date(year, month, day int) time.Time {
-	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+// date creates a time.Time pointer for a given date.
+func date(year, month, day int) *time.Time {
+	d := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	return &d
 }
 
 // daysInMonth returns the number of days in a month.

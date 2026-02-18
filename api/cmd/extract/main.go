@@ -60,7 +60,7 @@ func main() {
 
 	err = extractService.ExtractDocument(ctx, doc.ID.String(), func(progress extraction.ExtractionProgress) {
 		if progress.TotalChunks > 0 {
-			percentage := (progress.ProcessedChunks * 100) / progress.TotalChunks
+			_ = (progress.ProcessedChunks * 100) / progress.TotalChunks
 			logger.Info("progress",
 				"chunk", fmt.Sprintf("%d/%d", progress.ProcessedChunks, progress.TotalChunks),
 				"events", progress.EventsExtracted,

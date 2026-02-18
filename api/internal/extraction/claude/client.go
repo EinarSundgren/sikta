@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	apiURL = "https://api.anthropic.com/v1/messages"
 	apiVersion = "2023-06-01"
 	maxRetries = 3
 	baseRetryDelay = 1 * time.Second
@@ -24,16 +23,24 @@ const (
 type Client struct {
 	httpClient *http.Client
 	apiKey     string
+	apiURL     string
 	logger     *slog.Logger
 }
 
 // NewClient creates a new Claude API client.
 func NewClient(cfg *config.Config, logger *slog.Logger) *Client {
+	apiURL := cfg.AnthropicAPIURL
+	if apiURL == "" {
+		apiURL = "https://api.anthropic.com"
+	}
+	apiURL = apiURL + "/v1/messages"
+
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 120 * time.Second,
 		},
 		apiKey: cfg.AnthropicAPIKey,
+		apiURL: apiURL,
 		logger: logger,
 	}
 }
@@ -105,7 +112,7 @@ func (c *Client) SendMessage(ctx context.Context, req Request) (*Response, error
 
 // doRequest performs a single HTTP request.
 func (c *Client) doRequest(ctx context.Context, reqBody []byte) (*Response, error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.apiURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
