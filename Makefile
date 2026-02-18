@@ -1,4 +1,4 @@
-.PHONY: dev infra backend frontend migrate migration generate test build down logs setup help
+.PHONY: dev infra backend frontend migrate migration generate test build down logs setup extract
 
 .DEFAULT_GOAL := help
 
@@ -79,3 +79,7 @@ setup: ## Install required dev tools (air, sqlc, golang-migrate, npm deps)
 	@echo ""
 	@echo "Setup complete. Make sure GOPATH/bin is in your PATH:"
 	@echo "  export PATH=\$$PATH:\$$(go env GOPATH)/bin"
+
+extract: ## Run extraction on a document (usage: make extract doc=path/to/file.txt)
+	@if [ -z "$(doc)" ]; then echo "Error: doc is required. Usage: make extract doc=path/to/file.txt"; exit 1; fi
+	cd $(BACKEND_DIR) && go run ./cmd/extract $(doc)

@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	Port           string
-	DatabaseURL    string
-	AllowedOrigins []string
+	Port             string
+	DatabaseURL      string
+	AllowedOrigins   []string
+	AnthropicAPIKey  string
 }
 
 func Load() (*Config, error) {
@@ -24,9 +25,10 @@ func Load() (*Config, error) {
 	)
 
 	return &Config{
-		Port:           getEnv("PORT", "8080"),
-		DatabaseURL:    databaseURL,
-		AllowedOrigins: allowedOrigins,
+		Port:            getEnv("PORT", "8080"),
+		DatabaseURL:     databaseURL,
+		AllowedOrigins:  allowedOrigins,
+		AnthropicAPIKey: getEnv("ANTHROPIC_API_KEY", ""),
 	}, nil
 }
 
