@@ -52,3 +52,16 @@ SELECT
     SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info
 FROM inconsistencies
 WHERE document_id = $1;
+
+-- name: ListInconsistenciesByEvent
+SELECT i.*
+FROM inconsistencies i
+INNER JOIN inconsistency_items ii ON i.id = ii.inconsistency_id
+WHERE ii.event_id = $1
+ORDER BY
+    CASE i.severity
+        WHEN 'conflict' THEN 1
+        WHEN 'warning' THEN 2
+        WHEN 'info' THEN 3
+    END,
+    i.created_at DESC;

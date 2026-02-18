@@ -60,6 +60,10 @@ func main() {
 	mux.HandleFunc("GET /api/inconsistencies/{id}/items", incHandler.GetInconsistencyItems)
 	mux.HandleFunc("PUT /api/inconsistencies/{id}/resolve", incHandler.ResolveInconsistency)
 
+	// Timeline handlers
+	timelineHandler := handlers.NewTimelineHandler(db, logger)
+	mux.HandleFunc("GET /api/documents/{id}/timeline", timelineHandler.GetTimeline)
+
 	handler := middleware.CORS(cfg.AllowedOrigins)(mux)
 
 	srv := &http.Server{

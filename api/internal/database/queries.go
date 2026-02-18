@@ -864,3 +864,47 @@ type CountInconsistenciesByDocumentRow struct {
 	Warnings  int64
 	Info      int64
 }
+
+// ListInconsistenciesByEvent retrieves all inconsistencies linked to a specific event.
+func (q *Queries) ListInconsistenciesByEvent(ctx context.Context, eventID UUID) ([]Inconsistency, error) {
+	sql := `SELECT i.*
+		FROM inconsistencies i
+		INNER JOIN inconsistency_items ii ON i.id = ii.inconsistency_id
+		WHERE ii.event_id = $1
+		ORDER BY
+			CASE i.severity
+				WHEN 'conflict' THEN 1
+				WHEN 'warning' THEN 2
+				WHEN 'info' THEN 3
+			END,
+			i.created_at DESC`
+
+	rows, err := q.db.Query(ctx, sql, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []Inconsistency
+	for rows.Next() {
+		var inc Inconsistency
+		if err := rows.Scan(
+			&inc.ID,
+			&inc.DocumentID,
+			&inc.InconsistencyType,
+			&inc.Severity,
+			&inc.Title,
+			&inc.Description,
+			&inc.ResolutionStatus,
+			&inc.ResolutionNote,
+			&inc.Metadata,
+			&inc.CreatedAt,
+			&inc.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, inc)
+	}
+
+	return items, rows.Err()
+}
