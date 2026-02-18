@@ -15,17 +15,19 @@ import (
 
 // Service handles the extraction pipeline.
 type Service struct {
-	db      *database.Queries
-	 claude  *claude.Client
-	logger  *slog.Logger
+	db     *database.Queries
+	claude *claude.Client
+	logger *slog.Logger
+	model  string
 }
 
 // NewService creates a new extraction service.
-func NewService(db *database.Queries, claude *claude.Client, logger *slog.Logger) *Service {
+func NewService(db *database.Queries, claude *claude.Client, logger *slog.Logger, model string) *Service {
 	return &Service{
 		db:     db,
 		claude: claude,
 		logger: logger,
+		model:  model,
 	}
 }
 
@@ -124,7 +126,7 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk database.Chunk) (*
 	userMessage := fmt.Sprintf("%s\n\n%s", FewShotExample1, chunk.Content)
 
 	// Call Claude API
-	apiResp, err := s.claude.SendSystemPrompt(ctx, ExtractionSystemPrompt, userMessage, "claude-sonnet-4-20250514")
+	apiResp, err := s.claude.SendSystemPrompt(ctx, ExtractionSystemPrompt, userMessage, s.model)
 	if err != nil {
 		return nil, fmt.Errorf("Claude API call failed: %w", err)
 	}

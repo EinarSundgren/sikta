@@ -17,14 +17,16 @@ type ChronologicalEstimator struct {
 	db     *database.Queries
 	claude *claude.Client
 	logger *slog.Logger
+	model  string
 }
 
 // NewChronologicalEstimator creates a new chronological estimator.
-func NewChronologicalEstimator(db *database.Queries, claude *claude.Client, logger *slog.Logger) *ChronologicalEstimator {
+func NewChronologicalEstimator(db *database.Queries, claude *claude.Client, logger *slog.Logger, model string) *ChronologicalEstimator {
 	return &ChronologicalEstimator{
 		db:     db,
 		claude: claude,
 		logger: logger,
+		model:  model,
 	}
 }
 
@@ -54,7 +56,7 @@ func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, documen
 
 	// Call LLM for ordering
 	prompt := fmt.Sprintf(ChronologyEstimationPrompt, eventsSummary)
-	resp, err := e.claude.SendSystemPrompt(ctx, "", prompt, "claude-sonnet-4-20250514")
+	resp, err := e.claude.SendSystemPrompt(ctx, "", prompt, e.model)
 	if err != nil {
 		return nil, fmt.Errorf("LLM call failed: %w", err)
 	}

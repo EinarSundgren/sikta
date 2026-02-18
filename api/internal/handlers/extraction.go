@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/einarsundgren/sikta/internal/config"
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
+	"github.com/google/uuid"
 )
 
 // ExtractionHandler handles extraction-related HTTP requests.
@@ -27,9 +27,9 @@ type ExtractionHandler struct {
 // NewExtractionHandler creates a new extraction handler.
 func NewExtractionHandler(db *database.Queries, cfg *config.Config, logger *slog.Logger) *ExtractionHandler {
 	claudeClient := claude.NewClient(cfg, logger)
-	extractService := extraction.NewService(db, claudeClient, logger)
-	dedupeService := extraction.NewDeduplicator(db, claudeClient, logger)
-	chronoService := extraction.NewChronologicalEstimator(db, claudeClient, logger)
+	extractService := extraction.NewService(db, claudeClient, logger, cfg.AnthropicModelExtraction)
+	dedupeService := extraction.NewDeduplicator(db, claudeClient, logger, cfg.AnthropicModelClassification)
+	chronoService := extraction.NewChronologicalEstimator(db, claudeClient, logger, cfg.AnthropicModelChronology)
 
 	return &ExtractionHandler{
 		db:       db,
@@ -52,14 +52,14 @@ func (h *ExtractionHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/events")
 
-	docID, err := parseUUID(idStr)
+	parsedUUID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
 	// Get events
-	events, err := h.db.ListEventsByDocument(r.Context(), database.UUID(docID))
+	events, err := h.db.ListEventsByDocument(r.Context(), database.UUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get events", "error", err)
 		http.Error(w, "Failed to get events", http.StatusInternalServerError)
@@ -81,14 +81,14 @@ func (h *ExtractionHandler) GetEntities(w http.ResponseWriter, r *http.Request) 
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/entities")
 
-	docID, err := parseUUID(idStr)
+	parsedUUID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
 	// Get entities
-	entities, err := h.db.ListEntitiesByDocument(r.Context(), database.UUID(docID))
+	entities, err := h.db.ListEntitiesByDocument(r.Context(), database.UUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get entities", "error", err)
 		http.Error(w, "Failed to get entities", http.StatusInternalServerError)
@@ -110,14 +110,14 @@ func (h *ExtractionHandler) GetRelationships(w http.ResponseWriter, r *http.Requ
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/relationships")
 
-	docID, err := parseUUID(idStr)
+	parsedUUID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
 	// Get relationships
-	relationships, err := h.db.ListRelationshipsByDocument(r.Context(), database.UUID(docID))
+	relationships, err := h.db.ListRelationshipsByDocument(r.Context(), database.UUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get relationships", "error", err)
 		http.Error(w, "Failed to get relationships", http.StatusInternalServerError)
@@ -139,14 +139,14 @@ func (h *ExtractionHandler) TriggerExtraction(w http.ResponseWriter, r *http.Req
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/extract")
 
-	docID, err := parseUUID(idStr)
+	parsedUUID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
 	// Start extraction in background
-	go h.runExtraction(r.Context(), docID.String())
+	go h.runExtraction(r.Context(), parsedUUID.String())
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
@@ -167,17 +167,17 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 	idStr = strings.TrimSuffix(idStr, "/extract/status")
 	idStr = strings.TrimSuffix(idStr, "/status")
 
-	docID, err := parseUUID(idStr)
+	parsedUUID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
 	// Get extraction counts
-	eventCount, _ := h.db.CountEventsByDocument(r.Context(), database.UUID(docID))
-	entityCount, _ := h.db.CountEntitiesByDocument(r.Context(), database.UUID(docID))
-	relationshipCount, _ := h.db.CountRelationshipsByDocument(r.Context(), database.UUID(docID))
-	chunkCount, _ := h.db.CountChunksByDocument(r.Context(), database.UUID(docID))
+	eventCount, _ := h.db.CountEventsByDocument(r.Context(), database.UUID(parsedUUID))
+	entityCount, _ := h.db.CountEntitiesByDocument(r.Context(), database.UUID(parsedUUID))
+	relationshipCount, _ := h.db.CountRelationshipsByDocument(r.Context(), database.UUID(parsedUUID))
+	chunkCount, _ := h.db.CountChunksByDocument(r.Context(), database.UUID(parsedUUID))
 
 	status := map[string]interface{}{
 		"status":       "processing",
@@ -224,20 +224,11 @@ func (h *ExtractionHandler) runExtraction(ctx context.Context, documentID string
 	}
 
 	// Step 3: Estimate chronology
-	_, err = h.chronology.EstimateChronology(ctx, documentID)
+	_, err = h.chrono.EstimateChronology(ctx, documentID)
 	if err != nil {
 		h.logger.Error("chronology estimation failed", "document_id", documentID, "error", err)
 		// Continue anyway
 	}
 
 	h.logger.Info("extraction pipeline complete", "document_id", documentID)
-}
-
-// parseUUID parses a UUID from string.
-func parseUUID(s string) (string, error) {
-	// Basic UUID validation
-	if len(s) != 36 {
-		return "", http.ErrNotSupported
-	}
-	return s, nil
 }

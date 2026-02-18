@@ -53,7 +53,7 @@ func main() {
 
 	// Create extraction service
 	claudeClient := claude.NewClient(cfg, logger)
-	extractService := extraction.NewService(queries, claudeClient, logger)
+	extractService := extraction.NewService(queries, claudeClient, logger, cfg.AnthropicModelExtraction)
 
 	// Run extraction with progress tracking
 	startTime := time.Now()

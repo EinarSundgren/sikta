@@ -15,14 +15,16 @@ type Deduplicator struct {
 	db     *database.Queries
 	claude *claude.Client
 	logger *slog.Logger
+	model  string
 }
 
 // NewDeduplicator creates a new entity deduplicator.
-func NewDeduplicator(db *database.Queries, claude *claude.Client, logger *slog.Logger) *Deduplicator {
+func NewDeduplicator(db *database.Queries, claude *claude.Client, logger *slog.Logger, model string) *Deduplicator {
 	return &Deduplicator{
 		db:     db,
 		claude: claude,
 		logger: logger,
+		model:  model,
 	}
 }
 
@@ -276,7 +278,7 @@ func (d *Deduplicator) confirmWithLLM(ctx context.Context, entityA, entityB data
 		`{"same_entity": boolean, "confidence": float (0.0-1.0), "reasoning": string}`,
 		entityA.Name, entityA.EntityType, entityB.Name, entityB.EntityType, context)
 
-	resp, err := d.claude.SendSystemPrompt(ctx, "", prompt, "claude-haiku-4-20250514")
+	resp, err := d.claude.SendSystemPrompt(ctx, "", prompt, d.model)
 	if err != nil {
 		return false, "", err
 	}
