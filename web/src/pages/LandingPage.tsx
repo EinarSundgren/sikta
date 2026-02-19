@@ -12,8 +12,20 @@ type UploadPhase =
   | { name: 'idle' }
   | { name: 'uploading' }
   | { name: 'chunking'; docId: string }
-  | { name: 'extracting'; docId: string; events: number; chunks: number }
+  | { name: 'extracting'; docId: string; currentChunk: number; totalChunks: number; events: number; entities: number; relationships: number; percent: number; elapsedSec: number }
   | { name: 'error'; message: string };
+
+interface ExtractionProgress {
+  source_id: string;
+  status: string;
+  current_chunk: number;
+  total_chunks: number;
+  events_found: number;
+  entities_found: number;
+  relationships_found: number;
+  percent_complete: number;
+  elapsed_time_sec: number;
+}
 
 interface Props {
   onNavigate: (docId: string) => void;
@@ -55,20 +67,75 @@ export default function LandingPage({ onNavigate }: Props) {
       .finally(() => setDemoLoading(false));
   }, []);
 
-  // Cleanup poll timer on unmount
+  // Cleanup poll timer and SSE on unmount
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      const sseRef = (window as unknown as { sseRef?: EventSource }).sseRef;
+      if (sseRef) sseRef.close();
     };
   }, []);
 
+  const streamExtractionProgress = useCallback((docId: string) => {
+    const eventSource = new EventSource(`/api/documents/${docId}/extract/progress`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const progress: ExtractionProgress = JSON.parse(event.data);
+
+        setPhase({
+          name: 'extracting',
+          docId,
+          currentChunk: progress.current_chunk,
+          totalChunks: progress.total_chunks,
+          events: progress.events_found,
+          entities: progress.entities_found,
+          relationships: progress.relationships_found,
+          percent: progress.percent_complete,
+          elapsedSec: progress.elapsed_time_sec,
+        });
+
+        if (progress.status === 'complete') {
+          eventSource.close();
+          onNavigate(docId);
+        } else if (progress.status === 'error') {
+          eventSource.close();
+          setPhase({ name: 'error', message: 'Extraction failed' });
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      // Fallback to polling if SSE fails
+      pollExtractionStatus(docId);
+    };
+
+    // Store for cleanup
+    pollTimerRef.current = setInterval(() => {}, 1000); // Dummy for cleanup tracking
+    (window as unknown as { sseRef?: EventSource }).sseRef = eventSource;
+  }, [onNavigate]);
+
   const pollExtractionStatus = useCallback((docId: string) => {
+    // Fallback polling if SSE doesn't work
     pollTimerRef.current = setInterval(async () => {
       try {
         const status = await fetch(`/api/documents/${docId}/extract/status`).then(r => r.json());
         const events = status.events || 0;
-        const chunks = status.total_chunks || 0;
-        setPhase({ name: 'extracting', docId, events, chunks });
+        const totalChunks = status.total_chunks || 0;
+        setPhase({
+          name: 'extracting',
+          docId,
+          currentChunk: 0,
+          totalChunks,
+          events,
+          entities: 0,
+          relationships: 0,
+          percent: events > 0 ? 50 : 0,
+          elapsedSec: 0,
+        });
         if (status.status === 'complete' && events > 0) {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           onNavigate(docId);
@@ -126,14 +193,24 @@ export default function LandingPage({ onNavigate }: Props) {
 
       // 3. Trigger extraction
       await fetch(`/api/documents/${docId}/extract`, { method: 'POST' });
-      setPhase({ name: 'extracting', docId, events: 0, chunks: 0 });
+      setPhase({
+        name: 'extracting',
+        docId,
+        currentChunk: 0,
+        totalChunks: 0,
+        events: 0,
+        entities: 0,
+        relationships: 0,
+        percent: 0,
+        elapsedSec: 0,
+      });
 
-      // 4. Poll extraction progress
-      pollExtractionStatus(docId);
+      // 4. Stream extraction progress via SSE
+      streamExtractionProgress(docId);
     } catch (err) {
       setPhase({ name: 'error', message: err instanceof Error ? err.message : 'Upload failed' });
     }
-  }, [pollExtractionStatus]);
+  }, [streamExtractionProgress]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -260,38 +337,71 @@ export default function LandingPage({ onNavigate }: Props) {
           <div className="bg-white border border-slate-200 rounded-xl p-8 mb-12">
             <div className="flex items-center gap-4 mb-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 shrink-0" />
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-slate-800">
                   {phase.name === 'uploading' && 'Uploading document...'}
-                  {phase.name === 'chunking' && 'Splitting into chapters...'}
+                  {phase.name === 'chunking' && 'Splitting into sections...'}
                   {phase.name === 'extracting' && 'Extracting events with AI...'}
                 </p>
                 {phase.name === 'extracting' && (
                   <p className="text-sm text-slate-500 mt-0.5">
-                    {phase.events > 0
-                      ? `${phase.events} events found so far across ${phase.chunks} chapters`
+                    {phase.totalChunks > 0
+                      ? `Processing chunk ${phase.currentChunk} of ${phase.totalChunks}`
                       : 'Starting extraction pipeline...'}
                   </p>
                 )}
               </div>
+              {phase.name === 'extracting' && phase.elapsedSec > 0 && (
+                <span className="text-sm text-slate-400">
+                  {Math.floor(phase.elapsedSec / 60)}:{(phase.elapsedSec % 60).toString().padStart(2, '0')}
+                </span>
+              )}
             </div>
+
             {/* Progress bar for extraction */}
-            {phase.name === 'extracting' && phase.chunks > 0 && (
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                  style={{ width: `${Math.min((phase.events / (phase.chunks * 2.5)) * 100, 95)}%` }}
-                />
+            {phase.name === 'extracting' && phase.totalChunks > 0 && (
+              <div className="mb-4">
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                    style={{ width: `${phase.percent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-xs text-slate-500">
+                  <span>{phase.percent}% complete</span>
+                  <span>{phase.totalChunks - phase.currentChunk} chunks remaining</span>
+                </div>
               </div>
             )}
+
+            {/* Extraction stats */}
+            {phase.name === 'extracting' && (phase.events > 0 || phase.entities > 0) && (
+              <div className="flex gap-6 mb-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span className="text-slate-600"><strong className="text-slate-800">{phase.events}</strong> events</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span className="text-slate-600"><strong className="text-slate-800">{phase.entities}</strong> entities</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  <span className="text-slate-600"><strong className="text-slate-800">{phase.relationships}</strong> relationships</span>
+                </div>
+              </div>
+            )}
+
             {/* Early access button */}
             {phase.name === 'extracting' && phase.events > 0 && (
               <button
                 onClick={() => {
                   if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+                  const sseRef = (window as unknown as { sseRef?: EventSource }).sseRef;
+                  if (sseRef) sseRef.close();
                   onNavigate((phase as { name: 'extracting'; docId: string }).docId);
                 }}
-                className="mt-4 w-full py-2 border border-blue-300 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-50 transition-colors"
+                className="w-full py-2 border border-blue-300 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-50 transition-colors"
               >
                 View partial results now →
               </button>

@@ -47,6 +47,15 @@ type ExtractionProgress struct {
 // ProgressCallback is called with progress updates.
 type ProgressCallback func(ExtractionProgress)
 
+// GetChunkCount returns the number of chunks for a document.
+func (s *Service) GetChunkCount(ctx context.Context, sourceID string) (int, error) {
+	chunks, err := s.db.ListChunksBySource(ctx, database.PgUUID(parseUUID(sourceID)))
+	if err != nil {
+		return 0, fmt.Errorf("failed to get chunks: %w", err)
+	}
+	return len(chunks), nil
+}
+
 // ExtractDocument extracts events, entities, and relationships from a document.
 func (s *Service) ExtractDocument(ctx context.Context, sourceID string, progressCb ProgressCallback) error {
 	s.logger.Info("starting extraction", "source_id", sourceID)

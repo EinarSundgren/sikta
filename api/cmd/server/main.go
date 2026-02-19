@@ -14,6 +14,7 @@ import (
 
 	"github.com/einarsundgren/sikta/internal/config"
 	"github.com/einarsundgren/sikta/internal/database"
+	"github.com/einarsundgren/sikta/internal/extraction"
 	"github.com/einarsundgren/sikta/internal/handlers"
 	"github.com/einarsundgren/sikta/internal/middleware"
 )
@@ -59,13 +60,17 @@ func main() {
 
 	db := database.New(pool)
 
+	// Progress tracker for real-time extraction updates
+	progressTracker := extraction.NewProgressTracker()
+
 	// Extraction handlers
-	extractionHandler := handlers.NewExtractionHandler(db, cfg, logger)
+	extractionHandler := handlers.NewExtractionHandler(db, cfg, logger, progressTracker)
 	mux.HandleFunc("GET /api/documents/{id}/events", extractionHandler.GetEvents)
 	mux.HandleFunc("GET /api/documents/{id}/entities", extractionHandler.GetEntities)
 	mux.HandleFunc("GET /api/documents/{id}/relationships", extractionHandler.GetRelationships)
 	mux.HandleFunc("POST /api/documents/{id}/extract", extractionHandler.TriggerExtraction)
 	mux.HandleFunc("GET /api/documents/{id}/extract/status", extractionHandler.GetExtractionStatus)
+	mux.HandleFunc("GET /api/documents/{id}/extract/progress", extractionHandler.StreamProgress)
 
 	// Inconsistency handlers
 	incHandler := handlers.NewInconsistencyHandler(db, cfg, logger)
@@ -92,7 +97,7 @@ func main() {
 		Addr:         fmt.Sprintf(":%s", cfg.Port),
 		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 10 * time.Minute, // Long timeout for SSE streams
 		IdleTimeout:  60 * time.Second,
 	}
 

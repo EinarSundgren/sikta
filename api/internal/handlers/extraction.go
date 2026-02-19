@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -16,28 +17,30 @@ import (
 
 // ExtractionHandler handles extraction-related HTTP requests.
 type ExtractionHandler struct {
-	db       *database.Queries
-	extract  *extraction.Service
-	dedupe   *extraction.Deduplicator
-	chrono   *extraction.ChronologicalEstimator
-	logger   *slog.Logger
-	progress chan extraction.ExtractionProgress
+	db             *database.Queries
+	extract        *extraction.Service
+	dedupe         *extraction.Deduplicator
+	chrono         *extraction.ChronologicalEstimator
+	logger         *slog.Logger
+	progress       chan extraction.ExtractionProgress
+	progressTracker *extraction.ProgressTracker
 }
 
 // NewExtractionHandler creates a new extraction handler.
-func NewExtractionHandler(db *database.Queries, cfg *config.Config, logger *slog.Logger) *ExtractionHandler {
+func NewExtractionHandler(db *database.Queries, cfg *config.Config, logger *slog.Logger, tracker *extraction.ProgressTracker) *ExtractionHandler {
 	claudeClient := claude.NewClient(cfg, logger)
 	extractService := extraction.NewService(db, claudeClient, logger, cfg.AnthropicModelExtraction)
 	dedupeService := extraction.NewDeduplicator(db, claudeClient, logger, cfg.AnthropicModelClassification)
 	chronoService := extraction.NewChronologicalEstimator(db, claudeClient, logger, cfg.AnthropicModelChronology)
 
 	return &ExtractionHandler{
-		db:       db,
-		extract:  extractService,
-		dedupe:   dedupeService,
-		chrono:   chronoService,
-		logger:   logger,
-		progress: make(chan extraction.ExtractionProgress, 100),
+		db:              db,
+		extract:         extractService,
+		dedupe:          dedupeService,
+		chrono:          chronoService,
+		logger:          logger,
+		progress:        make(chan extraction.ExtractionProgress, 100),
+		progressTracker: tracker,
 	}
 }
 
@@ -186,18 +189,84 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(status)
 }
 
+// StreamProgress handles GET /api/documents/:id/extract/progress (SSE)
+func (h *ExtractionHandler) StreamProgress(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
+	idStr = strings.TrimSuffix(idStr, "/extract/progress")
+
+	parsedUUID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid document ID", http.StatusBadRequest)
+		return
+	}
+	sourceID := parsedUUID.String()
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	// Subscribe to progress updates
+	ch := h.progressTracker.Subscribe(sourceID)
+	defer h.progressTracker.Unsubscribe(sourceID, ch)
+
+	// Send initial state
+	initialState := h.progressTracker.Get(sourceID)
+	fmt.Fprintf(w, "data: %s\n\n", initialState.ToJSON())
+	flusher.Flush()
+
+	// Stream updates
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			fmt.Fprintf(w, "data: %s\n\n", event.Payload.ToJSON())
+			flusher.Flush()
+
+			// Close connection on complete or error
+			if event.Type == "complete" || event.Type == "error" {
+				return
+			}
+
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
 // runExtraction runs the full extraction pipeline.
 func (h *ExtractionHandler) runExtraction(ctx context.Context, sourceID string) {
 	h.logger.Info("starting extraction pipeline", "source_id", sourceID)
 
+	// Get chunk count first
+	chunks, err := h.extract.GetChunkCount(ctx, sourceID)
+	if err != nil {
+		h.logger.Error("failed to get chunks", "error", err)
+		h.progressTracker.Error(sourceID, err.Error())
+		return
+	}
+	h.progressTracker.Start(sourceID, chunks)
+
 	var totalEvents, totalEntities, totalRelationships int
-	err := h.extract.ExtractDocument(ctx, sourceID, func(progress extraction.ExtractionProgress) {
+	err = h.extract.ExtractDocument(ctx, sourceID, func(progress extraction.ExtractionProgress) {
 		if progress.Status == "complete" {
 			return
 		}
 		totalEvents += progress.EventsExtracted
 		totalEntities += progress.EntitiesExtracted
 		totalRelationships += progress.RelationshipsExtracted
+
+		h.progressTracker.Update(sourceID, progress.ProcessedChunks, totalEvents, totalEntities, totalRelationships)
+
 		h.logger.Info("extraction progress",
 			"chunk", progress.ProcessedChunks,
 			"of", progress.TotalChunks,
@@ -208,6 +277,7 @@ func (h *ExtractionHandler) runExtraction(ctx context.Context, sourceID string) 
 	})
 	if err != nil {
 		h.logger.Error("extraction failed", "source_id", sourceID, "error", err)
+		h.progressTracker.Error(sourceID, err.Error())
 		return
 	}
 
@@ -222,6 +292,8 @@ func (h *ExtractionHandler) runExtraction(ctx context.Context, sourceID string) 
 	if err != nil {
 		h.logger.Error("chronology estimation failed", "source_id", sourceID, "error", err)
 	}
+
+	h.progressTracker.Complete(sourceID, totalEvents, totalEntities, totalRelationships)
 
 	h.logger.Info("extraction pipeline complete",
 		"source_id", sourceID,
