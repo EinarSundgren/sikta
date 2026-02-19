@@ -283,20 +283,68 @@ Make it demo-ready. Pre-loaded data, landing experience, visual polish.
 >
 > **Phasing:**
 > - **Now (MVP):** Single document (novel) → prove extraction + timeline + review works brilliantly
-> - **Phase 8:** Multiple documents of same type (e.g., 5 years of board protocols)
-> - **Phase 9:** Mixed document types (protocols + invoices + emails) → unified timeline with cross-document anomaly detection
-> - **Phase 10:** Multiple LLM provider support (OpenAI, Azure, local models)
+> - **Phase 8:** Extraction Progress UX — improved loading bar and real-time feedback
+> - **Phase 9:** Multi-file projects — upload and analyze multiple documents as one coherent set
+> - **Phase 10:** Mixed document types (protocols + invoices + emails) → unified timeline with cross-document anomaly detection
+> - **Phase 11:** Multiple LLM provider support (OpenAI, Azure, local models)
 >
 > The data model already supports this trajectory: sources table is type-agnostic, source_references link to specific chunks, claims use claim_type discriminator for extensibility, and inconsistencies can span sources via inconsistency_items.
 
-### Phase 8: Multi-Document Projects (Same Document Type)
-- **Projects table:** Group multiple documents together (e.g., 5 years of board protocols)
-- **Cross-document entity resolution:** "John Smith" in protocol 2020 and protocol 2024 → same entity
-- **Cross-document event deduplication:** Same event mentioned in multiple sources → one entry with multiple source references
-- **Unified timeline across project:** All events from all documents on one timeline
-- **Project-based access control:** All documents in a project share permissions
+### Phase 8: Extraction Progress UX
+**Size:** S (1-2 hours) | **Model:** Sonnet
 
-### Phase 9: Mixed Document Types + Cross-Document Anomaly Detection
+Improve the extraction loading experience with real-time progress feedback.
+
+### Tasks
+- [ ] Backend: Stream chunk-by-chunk progress via WebSocket or SSE (Server-Sent Events)
+- [ ] Backend: Emit events for each chunk processed (chunk index, events extracted, entities found)
+- [ ] Frontend: Real-time progress bar showing "Chunk 3 of 8" with percentage
+- [ ] Frontend: Live-updating counters (events, entities, relationships) during extraction
+- [ ] Frontend: Show estimated time remaining based on average chunk processing time
+- [ ] Frontend: Animated event cards appearing one by one as they're extracted
+- [ ] Frontend: Error state per chunk (show which chunk failed, allow retry)
+
+### Acceptance Criteria
+- User sees real-time progress: "Extracting chunk 3 of 8... 47 events found"
+- Progress bar smoothly animates from 0% to 100%
+- Counters increment live as extraction proceeds
+- If extraction fails on chunk 5, user sees which chunk and can retry
+
+---
+
+### Phase 9: Multi-File Projects
+**Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for cross-document entity resolution design
+
+Upload and analyze multiple documents together as one coherent set of evidence on the same timeline.
+
+### Tasks
+- [ ] **Database:** Add `projects` table (id, name, description, created_at, metadata)
+- [ ] **Database:** Add `project_id` foreign key to `sources` table
+- [ ] **Database:** Update queries to filter by project_id
+- [ ] **Backend:** Project CRUD endpoints (`POST /api/projects`, `GET /api/projects`, `GET /api/projects/:id`)
+- [ ] **Backend:** Multi-file upload endpoint (`POST /api/projects/:id/documents` accepts multiple files)
+- [ ] **Backend:** Sequential or parallel extraction for project documents
+- [ ] **Backend:** Project-level extraction status aggregation
+- [ ] **Extraction:** Cross-document entity resolution ("John Smith" in doc A + doc B → same entity)
+- [ ] **Extraction:** Cross-document event deduplication (same event in multiple sources → one claim with multiple references)
+- [ ] **Frontend:** Project creation flow (name, description)
+- [ ] **Frontend:** Multi-file drop zone for project upload
+- [ ] **Frontend:** Project-level progress dashboard (Doc 1: done, Doc 2: extracting, Doc 3: queued)
+- [ ] **Frontend:** Unified timeline showing all project documents
+- [ ] **Frontend:** Source document badges on events (which doc this came from)
+- [ ] **Frontend:** Filter timeline by source document
+
+### Acceptance Criteria
+- Create a project "Board Meetings 2020-2024"
+- Upload 5 PDFs, see all 5 processing in parallel/sequence
+- Unified timeline shows events from all documents
+- Click an event → see which document(s) it came from
+- Same entity mentioned across documents shows once with multiple source references
+- Filter by "Q1 Meeting" shows only events from that document
+
+**The test:** Upload 3 related documents (e.g., meeting minutes from 3 consecutive meetings). Timeline shows unified view. Cross-references between documents are surfaced. User understands the complete picture.
+
+### Phase 10: Mixed Document Types + Cross-Document Anomaly Detection
 - **Document-type-specific extraction:**
   - Board protocols → decisions, votes, action items
   - Invoices → line items, totals, due dates
@@ -313,34 +361,32 @@ Make it demo-ready. Pre-loaded data, landing experience, visual polish.
 - **Unified event model:** All document types map to common event/entity/relationship structures
 - **Anomaly resolution workflow:** Flag conflicts, show both sources, human picks correct side
 
-### Phase 10: Multiple LLM Provider Support
+### Phase 11: Multiple LLM Provider Support
 - **Provider abstraction layer:** Support Anthropic, OpenAI, Azure OpenAI, local models
 - **Configuration:** LLM_PROVIDER=anthropic|openai|azure|local
 - **Model selection per task:** Configure which model to use for extraction, classification, chronology
 - **Cost optimization:** Use cheaper models (Haiku/GPT-4o-mini) for classification, premium models (Opus/GPT-4) for complex extraction
 - **Fallback and redundancy:** Failover between providers, rate limiting across multiple API keys
 
-### Phase 11: Board Protocol Mode (Swedish Market Focus)
+### Phase 12: Board Protocol Mode (Swedish Market Focus)
 - Specialized extraction prompts for Swedish board protocols (styrelsebeslut, protokoll)
 - Decision trail view: follow one topic across multiple meetings
 - Budget tracking across protocols
 - Swedish UI option
 
-### Phase 12: Export & Sharing
-
-### Phase 12: Export & Sharing
+### Phase 13: Export & Sharing
 - Export timeline as PDF/PNG
 - Export data as JSON/CSV
 - Shareable link (read-only view)
 - Embeddable timeline widget
 
-### Phase 13: Authentication & Multi-Tenant
+### Phase 14: Authentication & Multi-Tenant
 - User accounts
 - Project management (multiple document collections)
 - Sharing and collaboration
 - Billing (Stripe)
 
-### Phase 14: Legal / Due Diligence Mode
+### Phase 15: Legal / Due Diligence Mode
 - Contract obligation extraction
 - Deadline tracking
 - Entity relationship mapping across corporate documents
