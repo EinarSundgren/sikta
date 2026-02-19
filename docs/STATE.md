@@ -36,14 +36,15 @@
   - `air` installed for backend hot reload
   - Frontend connects to backend via Vite proxy (`/health`, `/api`)
 - [x] **Phase 1: Document Ingestion & Chunking — Complete**
-  - TXT parser with chapter detection (multiple regex patterns)
+  - Structure-agnostic chunking: paragraph boundaries + word budget (3000 target, 4500 max)
+  - Gutenberg boilerplate stripping (standard START/END markers)
   - PDF parser using pdftotext with page tracking
   - Document upload endpoint (`POST /api/documents`)
   - Document status endpoint (`GET /api/documents/:id/status`)
   - Chunk creation and storage in database
   - Async processing with worker pool (background goroutine)
   - Error handling and validation (file size, type, encoding)
-  - Pride and Prejudice: 61 chapters correctly chunked
+  - Pride and Prejudice: ~42 chunks, Dr Jekyll: ~8 chunks, Wuthering Heights: ~38 chunks
 - [x] **Phase 2: LLM Extraction Pipeline — Complete**
   - Claude API integration for structured extraction
   - 61 chapters processed → 178 events, 54 entities, 58 relationships
@@ -118,6 +119,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-19 | Fixed structure-agnostic chunking: replaced regex chapter detection with paragraph-boundary word-budget splitting (target 3000 words, max 4500). Added Gutenberg boilerplate stripping. Fixed missing /api/documents/{id}/status route for frontend polling. Updated Makefile for `podman compose` (built-in) vs podman-compose. | api/internal/document/parser.go, api/cmd/server/main.go, api/internal/services/document_service.go, web/src/pages/LandingPage.tsx, Makefile, podman-compose.yaml |
 | 2026-02-19 | Phase 7 complete: Landing page (hero + demo card + upload flow), state-based routing, back button in TimelineView, favicon, seed SQL (1700 lines, full P&P extraction), Makefile dump-demo/seed-demo targets. | web/src/App.tsx, web/src/pages/LandingPage.tsx, web/src/pages/TimelineView.tsx, web/index.html, Makefile, demo/seed.sql |
 | 2026-02-19 | Phase 6 complete: Review workflow (J/K/A/R/E keyboard shortcuts), edit modal, inconsistency panel with resolve/note/dismiss, "show on timeline" highlight. Backend review routes. Frontend build passes clean. | api/sql/queries/claims.sql, api/sql/queries/entities.sql, api/internal/handlers/review.go, api/cmd/server/main.go, web/src/components/review/*, web/src/components/inconsistencies/*, web/src/pages/TimelineView.tsx, web/src/components/timeline/Timeline.tsx |
 | 2026-02-19 | Phase 2.5 complete: Renamed documents→sources, events→claims throughout. Added claim_type, source_trust columns. All Go files + frontend types updated. Build passes clean. | api/sql/schema/010_rename_sources_claims.sql, api/sql/queries/*, api/internal/database/*, api/internal/handlers/*, api/internal/extraction/*, api/cmd/*/main.go, web/src/types/index.ts |
@@ -144,7 +146,6 @@
 |------|---------------|
 | `air` | `go install github.com/air-verse/air@latest` |
 | `sqlc` | `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest` |
-| `podman-compose` | `pip3 install podman-compose` |
 | `pdftotext` | Install poppler-utils (system package manager) |
 
 Add `$(go env GOPATH)/bin` to PATH for installed Go tools.
@@ -156,8 +157,7 @@ Podman machine must be running before `make infra`:
 /opt/podman/bin/podman machine start
 ```
 
-podman-compose binary is at `/Users/einar.sundgren/Library/Python/3.9/bin/podman-compose`.
-Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(go env GOPATH)/bin"`
+Makefile now uses `podman compose` (built-in subcommand) instead of `podman-compose` (separate install). No PATH changes needed.
 
 ### Database
 
@@ -173,7 +173,6 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 | Issue | Severity | Workaround |
 |-------|----------|------------|
-| podman-compose not in PATH by default | Low | Add `/Users/einar.sundgren/Library/Python/3.9/bin` to PATH |
 | Go tools not in PATH by default | Low | Add `$(go env GOPATH)/bin` to PATH |
 | pdftotext required for PDF parsing | Medium | Install poppler-utils via system package manager |
 | `events_event_type_check` constraint too restrictive | Low | ~6 events lost from extraction when LLM returns unexpected types. Will be fixed in migration. |
@@ -196,12 +195,14 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-19 | Structure-agnostic chunking (paragraph boundaries + word budget) | Regex chapter detection is brittle — failed for Dr Jekyll (all-caps section titles). New approach: split on blank lines, accumulate paragraphs targeting 3000 words/chunk, flush at 4500, merge trailing chunks <1500. Works on any plain text regardless of formatting. |
+| 2026-02-19 | Gutenberg boilerplate stripping | Standard `*** START/END OF THE PROJECT GUTENBERG EBOOK` markers. Non-Gutenberg texts pass through unchanged. |
 | 2026-02-19 | Rename `documents` → `sources`, `events` → `claims` | Sources is more accurate (any ingested material). Claims captures that extractions are assertions, not ground truth. Enables two-level confidence and claim_type discriminator for extensibility. |
 | 2026-02-19 | Two-level confidence model | Source trust (how reliable is the source?) vs assertion confidence (how confident is the extraction?). Effective confidence = trust × confidence. |
 | 2026-02-19 | `claim_type` discriminator | Single `claims` table holds events, attributes, and relational claims. New claim types = zero schema changes. |
 | 2026-02-19 | Keep HTTP routes as `/api/documents/...` during migration | External API stability. Internal naming changes, external stays the same. |
-| 2026-02-18 | Chapter-based chunking (not size-based) | Chapters are the smallest coherent narrative units. LLM extraction needs context. |
-| 2026-02-18 | Multiple regex patterns for chapter detection | Handles different formatting styles (Roman numerals, numeric, "CHAPTER X", etc.) |
+| 2026-02-18 | ~~Chapter-based chunking (not size-based)~~ | ~~Chapters are the smallest coherent narrative units. LLM extraction needs context.~~ **Superseded by structure-agnostic approach.** |
+| 2026-02-18 | ~~Multiple regex patterns for chapter detection~~ | ~~Handles different formatting styles (Roman numerals, numeric, "CHAPTER X", etc.)~~ **Removed — too brittle.** |
 | 2026-02-18 | pdftotext for PDF parsing | Reliable, preserves layout, handles multi-column documents well |
 | 2026-02-18 | Page marker strategy for PDFs | Insert `[[[PAGE N]]]` markers during extraction, build lookup table for offset→page mapping |
 | 2026-02-18 | Async processing with worker pool | Prevent resource exhaustion, handle multiple concurrent uploads |
