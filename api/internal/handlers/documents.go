@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -25,7 +26,7 @@ type DocumentHandler struct {
 
 // NewDocumentHandler creates a new document handler.
 func NewDocumentHandler(pool *pgxpool.Pool, logger *slog.Logger) *DocumentHandler {
-	repo := database.NewRepository(pool, nil)
+	repo := database.NewRepository(pool, context.Background())
 	return &DocumentHandler{
 		pool:      pool,
 		repo:      repo,

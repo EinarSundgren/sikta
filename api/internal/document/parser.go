@@ -28,33 +28,27 @@ const (
 )
 
 // Chapter patterns ordered by priority (highest confidence first).
+// Require explicit "Chapter" or "CHAPTER" prefix to avoid false positives.
+// Trailing [.\]] handles formats like "Chapter I.]", "CHAPTER II.", "CHAPTER XIII".
 var chapterPatterns = []struct {
 	name    string
 	pattern *regexp.Regexp
 }{
 	{
 		name:    "roman_chapter",
-		pattern: regexp.MustCompile(`^Chapter\s+[IVXLCDM]+\b`),
+		pattern: regexp.MustCompile(`^Chapter\s+[IVXLCDM]+[.\]]*\s*$`),
 	},
 	{
 		name:    "numeric_chapter",
-		pattern: regexp.MustCompile(`^Chapter\s+\d+\b`),
+		pattern: regexp.MustCompile(`^Chapter\s+\d+[.\]]*\s*$`),
 	},
 	{
 		name:    "uppercase_roman",
-		pattern: regexp.MustCompile(`^CHAPTER\s+[IVXLCDM]+\b`),
+		pattern: regexp.MustCompile(`^CHAPTER\s+[IVXLCDM]+[.\]]*\s*$`),
 	},
 	{
 		name:    "uppercase_numeric",
-		pattern: regexp.MustCompile(`^CHAPTER\s+\d+\b`),
-	},
-	{
-		name:    "standalone_roman",
-		pattern: regexp.MustCompile(`^[IVXLCDM]+\.\s+`),
-	},
-	{
-		name:    "standalone_numeric",
-		pattern: regexp.MustCompile(`^\d+\.\s+`),
+		pattern: regexp.MustCompile(`^CHAPTER\s+\d+[.\]]*\s*$`),
 	},
 }
 

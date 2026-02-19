@@ -6,9 +6,9 @@
 
 ## Status
 
-**Overall:** Phase 1 Complete — Ready for Phase 2
+**Overall:** Phase 2 In Progress — LLM Extraction Running
 
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-19
 
 ---
 
@@ -52,7 +52,7 @@
 
 | Task | Status | Assigned Model | Notes |
 |------|--------|----------------|-------|
-| Phase 2: LLM Extraction Pipeline | Not started | Opus (prompts) + Sonnet (pipeline) | Depends on Phase 1 ✅ |
+| Phase 2: LLM Extraction Pipeline | **Running** | Sonnet | Processing 61 chapters, ~10 min ETA |
 
 ---
 
@@ -68,6 +68,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-19 | Fixed chunking: 61 chapters now detected (was 2). Fixed 6 bugs blocking extraction. Extraction running. | api/internal/document/parser.go, api/internal/handlers/documents.go, api/internal/handlers/extraction.go, api/internal/database/*.go, api/internal/extraction/service.go, api/cmd/server/main.go |
 | 2026-02-18 | Phase 1 complete: TXT/PDF parsers, chapter detection, document upload API, async processing | api/internal/document/, api/internal/services/, api/internal/handlers/, api/internal/database/ |
 | 2026-02-18 | Pride and Prejudice downloaded from Project Gutenberg | api/uploads/demo/pride-and-prejudice.txt |
 | 2026-02-18 | Project initialized with full documentation | CLAUDE.md, docs/TASKS.md, docs/STATE.md |

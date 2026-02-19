@@ -5,6 +5,8 @@
 package database
 
 import (
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -24,7 +26,7 @@ type Event struct {
 	Confidence           float64            `json:"confidence"`
 	ConfidenceReason     *string            `json:"confidence_reason"`
 	ReviewStatus         string             `json:"review_status"`
-	Metadata             pgtype.Map          `json:"metadata"`
+	Metadata             *json.RawMessage    `json:"metadata"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
@@ -41,7 +43,7 @@ type Entity struct {
 	LastAppearanceChunk  *int32             `json:"last_appearance_chunk"`
 	Confidence           float64            `json:"confidence"`
 	ReviewStatus         string             `json:"review_status"`
-	Metadata             pgtype.Map          `json:"metadata"`
+	Metadata             *json.RawMessage    `json:"metadata"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 }
@@ -58,7 +60,7 @@ type Relationship struct {
 	EndEventID        *UUID              `json:"end_event_id"`
 	Confidence        float64            `json:"confidence"`
 	ReviewStatus      string             `json:"review_status"`
-	Metadata          pgtype.Map          `json:"metadata"`
+	Metadata          *json.RawMessage    `json:"metadata"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
 }

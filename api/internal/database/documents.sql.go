@@ -5,6 +5,8 @@
 package database
 
 import (
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,7 +20,7 @@ type Document struct {
 	UploadStatus string             `json:"upload_status"`
 	ErrorMessage *string            `json:"error_message"`
 	IsDemo       bool               `json:"is_demo"`
-	Metadata     pgtype.Map `json:"metadata"`
+	Metadata     *json.RawMessage   `json:"metadata"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }

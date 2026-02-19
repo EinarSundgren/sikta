@@ -218,6 +218,7 @@ func (s *Service) storeEntity(ctx context.Context, documentID database.UUID, chu
 		FirstAppearanceChunk: &chunk.ChunkIndex,
 		LastAppearanceChunk:  &chunk.ChunkIndex,
 		Confidence:          entity.Confidence,
+		Metadata:            json.RawMessage("{}"),
 	}
 
 	created, err := s.db.CreateEntity(ctx, params)
@@ -240,13 +241,14 @@ func (s *Service) storeEntity(ctx context.Context, documentID database.UUID, chu
 // storeEvent stores a single event.
 func (s *Service) storeEvent(ctx context.Context, documentID database.UUID, chunk database.Chunk, event Event) (string, error) {
 	params := database.CreateEventParams{
-		DocumentID:         documentID,
-		Title:              event.Title,
-		Description:        &event.Description,
-		EventType:          event.Type,
-		DateText:           &event.DateText,
-		NarrativePosition:  chunk.NarrativePosition,
-		Confidence:         event.Confidence,
+		DocumentID:        documentID,
+		Title:             event.Title,
+		Description:       &event.Description,
+		EventType:         event.Type,
+		DateText:          &event.DateText,
+		NarrativePosition: chunk.NarrativePosition,
+		Confidence:        event.Confidence,
+		Metadata:          json.RawMessage("{}"),
 	}
 
 	created, err := s.db.CreateEvent(ctx, params)
@@ -280,12 +282,13 @@ func (s *Service) storeRelationship(ctx context.Context, documentID database.UUI
 	}
 
 	params := database.CreateRelationshipParams{
-		DocumentID:        documentID,
-		EntityAID:         parseUUID(entityAID),
-		EntityBID:         parseUUID(entityBID),
-		RelationshipType:  relationship.Type,
-		Description:       &relationship.Description,
-		Confidence:        relationship.Confidence,
+		DocumentID:       documentID,
+		EntityAID:        parseUUID(entityAID),
+		EntityBID:        parseUUID(entityBID),
+		RelationshipType: relationship.Type,
+		Description:      &relationship.Description,
+		Confidence:       relationship.Confidence,
+		Metadata:         json.RawMessage("{}"),
 	}
 
 	created, err := s.db.CreateRelationship(ctx, params)

@@ -145,8 +145,9 @@ func (h *ExtractionHandler) TriggerExtraction(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Start extraction in background
-	go h.runExtraction(r.Context(), parsedUUID.String())
+	// Start extraction in background with a detached context so it isn't
+	// cancelled when the HTTP response is sent.
+	go h.runExtraction(context.Background(), parsedUUID.String())
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{

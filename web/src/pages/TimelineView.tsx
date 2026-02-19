@@ -9,14 +9,17 @@ const TimelineView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
 
-  // Hardcoded document ID for Pride and Prejudice
-  const DOCUMENT_ID = '01234567-89ab-cdef-0123-456789abcdef';
-
   useEffect(() => {
     const loadTimeline = async () => {
       try {
         setLoading(true);
-        const data = await timelineApi.getTimeline(DOCUMENT_ID);
+        // Fetch the first available document dynamically
+        const res = await fetch('/api/documents');
+        if (!res.ok) throw new Error('Failed to fetch documents');
+        const docs = await res.json();
+        if (!docs || docs.length === 0) throw new Error('No documents found');
+        const documentId = docs[0].id;
+        const data = await timelineApi.getTimeline(documentId);
         setEvents(data);
         setError(null);
       } catch (err) {

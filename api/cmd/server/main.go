@@ -52,8 +52,21 @@ func main() {
 	mux.HandleFunc("GET /api/documents/{id}", docHandler.GetDocument)
 	mux.HandleFunc("DELETE /api/documents/{id}", docHandler.DeleteDocument)
 
-	// Inconsistency handlers
+	// Start background document processor (chunks uploaded documents)
+	stopCh := make(chan struct{})
+	go docHandler.ProcessDocuments(stopCh)
+
 	db := database.New(pool)
+
+	// Extraction handlers
+	extractionHandler := handlers.NewExtractionHandler(db, cfg, logger)
+	mux.HandleFunc("GET /api/documents/{id}/events", extractionHandler.GetEvents)
+	mux.HandleFunc("GET /api/documents/{id}/entities", extractionHandler.GetEntities)
+	mux.HandleFunc("GET /api/documents/{id}/relationships", extractionHandler.GetRelationships)
+	mux.HandleFunc("POST /api/documents/{id}/extract", extractionHandler.TriggerExtraction)
+	mux.HandleFunc("GET /api/documents/{id}/extract/status", extractionHandler.GetExtractionStatus)
+
+	// Inconsistency handlers
 	incHandler := handlers.NewInconsistencyHandler(db, cfg, logger)
 	mux.HandleFunc("GET /api/documents/{id}/inconsistencies", incHandler.GetInconsistencies)
 	mux.HandleFunc("POST /api/documents/{id}/detect-inconsistencies", incHandler.TriggerInconsistencyDetection)
@@ -87,6 +100,8 @@ func main() {
 	<-quit
 
 	logger.Info("shutting down server...")
+	close(stopCh)
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
