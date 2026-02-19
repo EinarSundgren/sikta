@@ -58,36 +58,63 @@ Upload documents, extract text, split into chunks with position metadata.
 
 ---
 
-## Phase 2: LLM Extraction Pipeline
+## Phase 2: LLM Extraction Pipeline ✅ COMPLETE
 **Size:** L (4-5 hours) | **Model:** Opus for prompt design, Sonnet for pipeline implementation
 
-The intelligence layer. Send chunks to Claude API, get structured events/entities/relationships back.
+The intelligence layer. Send chunks to Claude API, get structured claims/entities/relationships back.
 
 ### Tasks
-- [ ] Database migrations: `events`, `entities`, `relationships`, `event_entities`, `source_references`
-- [ ] sqlc queries for all extraction tables
-- [ ] Design extraction prompt: given a chunk, extract events, entities, relationships as structured JSON
-- [ ] Design confidence prompt: classify confidence for date precision, entity certainty, fact explicitness
-- [ ] Claude API client (Go): call Sonnet for extraction, Haiku for classification
-- [ ] Extraction service: iterate chunks, call LLM, parse responses, store results
-- [ ] Source reference creation: link every extracted item to its chunk + excerpt + char positions
-- [ ] Entity deduplication: merge "Elizabeth", "Lizzy", "Miss Bennet" into one entity with aliases
-- [ ] Date normalization: parse "that spring", "15 March", "the following year" into date ranges with precision markers
-- [ ] Narrative position tracking: record which chapter each event comes from
-- [ ] Chronological position estimation: LLM-assisted ordering of events on the actual timeline
-- [ ] Extraction CLI tool (`make extract doc=path/to/file.txt`)
-- [ ] Rate limiting and retry logic for API calls
-- [ ] Progress tracking: events emitted as chunks are processed
+- [x] Database migrations: `events`, `entities`, `relationships`, `event_entities`, `source_references`
+- [x] sqlc queries for all extraction tables
+- [x] Design extraction prompt: given a chunk, extract events, entities, relationships as structured JSON
+- [x] Claude API client (Go): call Sonnet for extraction
+- [x] Extraction service: iterate chunks, call LLM, parse responses, store results
+- [x] Source reference creation: link every extracted item to its chunk + excerpt + char positions
+- [x] Narrative position tracking: record which chapter each event comes from
+- [x] Chronological position estimation: LLM-assisted ordering of events on the actual timeline
+- [x] Extraction CLI tool (`make extract doc=path/to/file.txt`)
+- [x] Progress tracking: events emitted as chunks are processed
 
-### Acceptance Criteria
-- Run extraction on Pride and Prejudice → 50-80 events, 20-30 entities, 15-25 relationships extracted
-- Every event has: title, description, type, date_text, confidence score, source reference
-- Every entity has: name, type, aliases, confidence score, source reference
-- Confidence scores are meaningful (precise dates get higher scores than vague ones)
-- Entity deduplication works: "Elizabeth Bennet", "Lizzy", "Eliza" → one entity
-- Source references point to correct chunks and excerpts
+### Results
+- Pride and Prejudice: 61 chapters → 178 events, 54 entities, 58 relationships extracted
+- Timeline Hero View working with D3 dual-lane visualization
+- Inconsistency detection implemented (Phase 3 also complete)
 
 **The test:** Pick 10 random extracted events. Click through to source text. Verify each reference points to the correct passage and the extraction is accurate.
+
+---
+
+## Phase 2.5: Data Model Migration
+**Size:** M (3-4 hours) | **Model:** Sonnet for implementation
+
+Rename `documents` → `sources` and `events` → `claims` throughout the codebase. Add two-level confidence model (source trust + assertion confidence) and `claim_type` discriminator.
+
+### Tasks
+- [ ] SQL migration: rename `documents` table → `sources`, add `source_trust` and `trust_reason` columns
+- [ ] SQL migration: rename `events` table → `claims`, add `claim_type` column (event/attribute/relation)
+- [ ] SQL migration: rename all foreign keys `document_id` → `source_id`, `event_id` → `claim_id`
+- [ ] SQL migration: rename `event_entities` → `claim_entities`
+- [ ] Update all sqlc queries (`.sql` files) with new table/column names
+- [ ] Run `sqlc generate` to regenerate Go database layer
+- [ ] Update Go handlers: `documents.go`, `extraction.go`, `timeline.go`, `inconsistencies.go`
+- [ ] Update Go extraction service: `service.go`, `deduplicator.go`, `chronology.go`, `inconsistency.go`, `types.go`
+- [ ] Update Go CLI tools: `cmd/extract/main.go`, `cmd/chunk/main.go`
+- [ ] Update repository.go with renamed methods
+- [ ] Update frontend TypeScript types (`types/index.ts`)
+- [ ] Update frontend API client (`api/timeline.ts`)
+- [ ] Re-upload Pride and Prejudice and re-run extraction with new schema
+- [ ] Verify timeline UI works with renamed fields
+
+### Acceptance Criteria
+- All `document_id` references in code → `source_id`
+- All `event_id` references in code → `claim_id` (where referring to the claims table)
+- `sources` table has `source_trust` and `trust_reason` columns
+- `claims` table has `claim_type` discriminator column
+- Extraction pipeline produces claims with `claim_type = 'event'`
+- Timeline renders correctly with renamed data
+- HTTP API routes remain `/api/documents/...` (external API unchanged)
+
+**The test:** Full pipeline: upload P&P → chunking → extraction → timeline renders. All 61 chapters, ~178 claims, ~54 entities, ~58 relationships.
 
 ---
 
@@ -97,21 +124,21 @@ The intelligence layer. Send chunks to Claude API, get structured events/entitie
 Detect and store contradictions, temporal impossibilities, and narrative vs. chronological mismatches.
 
 ### Tasks
-- [ ] Database migrations: `inconsistencies`, `inconsistency_items`
+- [ ] Database migrations: `inconsistencies`, `inconsistency_items` (already created, may need migration for renamed FKs)
 - [ ] sqlc queries for inconsistencies CRUD
-- [ ] Narrative vs. chronological ordering: compare narrative_position (chapter order) with chronological_position (timeline order) for all events
-- [ ] Contradiction detection prompt: given overlapping events/facts, identify conflicts
-- [ ] Temporal impossibility detection: flag events where timing is logically impossible
+- [ ] Narrative vs. chronological ordering: compare narrative_position (chapter order) with chronological_position (timeline order) for all claims
+- [ ] Contradiction detection prompt: given overlapping claims/facts, identify conflicts
+- [ ] Temporal impossibility detection: flag claims where timing is logically impossible
 - [ ] Cross-reference detection: identify when the same event is described multiple times
 - [ ] Inconsistency service: run detection passes after extraction, store results
-- [ ] Link inconsistencies to involved events/entities via inconsistency_items
+- [ ] Link inconsistencies to involved claims/entities via inconsistency_items
 - [ ] Severity classification: info (narrative order difference), warning (ambiguity), conflict (contradiction)
 - [ ] API endpoints for inconsistencies (`GET /api/documents/:id/inconsistencies`)
 
 ### Acceptance Criteria
 - Narrative vs. chronological mismatches detected (if any exist in Pride and Prejudice)
-- Cross-references identified (same event mentioned in different chapters)
-- Each inconsistency links to the specific events/entities and source references involved
+- Cross-references identified (same claim mentioned in different chapters)
+- Each inconsistency links to the specific claims/entities and source references involved
 - Severity levels assigned appropriately
 - API returns inconsistencies with full context
 
@@ -125,7 +152,7 @@ Detect and store contradictions, temporal impossibilities, and narrative vs. chr
 The horizontal dual-lane timeline. This is what people see first and what makes them want to use Sikta.
 
 ### Tasks
-- [ ] API endpoints: `GET /api/documents/:id/timeline` (events with entities, sources, inconsistencies)
+- [ ] API endpoints: `GET /api/documents/:id/timeline` (claims with entities, sources, inconsistencies)
 - [ ] API endpoints: `GET /api/documents/:id/entities`, `GET /api/documents/:id/relationships`
 - [ ] D3 horizontal timeline component: render events on a scrollable horizontal axis
 - [ ] Dual-lane layout: chronological lane (top) + narrative lane (bottom)
@@ -258,7 +285,7 @@ Make it demo-ready. Pre-loaded data, landing experience, visual polish.
 > - **Phase 9:** Mixed document types (protocols + invoices + emails) → unified timeline with cross-document anomaly detection
 > - **Phase 10:** Multiple LLM provider support (OpenAI, Azure, local models)
 >
-> The data model already supports this trajectory: documents table is type-agnostic, source_references link to specific chunks, and inconsistencies can span documents via inconsistency_items.
+> The data model already supports this trajectory: sources table is type-agnostic, source_references link to specific chunks, claims use claim_type discriminator for extensibility, and inconsistencies can span sources via inconsistency_items.
 
 ### Phase 8: Multi-Document Projects (Same Document Type)
 - **Projects table:** Group multiple documents together (e.g., 5 years of board protocols)

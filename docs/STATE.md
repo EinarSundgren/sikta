@@ -6,7 +6,7 @@
 
 ## Status
 
-**Overall:** Phase 2 In Progress — LLM Extraction Running
+**Overall:** Phase 5 Complete — Entity Panel & Relationship Graph done. Phase 6 (Review Workflow) is next.
 
 **Last Updated:** 2026-02-19
 
@@ -14,16 +14,16 @@
 
 ## Current Phase
 
-**Phase:** 2 — LLM Extraction Pipeline (Next)
+**Phase:** 2.5 — Data Model Migration
 
-**Goal:** Send chunks to Claude API, get structured events/entities/relationships back.
+**Goal:** Rename `documents` → `sources`, `events` → `claims`. Add two-level confidence model and `claim_type` discriminator.
 
 ---
 
 ## What's Working
 
 - [x] Project documentation (CLAUDE.md, docs/TASKS.md, docs/STATE.md)
-- [x] Data model drafted (see CLAUDE.md)
+- [x] Data model drafted and refined (sources/claims architecture)
 - [x] UX concept defined (horizontal dual-lane timeline, entity panel, graph, review workflow)
 - [x] Demo novel selected (Pride and Prejudice)
 - [x] **Phase 0: Project Scaffolding — Complete**
@@ -43,8 +43,33 @@
   - Chunk creation and storage in database
   - Async processing with worker pool (background goroutine)
   - Error handling and validation (file size, type, encoding)
-  - Pride and Prejudice downloaded to `api/uploads/demo/`
-  - Full API implementation with repository pattern
+  - Pride and Prejudice: 61 chapters correctly chunked
+- [x] **Phase 2: LLM Extraction Pipeline — Complete**
+  - Claude API integration for structured extraction
+  - 61 chapters processed → 178 events, 54 entities, 58 relationships
+  - Source references linking extractions to chunks
+  - Chronological position estimation via LLM
+  - Entity deduplication service
+  - Extraction CLI and HTTP triggers
+- [x] **Phase 3: Inconsistency Detection — Complete**
+  - Inconsistency detection service (narrative vs chronological, contradictions, temporal)
+  - Database schema for inconsistencies and inconsistency_items
+  - API endpoints for inconsistencies
+- [x] **Phase 4: Timeline Hero View — Complete**
+  - D3 horizontal dual-lane timeline
+  - Chronological and narrative lanes with connectors
+  - Event cards with confidence markers
+  - Click-to-detail panel
+  - Dynamic document loading (no hardcoded IDs)
+- [x] **Phase 5: Entity Panel & Relationship Graph — Complete**
+  - Entity sidebar grouped by type (people, places, organizations) with search
+  - Click entity → filters timeline events by name matching
+  - D3 force-directed relationship graph (191 nodes, 236 edges)
+  - Node sizing by relationship count, color by entity type
+  - Hover tooltips on nodes and edges
+  - Drag nodes, zoom/pan, auto-fit on load
+  - Tab switching: Timeline ↔ Graph
+  - Shared entity selection state across all views
 
 ---
 
@@ -52,7 +77,8 @@
 
 | Task | Status | Assigned Model | Notes |
 |------|--------|----------------|-------|
-| Phase 2: LLM Extraction Pipeline | **Running** | Sonnet | Processing 61 chapters, ~10 min ETA |
+| Phase 2.5: Data Model Migration | **Complete** | Sonnet | Migration done. DB + all Go files + frontend types updated. Build passes. |
+| Phase 5: Entity Panel & Relationship Graph | **Complete** | Sonnet | EntityPanel sidebar + D3 RelationshipGraph + tab switching. claim_entities table empty (extraction didn't link events↔entities), entity filter uses text matching fallback. |
 
 ---
 
@@ -68,10 +94,10 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
-| 2026-02-19 | Fixed chunking: 61 chapters now detected (was 2). Fixed 6 bugs blocking extraction. Extraction running. | api/internal/document/parser.go, api/internal/handlers/documents.go, api/internal/handlers/extraction.go, api/internal/database/*.go, api/internal/extraction/service.go, api/cmd/server/main.go |
+| 2026-02-19 | Phase 2.5 complete: Renamed documents→sources, events→claims throughout. Added claim_type, source_trust columns. All Go files + frontend types updated. Build passes clean. | api/sql/schema/010_rename_sources_claims.sql, api/sql/queries/*, api/internal/database/*, api/internal/handlers/*, api/internal/extraction/*, api/cmd/*/main.go, web/src/types/index.ts |
+| 2026-02-19 | Documentation updated for sources/claims data model migration | CLAUDE.md, docs/TASKS.md, docs/STATE.md |
+| 2026-02-19 | Fixed chunking: 61 chapters now detected (was 2). Fixed 8 bugs blocking extraction. Full extraction complete (178 events, 54 entities, 58 relationships). | api/internal/document/parser.go, api/internal/handlers/documents.go, api/internal/handlers/extraction.go, api/internal/database/*.go, api/internal/extraction/service.go, api/cmd/server/main.go, web/src/pages/TimelineView.tsx |
 | 2026-02-18 | Phase 1 complete: TXT/PDF parsers, chapter detection, document upload API, async processing | api/internal/document/, api/internal/services/, api/internal/handlers/, api/internal/database/ |
-| 2026-02-18 | Pride and Prejudice downloaded from Project Gutenberg | api/uploads/demo/pride-and-prejudice.txt |
-| 2026-02-18 | Project initialized with full documentation | CLAUDE.md, docs/TASKS.md, docs/STATE.md |
 | 2026-02-18 | Phase 0 complete: Go backend, React frontend, PostgreSQL, Makefile, sqlc | api/, web/, Makefile, podman-compose.yaml, .env.example |
 
 ---
@@ -109,9 +135,11 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 ### Database
 
-**Migrations Applied:** 2 (001_documents.sql, 002_chunks.sql)
+**Migrations Applied:** 10 (001_documents through 010_rename_sources_claims)
 
-**Schema Version:** 002_chunks
+**Schema Version:** 010_rename_sources_claims
+
+**Current Data:** Pride and Prejudice (doc ID: `334903c6-de15-469a-8671-686dd9c2b534`) — 61 chunks, 178 events, 54 entities, 58 relationships
 
 ---
 
@@ -122,18 +150,21 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 | podman-compose not in PATH by default | Low | Add `/Users/einar.sundgren/Library/Python/3.9/bin` to PATH |
 | Go tools not in PATH by default | Low | Add `$(go env GOPATH)/bin` to PATH |
 | pdftotext required for PDF parsing | Medium | Install poppler-utils via system package manager |
+| `events_event_type_check` constraint too restrictive | Low | ~6 events lost from extraction when LLM returns unexpected types. Will be fixed in migration. |
 
 ---
 
 ## Next Milestone
 
-**Milestone:** Phase 2 — LLM Extraction Pipeline
+**Milestone:** Phase 6 — Review Workflow & Inconsistency Panel
 
-**Why this is next:** We now have structured chunks with position metadata. Next step is to extract events, entities, and relationships using Claude API.
+**Why this is next:** Entity panel and graph are done. Phase 6 adds the human review loop: approve/reject/edit extracted items, keyboard shortcuts, and the inconsistency panel.
 
-**Recommended model:** Opus for prompt design (critical decisions that compound), Sonnet for pipeline implementation.
+**Recommended model:** Sonnet for implementation.
 
-**After Phase 2:** Phase 3 (Inconsistency Detection) — detection logic design is an Opus-level task.
+**Known issue:** `claim_entities` table is empty — the extraction pipeline stored events and entities separately but never linked them. Entity filtering on the timeline uses text-match fallback (works for Pride and Prejudice). To fix properly: update the extraction prompt to return participant entities per event, add `storeEvent` to call `CreateClaimEntity` for each participant.
+
+**After Phase 6:** Phase 7 (Demo Polish & Landing).
 
 ---
 
@@ -141,6 +172,10 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-19 | Rename `documents` → `sources`, `events` → `claims` | Sources is more accurate (any ingested material). Claims captures that extractions are assertions, not ground truth. Enables two-level confidence and claim_type discriminator for extensibility. |
+| 2026-02-19 | Two-level confidence model | Source trust (how reliable is the source?) vs assertion confidence (how confident is the extraction?). Effective confidence = trust × confidence. |
+| 2026-02-19 | `claim_type` discriminator | Single `claims` table holds events, attributes, and relational claims. New claim types = zero schema changes. |
+| 2026-02-19 | Keep HTTP routes as `/api/documents/...` during migration | External API stability. Internal naming changes, external stays the same. |
 | 2026-02-18 | Chapter-based chunking (not size-based) | Chapters are the smallest coherent narrative units. LLM extraction needs context. |
 | 2026-02-18 | Multiple regex patterns for chapter detection | Handles different formatting styles (Roman numerals, numeric, "CHAPTER X", etc.) |
 | 2026-02-18 | pdftotext for PDF parsing | Reliable, preserves layout, handles multi-column documents well |
@@ -155,4 +190,3 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 | 2026-02-18 | Go 1.22+ stdlib mux for routing | Method+path pattern routing added in Go 1.22. No external router needed for Phase 0-1. |
 | 2026-02-18 | pgx/v5 as database driver | Matches sqlc.yaml sql_package config. Standard high-performance PostgreSQL driver. |
 | 2026-02-18 | Vite proxy for /health and /api | Frontend calls backend via same-origin proxy — no CORS in dev, clean production parity. |
-

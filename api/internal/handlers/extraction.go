@@ -48,7 +48,6 @@ func (h *ExtractionHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/events")
 
@@ -58,16 +57,15 @@ func (h *ExtractionHandler) GetEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get events
-	events, err := h.db.ListEventsByDocument(r.Context(), database.UUID(parsedUUID))
+	claims, err := h.db.ListClaimsBySource(r.Context(), database.PgUUID(parsedUUID))
 	if err != nil {
-		h.logger.Error("failed to get events", "error", err)
+		h.logger.Error("failed to get claims", "error", err)
 		http.Error(w, "Failed to get events", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(events)
+	json.NewEncoder(w).Encode(claims)
 }
 
 // GetEntities handles GET /api/documents/:id/entities
@@ -77,7 +75,6 @@ func (h *ExtractionHandler) GetEntities(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/entities")
 
@@ -87,8 +84,7 @@ func (h *ExtractionHandler) GetEntities(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get entities
-	entities, err := h.db.ListEntitiesByDocument(r.Context(), database.UUID(parsedUUID))
+	entities, err := h.db.ListEntitiesBySource(r.Context(), database.PgUUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get entities", "error", err)
 		http.Error(w, "Failed to get entities", http.StatusInternalServerError)
@@ -106,7 +102,6 @@ func (h *ExtractionHandler) GetRelationships(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/relationships")
 
@@ -116,8 +111,7 @@ func (h *ExtractionHandler) GetRelationships(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Get relationships
-	relationships, err := h.db.ListRelationshipsByDocument(r.Context(), database.UUID(parsedUUID))
+	relationships, err := h.db.ListRelationshipsBySource(r.Context(), database.PgUUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get relationships", "error", err)
 		http.Error(w, "Failed to get relationships", http.StatusInternalServerError)
@@ -135,7 +129,6 @@ func (h *ExtractionHandler) TriggerExtraction(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/extract")
 
@@ -145,8 +138,6 @@ func (h *ExtractionHandler) TriggerExtraction(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Start extraction in background with a detached context so it isn't
-	// cancelled when the HTTP response is sent.
 	go h.runExtraction(context.Background(), parsedUUID.String())
 
 	w.Header().Set("Content-Type", "application/json")
@@ -163,7 +154,6 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/extract/status")
 	idStr = strings.TrimSuffix(idStr, "/status")
@@ -174,23 +164,21 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Get extraction counts
-	eventCount, _ := h.db.CountEventsByDocument(r.Context(), database.UUID(parsedUUID))
-	entityCount, _ := h.db.CountEntitiesByDocument(r.Context(), database.UUID(parsedUUID))
-	relationshipCount, _ := h.db.CountRelationshipsByDocument(r.Context(), database.UUID(parsedUUID))
-	chunkCount, _ := h.db.CountChunksByDocument(r.Context(), database.UUID(parsedUUID))
+	pgID := database.PgUUID(parsedUUID)
+	eventCount, _ := h.db.CountClaimsBySource(r.Context(), pgID)
+	entityCount, _ := h.db.CountEntitiesBySource(r.Context(), pgID)
+	relationshipCount, _ := h.db.CountRelationshipsBySource(r.Context(), pgID)
+	chunkCount, _ := h.db.CountChunksBySource(r.Context(), pgID)
 
 	status := map[string]interface{}{
-		"status":       "processing",
-		"total_chunks": chunkCount,
-		"events":       eventCount,
-		"entities":     entityCount,
+		"status":        "processing",
+		"total_chunks":  chunkCount,
+		"events":        eventCount,
+		"entities":      entityCount,
 		"relationships": relationshipCount,
 	}
 
-	// Check if extraction is complete
 	if eventCount > 0 && chunkCount > 0 {
-		// Rough heuristic: if we have events, assume complete
 		status["status"] = "complete"
 	}
 
@@ -199,13 +187,12 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 }
 
 // runExtraction runs the full extraction pipeline.
-func (h *ExtractionHandler) runExtraction(ctx context.Context, documentID string) {
-	h.logger.Info("starting extraction pipeline", "document_id", documentID)
+func (h *ExtractionHandler) runExtraction(ctx context.Context, sourceID string) {
+	h.logger.Info("starting extraction pipeline", "source_id", sourceID)
 
-	// Step 1: Extract events, entities, relationships
-	err := h.extract.ExtractDocument(ctx, documentID, func(progress extraction.ExtractionProgress) {
+	err := h.extract.ExtractDocument(ctx, sourceID, func(progress extraction.ExtractionProgress) {
 		h.logger.Info("extraction progress",
-			"document_id", documentID,
+			"source_id", sourceID,
 			"chunk", progress.CurrentChunk,
 			"total", progress.TotalChunks,
 			"events", progress.EventsExtracted,
@@ -213,23 +200,19 @@ func (h *ExtractionHandler) runExtraction(ctx context.Context, documentID string
 			"relationships", progress.RelationshipsExtracted)
 	})
 	if err != nil {
-		h.logger.Error("extraction failed", "document_id", documentID, "error", err)
+		h.logger.Error("extraction failed", "source_id", sourceID, "error", err)
 		return
 	}
 
-	// Step 2: Deduplicate entities
-	_, err = h.dedupe.DeduplicateEntities(ctx, documentID)
+	_, err = h.dedupe.DeduplicateEntities(ctx, sourceID)
 	if err != nil {
-		h.logger.Error("deduplication failed", "document_id", documentID, "error", err)
-		// Continue anyway
+		h.logger.Error("deduplication failed", "source_id", sourceID, "error", err)
 	}
 
-	// Step 3: Estimate chronology
-	_, err = h.chrono.EstimateChronology(ctx, documentID)
+	_, err = h.chrono.EstimateChronology(ctx, sourceID)
 	if err != nil {
-		h.logger.Error("chronology estimation failed", "document_id", documentID, "error", err)
-		// Continue anyway
+		h.logger.Error("chronology estimation failed", "source_id", sourceID, "error", err)
 	}
 
-	h.logger.Info("extraction pipeline complete", "document_id", documentID)
+	h.logger.Info("extraction pipeline complete", "source_id", sourceID)
 }

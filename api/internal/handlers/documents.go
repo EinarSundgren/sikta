@@ -18,20 +18,20 @@ import (
 
 // DocumentHandler handles document-related HTTP requests.
 type DocumentHandler struct {
-	pool      *pgxpool.Pool
-	repo      *database.Repository
+	pool       *pgxpool.Pool
+	repo       *database.Repository
 	docService *services.DocumentService
-	logger    *slog.Logger
+	logger     *slog.Logger
 }
 
 // NewDocumentHandler creates a new document handler.
 func NewDocumentHandler(pool *pgxpool.Pool, logger *slog.Logger) *DocumentHandler {
 	repo := database.NewRepository(pool, context.Background())
 	return &DocumentHandler{
-		pool:      pool,
-		repo:      repo,
+		pool:       pool,
+		repo:       repo,
 		docService: services.NewDocumentService(logger),
-		logger:    logger,
+		logger:     logger,
 	}
 }
 
@@ -65,8 +65,8 @@ func (h *DocumentHandler) UploadDocument(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Create document record
-	doc, err := h.repo.CreateDocument(
+	// Create source record
+	src, err := h.repo.CreateSource(
 		uploadResult.Title,
 		uploadResult.Filename,
 		uploadResult.FilePath,
@@ -75,16 +75,15 @@ func (h *DocumentHandler) UploadDocument(w http.ResponseWriter, r *http.Request)
 		false,
 	)
 	if err != nil {
-		h.logger.Error("failed to create document record", "error", err)
+		h.logger.Error("failed to create source record", "error", err)
 		http.Error(w, "Failed to create document", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info("document uploaded", "id", doc.ID, "filename", uploadResult.Filename)
+	h.logger.Info("document uploaded", "id", src.ID, "filename", uploadResult.Filename)
 
-	// Return document info
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(doc)
+	json.NewEncoder(w).Encode(src)
 }
 
 // GetDocumentStatus handles GET /api/documents/{id}/status
@@ -94,55 +93,50 @@ func (h *DocumentHandler) GetDocumentStatus(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Extract document ID from URL path
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/status")
 
-	docID, err := uuid.Parse(idStr)
+	srcID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
-	// Get document
-	doc, err := h.repo.GetDocument(docID)
+	src, err := h.repo.GetSource(srcID)
 	if err != nil {
-		h.logger.Error("failed to get document", "error", err)
+		h.logger.Error("failed to get source", "error", err)
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
 	}
 
-	// Get chunk count
-	chunkCount, err := h.repo.GetChunkCount(docID)
+	chunkCount, err := h.repo.GetChunkCount(srcID)
 	if err != nil {
 		h.logger.Error("failed to get chunk count", "error", err)
 		http.Error(w, "Failed to get status", http.StatusInternalServerError)
 		return
 	}
 
-	// Calculate progress
-	totalChunks := int64(1) // Default
-	if doc.UploadStatus == "ready" {
+	totalChunks := int64(1)
+	if src.UploadStatus == "ready" {
 		totalChunks = chunkCount
-	} else if doc.UploadStatus == "processing" {
-		// Estimate based on file size (rough heuristic)
+	} else if src.UploadStatus == "processing" {
 		totalChunks = int64(chunkCount)
 		if totalChunks == 0 {
-			totalChunks = 50 // Default estimate for novels
+			totalChunks = 50
 		}
 	}
 
 	progress := h.docService.CalculateProgress(int(chunkCount), int(totalChunks))
 
 	status := map[string]interface{}{
-		"upload_status": doc.UploadStatus,
+		"upload_status": src.UploadStatus,
 		"progress": map[string]int{
 			"current":    progress.Current,
 			"total":      progress.Total,
 			"percentage": progress.Percentage,
 		},
 		"chunks_created": int(chunkCount),
-		"error_message":  doc.ErrorMessage,
+		"error_message":  database.TextPtr(src.ErrorMessage),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -156,34 +150,30 @@ func (h *DocumentHandler) GetDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract document ID from URL path
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 
-	docID, err := uuid.Parse(idStr)
+	srcID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
-	// Get document
-	doc, err := h.repo.GetDocument(docID)
+	src, err := h.repo.GetSource(srcID)
 	if err != nil {
-		h.logger.Error("failed to get document", "error", err)
+		h.logger.Error("failed to get source", "error", err)
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
 	}
 
-	// Get chunks
-	chunks, err := h.repo.GetChunks(docID)
+	chunks, err := h.repo.GetChunks(srcID)
 	if err != nil {
 		h.logger.Error("failed to get chunks", "error", err)
 		http.Error(w, "Failed to get chunks", http.StatusInternalServerError)
 		return
 	}
 
-	// Combine document and chunks
 	response := map[string]interface{}{
-		"document": doc,
+		"document": src,
 		"chunks":   chunks,
 	}
 
@@ -198,15 +188,15 @@ func (h *DocumentHandler) ListDocuments(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	docs, err := h.repo.ListDocuments()
+	sources, err := h.repo.ListSources()
 	if err != nil {
-		h.logger.Error("failed to list documents", "error", err)
+		h.logger.Error("failed to list sources", "error", err)
 		http.Error(w, "Failed to list documents", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(docs)
+	json.NewEncoder(w).Encode(sources)
 }
 
 // DeleteDocument handles DELETE /api/documents/{id}
@@ -216,32 +206,24 @@ func (h *DocumentHandler) DeleteDocument(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Extract document ID from URL path
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 
-	docID, err := uuid.Parse(idStr)
+	srcID, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid document ID", http.StatusBadRequest)
 		return
 	}
 
-	// Get document to check if it exists
-	doc, err := h.repo.GetDocument(docID)
+	src, err := h.repo.GetSource(srcID)
 	if err != nil {
-		h.logger.Error("failed to get document", "error", err)
+		h.logger.Error("failed to get source", "error", err)
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
 	}
 
-	// Delete file from disk
-	if err := h.docService.Cleanup(doc.FilePath); err != nil {
+	if err := h.docService.Cleanup(src.FilePath); err != nil {
 		h.logger.Error("failed to cleanup file", "error", err)
-		// Continue anyway to delete DB record
 	}
-
-	// Delete document record (chunks will be cascade deleted)
-	// For now, we'll just return success
-	// In production, you'd implement actual delete in the repository
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
@@ -263,52 +245,50 @@ func (h *DocumentHandler) ProcessDocuments(stopCh <-chan struct{}) {
 			h.logger.Info("stopping document processor")
 			return
 		case <-ticker.C:
-			h.processQueuedDocuments()
+			h.processQueuedSources()
 		}
 	}
 }
 
-// processQueuedDocuments processes all documents in "uploaded" status.
-func (h *DocumentHandler) processQueuedDocuments() {
-	docs, err := h.repo.ListDocuments()
+// processQueuedSources processes all sources in "uploaded" status.
+func (h *DocumentHandler) processQueuedSources() {
+	sources, err := h.repo.ListSources()
 	if err != nil {
-		h.logger.Error("failed to list documents", "error", err)
+		h.logger.Error("failed to list sources", "error", err)
 		return
 	}
 
-	for _, doc := range docs {
-		if doc.UploadStatus == "uploaded" {
-			h.processDocument(doc)
+	for _, src := range sources {
+		if src.UploadStatus == "uploaded" {
+			h.processSource(src)
 		}
 	}
 }
 
-// processDocument processes a single document.
-func (h *DocumentHandler) processDocument(doc database.Document) {
-	h.logger.Info("processing document", "id", doc.ID, "filename", doc.Filename)
+// processSource processes a single source document.
+func (h *DocumentHandler) processSource(src *database.Source) {
+	h.logger.Info("processing source", "id", src.ID, "filename", src.Filename)
 
-	// Update status to processing
-	_, err := h.repo.UpdateDocumentStatus(uuid.UUID(doc.ID), "processing", nil)
+	srcID := uuid.UUID(src.ID.Bytes)
+
+	_, err := h.repo.UpdateSourceStatus(srcID, "processing", nil)
 	if err != nil {
-		h.logger.Error("failed to update document status", "error", err)
+		h.logger.Error("failed to update source status", "error", err)
 		return
 	}
 
-	// Process document
-	result, err := h.docService.ProcessDocument(doc.FilePath, doc.FileType)
+	result, err := h.docService.ProcessDocument(src.FilePath, src.FileType)
 	if err != nil {
-		h.logger.Error("failed to process document", "error", err)
+		h.logger.Error("failed to process source", "error", err)
 		errMsg := err.Error()
-		h.repo.UpdateDocumentStatus(uuid.UUID(doc.ID), "error", &errMsg)
+		h.repo.UpdateSourceStatus(srcID, "error", &errMsg)
 		return
 	}
 
-	// Update total pages if PDF
-	if doc.FileType == "pdf" && result.TotalPages > 0 {
-		h.repo.UpdateDocumentTotalPages(uuid.UUID(doc.ID), int32(result.TotalPages))
+	if src.FileType == "pdf" && result.TotalPages > 0 {
+		h.repo.UpdateSourceTotalPages(srcID, int32(result.TotalPages))
 	}
 
-	// Create chunks
 	for _, chunk := range result.Chunks {
 		var chapterTitle *string
 		if chunk.ChapterTitle != "" {
@@ -324,30 +304,29 @@ func (h *DocumentHandler) processDocument(doc database.Document) {
 		wordCount := int32(document.WordCount(chunk.Content))
 
 		_, err := h.repo.CreateChunk(
-			uuid.UUID(doc.ID),
+			srcID,
 			int32(chunk.ChunkIndex),
 			chunk.Content,
 			chapterTitle,
 			chapterNumber,
-			nil, // pageStart - convert to int32 pointer
-			nil, // pageEnd - convert to int32 pointer
+			nil,
+			nil,
 			int32(chunk.NarrativePosition),
 			&wordCount,
 		)
 		if err != nil {
 			h.logger.Error("failed to create chunk", "error", err)
 			errMsg := err.Error()
-			h.repo.UpdateDocumentStatus(uuid.UUID(doc.ID), "error", &errMsg)
+			h.repo.UpdateSourceStatus(srcID, "error", &errMsg)
 			return
 		}
 	}
 
-	// Update status to ready
-	_, err = h.repo.UpdateDocumentStatus(uuid.UUID(doc.ID), "ready", nil)
+	_, err = h.repo.UpdateSourceStatus(srcID, "ready", nil)
 	if err != nil {
-		h.logger.Error("failed to update document status", "error", err)
+		h.logger.Error("failed to update source status", "error", err)
 		return
 	}
 
-	h.logger.Info("document processed successfully", "id", doc.ID, "chunks", len(result.Chunks))
+	h.logger.Info("source processed successfully", "id", src.ID, "chunks", len(result.Chunks))
 }

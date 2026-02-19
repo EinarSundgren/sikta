@@ -8,8 +8,134 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Chunk struct {
+	ID                pgtype.UUID        `json:"id"`
+	SourceID          pgtype.UUID        `json:"source_id"`
+	ChunkIndex        int32              `json:"chunk_index"`
+	Content           string             `json:"content"`
+	ChapterTitle      pgtype.Text        `json:"chapter_title"`
+	ChapterNumber     pgtype.Int4        `json:"chapter_number"`
+	PageStart         pgtype.Int4        `json:"page_start"`
+	PageEnd           pgtype.Int4        `json:"page_end"`
+	NarrativePosition int32              `json:"narrative_position"`
+	WordCount         pgtype.Int4        `json:"word_count"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
+type Claim struct {
+	ID                    pgtype.UUID        `json:"id"`
+	SourceID              pgtype.UUID        `json:"source_id"`
+	Title                 string             `json:"title"`
+	Description           pgtype.Text        `json:"description"`
+	EventType             pgtype.Text        `json:"event_type"`
+	DateText              pgtype.Text        `json:"date_text"`
+	DateStart             pgtype.Date        `json:"date_start"`
+	DateEnd               pgtype.Date        `json:"date_end"`
+	DatePrecision         pgtype.Text        `json:"date_precision"`
+	ChronologicalPosition pgtype.Int4        `json:"chronological_position"`
+	NarrativePosition     int32              `json:"narrative_position"`
+	Confidence            float32            `json:"confidence"`
+	ConfidenceReason      pgtype.Text        `json:"confidence_reason"`
+	ReviewStatus          string             `json:"review_status"`
+	Metadata              []byte             `json:"metadata"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	ClaimType             string             `json:"claim_type"`
+}
+
+type ClaimEntity struct {
+	ClaimID  pgtype.UUID `json:"claim_id"`
+	EntityID pgtype.UUID `json:"entity_id"`
+	Role     pgtype.Text `json:"role"`
+}
+
+type Entity struct {
+	ID                   pgtype.UUID        `json:"id"`
+	SourceID             pgtype.UUID        `json:"source_id"`
+	Name                 string             `json:"name"`
+	EntityType           string             `json:"entity_type"`
+	Aliases              []string           `json:"aliases"`
+	Description          pgtype.Text        `json:"description"`
+	FirstAppearanceChunk pgtype.Int4        `json:"first_appearance_chunk"`
+	LastAppearanceChunk  pgtype.Int4        `json:"last_appearance_chunk"`
+	Confidence           float32            `json:"confidence"`
+	ReviewStatus         string             `json:"review_status"`
+	Metadata             []byte             `json:"metadata"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Inconsistency struct {
+	ID                pgtype.UUID        `json:"id"`
+	SourceID          pgtype.UUID        `json:"source_id"`
+	InconsistencyType string             `json:"inconsistency_type"`
+	Severity          string             `json:"severity"`
+	Title             string             `json:"title"`
+	Description       string             `json:"description"`
+	ResolutionStatus  string             `json:"resolution_status"`
+	ResolutionNote    pgtype.Text        `json:"resolution_note"`
+	Metadata          []byte             `json:"metadata"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+}
+
+type InconsistencyItem struct {
+	ID              pgtype.UUID        `json:"id"`
+	InconsistencyID pgtype.UUID        `json:"inconsistency_id"`
+	ClaimID         pgtype.UUID        `json:"claim_id"`
+	EntityID        pgtype.UUID        `json:"entity_id"`
+	Side            pgtype.Text        `json:"side"`
+	Description     pgtype.Text        `json:"description"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+type Relationship struct {
+	ID               pgtype.UUID        `json:"id"`
+	SourceID         pgtype.UUID        `json:"source_id"`
+	EntityAID        pgtype.UUID        `json:"entity_a_id"`
+	EntityBID        pgtype.UUID        `json:"entity_b_id"`
+	RelationshipType string             `json:"relationship_type"`
+	Description      pgtype.Text        `json:"description"`
+	StartClaimID     pgtype.UUID        `json:"start_claim_id"`
+	EndClaimID       pgtype.UUID        `json:"end_claim_id"`
+	Confidence       float32            `json:"confidence"`
+	ReviewStatus     string             `json:"review_status"`
+	Metadata         []byte             `json:"metadata"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 type SchemaVersion struct {
 	ID        int32              `json:"id"`
 	Version   string             `json:"version"`
 	AppliedAt pgtype.Timestamptz `json:"applied_at"`
+}
+
+type Source struct {
+	ID           pgtype.UUID        `json:"id"`
+	Title        string             `json:"title"`
+	Filename     string             `json:"filename"`
+	FilePath     string             `json:"file_path"`
+	FileType     string             `json:"file_type"`
+	TotalPages   pgtype.Int4        `json:"total_pages"`
+	UploadStatus string             `json:"upload_status"`
+	ErrorMessage pgtype.Text        `json:"error_message"`
+	IsDemo       bool               `json:"is_demo"`
+	Metadata     []byte             `json:"metadata"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	SourceTrust  pgtype.Float4      `json:"source_trust"`
+	TrustReason  pgtype.Text        `json:"trust_reason"`
+}
+
+type SourceReference struct {
+	ID             pgtype.UUID        `json:"id"`
+	ChunkID        pgtype.UUID        `json:"chunk_id"`
+	ClaimID        pgtype.UUID        `json:"claim_id"`
+	EntityID       pgtype.UUID        `json:"entity_id"`
+	RelationshipID pgtype.UUID        `json:"relationship_id"`
+	Excerpt        string             `json:"excerpt"`
+	CharStart      pgtype.Int4        `json:"char_start"`
+	CharEnd        pgtype.Int4        `json:"char_end"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }

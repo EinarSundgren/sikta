@@ -40,7 +40,6 @@ func (h *InconsistencyHandler) GetInconsistencies(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/inconsistencies")
 
@@ -50,8 +49,7 @@ func (h *InconsistencyHandler) GetInconsistencies(w http.ResponseWriter, r *http
 		return
 	}
 
-	// Get inconsistencies
-	incs, err := h.db.ListInconsistenciesByDocument(r.Context(), database.UUID(parsedUUID))
+	incs, err := h.db.ListInconsistenciesBySource(r.Context(), database.PgUUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get inconsistencies", "error", err)
 		http.Error(w, "Failed to get inconsistencies", http.StatusInternalServerError)
@@ -69,7 +67,6 @@ func (h *InconsistencyHandler) GetInconsistencyItems(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Extract inconsistency ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/inconsistencies/")
 	idStr = strings.TrimSuffix(idStr, "/items")
 
@@ -79,8 +76,7 @@ func (h *InconsistencyHandler) GetInconsistencyItems(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Get inconsistency items with event/entity details
-	items, err := h.db.ListInconsistencyItems(r.Context(), database.UUID(parsedUUID))
+	items, err := h.db.ListInconsistencyItems(r.Context(), database.PgUUID(parsedUUID))
 	if err != nil {
 		h.logger.Error("failed to get inconsistency items", "error", err)
 		http.Error(w, "Failed to get inconsistency items", http.StatusInternalServerError)
@@ -98,7 +94,6 @@ func (h *InconsistencyHandler) TriggerInconsistencyDetection(w http.ResponseWrit
 		return
 	}
 
-	// Extract document ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/documents/")
 	idStr = strings.TrimSuffix(idStr, "/detect-inconsistencies")
 
@@ -108,7 +103,6 @@ func (h *InconsistencyHandler) TriggerInconsistencyDetection(w http.ResponseWrit
 		return
 	}
 
-	// Run inconsistency detection in background
 	go h.runDetection(context.Background(), parsedUUID.String())
 
 	w.Header().Set("Content-Type", "application/json")
@@ -125,7 +119,6 @@ func (h *InconsistencyHandler) ResolveInconsistency(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// Extract inconsistency ID from URL
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/inconsistencies/")
 	idStr = strings.TrimSuffix(idStr, "/resolve")
 
@@ -135,7 +128,6 @@ func (h *InconsistencyHandler) ResolveInconsistency(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// Parse request body
 	var req struct {
 		Status string `json:"status"` // resolved, noted, dismissed
 		Note   string `json:"note"`
@@ -146,17 +138,15 @@ func (h *InconsistencyHandler) ResolveInconsistency(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// Validate status
 	if req.Status != "resolved" && req.Status != "noted" && req.Status != "dismissed" {
 		http.Error(w, "Invalid status. Must be: resolved, noted, or dismissed", http.StatusBadRequest)
 		return
 	}
 
-	// Update inconsistency
 	updated, err := h.db.UpdateInconsistencyResolution(r.Context(), database.UpdateInconsistencyResolutionParams{
-		ID:             database.UUID(parsedUUID),
+		ID:               database.PgUUID(parsedUUID),
 		ResolutionStatus: req.Status,
-		ResolutionNote:   req.Note,
+		ResolutionNote:   database.PgText(req.Note),
 	})
 	if err != nil {
 		h.logger.Error("failed to update inconsistency", "error", err)
@@ -169,23 +159,16 @@ func (h *InconsistencyHandler) ResolveInconsistency(w http.ResponseWriter, r *ht
 }
 
 // runDetection runs the full inconsistency detection pipeline
-func (h *InconsistencyHandler) runDetection(ctx context.Context, documentID string) {
-	h.logger.Info("starting inconsistency detection", "document_id", documentID)
+func (h *InconsistencyHandler) runDetection(ctx context.Context, sourceID string) {
+	h.logger.Info("starting inconsistency detection", "source_id", sourceID)
 
-	// Detect all types of inconsistencies
-	inconsistencies, err := h.detector.DetectAll(ctx, documentID)
+	inconsistencies, err := h.detector.DetectAll(ctx, sourceID)
 	if err != nil {
-		h.logger.Error("inconsistency detection failed", "document_id", documentID, "error", err)
+		h.logger.Error("inconsistency detection failed", "source_id", sourceID, "error", err)
 		return
 	}
 
-	// Run LLM-based contradiction detection (optional, more expensive)
-	// contradictions, err := h.detector.DetectContradictionsWithLLM(ctx, documentID)
-	// if err != nil {
-	// 	h.logger.Error("LLM contradiction detection failed", "document_id", documentID, "error", err)
-	// }
-
 	h.logger.Info("inconsistency detection complete",
-		"document_id", documentID,
+		"source_id", sourceID,
 		"total", len(inconsistencies))
 }

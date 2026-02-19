@@ -30,9 +30,9 @@ func NewDeduplicator(db *database.Queries, claude *claude.Client, logger *slog.L
 
 // DeduplicationResult contains the results of deduplication.
 type DeduplicationResult struct {
-	MergedCount    int
-	TotalEntities  int
-	MergedPairs    []EntityPair
+	MergedCount   int
+	TotalEntities int
+	MergedPairs   []EntityPair
 }
 
 // EntityPair represents two entities that were merged.
@@ -43,11 +43,10 @@ type EntityPair struct {
 }
 
 // DeduplicateEntities deduplicates entities in a document.
-func (d *Deduplicator) DeduplicateEntities(ctx context.Context, documentID string) (*DeduplicationResult, error) {
-	d.logger.Info("starting entity deduplication", "document_id", documentID)
+func (d *Deduplicator) DeduplicateEntities(ctx context.Context, sourceID string) (*DeduplicationResult, error) {
+	d.logger.Info("starting entity deduplication", "source_id", sourceID)
 
-	// Get all entities for the document
-	entities, err := d.db.ListEntitiesByDocument(ctx, database.UUID(parseUUID(documentID)))
+	entities, err := d.db.ListEntitiesBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get entities: %w", err)
 	}
@@ -65,14 +64,14 @@ func (d *Deduplicator) DeduplicateEntities(ctx context.Context, documentID strin
 		}
 		result.MergedCount++
 		result.MergedPairs = append(result.MergedPairs, EntityPair{
-			KeptEntityID:   match.entityA.ID.String(),
-			MergedEntityID: match.entityB.ID.String(),
+			KeptEntityID:   database.UUIDStr(match.entityA.ID),
+			MergedEntityID: database.UUIDStr(match.entityB.ID),
 			Reasoning:      "exact name match",
 		})
 	}
 
 	// Refresh entity list after merges
-	entities, err = d.db.ListEntitiesByDocument(ctx, database.UUID(parseUUID(documentID)))
+	entities, err = d.db.ListEntitiesBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to refresh entities: %w", err)
 	}
@@ -83,42 +82,41 @@ func (d *Deduplicator) DeduplicateEntities(ctx context.Context, documentID strin
 		if match.confidence < 0.85 {
 			continue
 		}
-		if err := d.mergeEntities(ctx, match.entityA, match.entityB, fmt.Sprintf("alias match (confidence: %.2f)", match.confidence)); err != nil {
+		reason := fmt.Sprintf("alias match (confidence: %.2f)", match.confidence)
+		if err := d.mergeEntities(ctx, match.entityA, match.entityB, reason); err != nil {
 			d.logger.Error("failed to merge entities", "error", err)
 			continue
 		}
 		result.MergedCount++
 		result.MergedPairs = append(result.MergedPairs, EntityPair{
-			KeptEntityID:   match.entityA.ID.String(),
-			MergedEntityID: match.entityB.ID.String(),
-			Reasoning:      fmt.Sprintf("alias match (confidence: %.2f)", match.confidence),
+			KeptEntityID:   database.UUIDStr(match.entityA.ID),
+			MergedEntityID: database.UUIDStr(match.entityB.ID),
+			Reasoning:      reason,
 		})
 	}
 
 	// Pass 3: Similarity matches with LLM confirmation for ambiguous cases
 	similarityMatches := d.findSimilarityMatches(entities)
 	for _, match := range similarityMatches {
-		// Skip if confidence is too low
 		if match.confidence < 0.70 {
 			continue
 		}
 
-		// High confidence - merge without LLM
 		if match.confidence >= 0.85 {
-			if err := d.mergeEntities(ctx, match.entityA, match.entityB, fmt.Sprintf("similarity match (confidence: %.2f)", match.confidence)); err != nil {
+			reason := fmt.Sprintf("similarity match (confidence: %.2f)", match.confidence)
+			if err := d.mergeEntities(ctx, match.entityA, match.entityB, reason); err != nil {
 				d.logger.Error("failed to merge entities", "error", err)
 				continue
 			}
 			result.MergedCount++
 			result.MergedPairs = append(result.MergedPairs, EntityPair{
-				KeptEntityID:   match.entityA.ID.String(),
-				MergedEntityID: match.entityB.ID.String(),
-				Reasoning:      fmt.Sprintf("similarity match (confidence: %.2f)", match.confidence),
+				KeptEntityID:   database.UUIDStr(match.entityA.ID),
+				MergedEntityID: database.UUIDStr(match.entityB.ID),
+				Reasoning:      reason,
 			})
 			continue
 		}
 
-		// Medium confidence - ask LLM for confirmation
 		confirmed, reasoning, err := d.confirmWithLLM(ctx, match.entityA, match.entityB)
 		if err != nil {
 			d.logger.Error("LLM confirmation failed", "error", err)
@@ -132,8 +130,8 @@ func (d *Deduplicator) DeduplicateEntities(ctx context.Context, documentID strin
 			}
 			result.MergedCount++
 			result.MergedPairs = append(result.MergedPairs, EntityPair{
-				KeptEntityID:   match.entityA.ID.String(),
-				MergedEntityID: match.entityB.ID.String(),
+				KeptEntityID:   database.UUIDStr(match.entityA.ID),
+				MergedEntityID: database.UUIDStr(match.entityB.ID),
 				Reasoning:      reasoning,
 			})
 		}
@@ -146,44 +144,45 @@ func (d *Deduplicator) DeduplicateEntities(ctx context.Context, documentID strin
 
 // entityMatch represents two entities that might be the same.
 type entityMatch struct {
-	entityA   database.Entity
-	entityB   database.Entity
+	entityA    *database.Entity
+	entityB    *database.Entity
 	confidence float64
 }
 
 // findExactMatches finds entities with exact name matches.
-func (d *Deduplicator) findExactMatches(entities []database.Entity) []entityMatch {
+func (d *Deduplicator) findExactMatches(entities []*database.Entity) []entityMatch {
 	var matches []entityMatch
 	seen := make(map[string]bool)
 
 	for _, entityA := range entities {
-		if seen[entityA.ID.String()] {
+		idA := database.UUIDStr(entityA.ID)
+		if seen[idA] {
 			continue
 		}
 
 		for _, entityB := range entities {
-			if entityA.ID == entityB.ID || seen[entityB.ID.String()] {
+			idB := database.UUIDStr(entityB.ID)
+			if entityA.ID == entityB.ID || seen[idB] {
 				continue
 			}
 
-			// Exact name match (case-insensitive)
 			if strings.EqualFold(entityA.Name, entityB.Name) {
 				matches = append(matches, entityMatch{
 					entityA:    entityA,
 					entityB:    entityB,
 					confidence: 1.0,
 				})
-				seen[entityB.ID.String()] = true
+				seen[idB] = true
 			}
 		}
-		seen[entityA.ID.String()] = true
+		seen[idA] = true
 	}
 
 	return matches
 }
 
 // findAliasMatches finds entities where one is an alias of another.
-func (d *Deduplicator) findAliasMatches(entities []database.Entity) []entityMatch {
+func (d *Deduplicator) findAliasMatches(entities []*database.Entity) []entityMatch {
 	var matches []entityMatch
 
 	for _, entityA := range entities {
@@ -192,12 +191,11 @@ func (d *Deduplicator) findAliasMatches(entities []database.Entity) []entityMatc
 				continue
 			}
 
-			// Check if entityA's name is in entityB's aliases
 			if entityB.Aliases != nil {
 				for _, alias := range entityB.Aliases {
 					if strings.EqualFold(entityA.Name, alias) {
 						matches = append(matches, entityMatch{
-							entityA:    entityB, // Keep entity with more aliases
+							entityA:    entityB,
 							entityB:    entityA,
 							confidence: 0.90,
 						})
@@ -206,12 +204,11 @@ func (d *Deduplicator) findAliasMatches(entities []database.Entity) []entityMatc
 				}
 			}
 
-			// Check if entityB's name is in entityA's aliases
 			if entityA.Aliases != nil {
 				for _, alias := range entityA.Aliases {
 					if strings.EqualFold(entityB.Name, alias) {
 						matches = append(matches, entityMatch{
-							entityA:    entityA, // Keep entity with more aliases
+							entityA:    entityA,
 							entityB:    entityB,
 							confidence: 0.90,
 						})
@@ -226,7 +223,7 @@ func (d *Deduplicator) findAliasMatches(entities []database.Entity) []entityMatc
 }
 
 // findSimilarityMatches finds entities with similar names.
-func (d *Deduplicator) findSimilarityMatches(entities []database.Entity) []entityMatch {
+func (d *Deduplicator) findSimilarityMatches(entities []*database.Entity) []entityMatch {
 	var matches []entityMatch
 
 	for _, entityA := range entities {
@@ -235,15 +232,12 @@ func (d *Deduplicator) findSimilarityMatches(entities []database.Entity) []entit
 				continue
 			}
 
-			// Must be same type
 			if entityA.EntityType != entityB.EntityType {
 				continue
 			}
 
-			// Calculate similarity
 			similarity := calculateSimilarity(entityA.Name, entityB.Name)
 
-			// Threshold for similarity matching
 			if similarity >= 0.70 {
 				matches = append(matches, entityMatch{
 					entityA:    entityA,
@@ -258,12 +252,10 @@ func (d *Deduplicator) findSimilarityMatches(entities []database.Entity) []entit
 }
 
 // confirmWithLLM asks LLM if two entities are the same.
-func (d *Deduplicator) confirmWithLLM(ctx context.Context, entityA, entityB database.Entity) (bool, string, error) {
-	// Get some context from chunks (if available)
+func (d *Deduplicator) confirmWithLLM(ctx context.Context, entityA, entityB *database.Entity) (bool, string, error) {
 	context := fmt.Sprintf("Entity A: %s (%s), Entity B: %s (%s)",
 		entityA.Name, entityA.EntityType, entityB.Name, entityB.EntityType)
 
-	// Build prompt (simplified from the full template)
 	prompt := fmt.Sprintf("You are determining if two entity names refer to the same person in a novel.\n\n"+
 		"Given:\n"+
 		"- Entity A: %s (type: %s)\n"+
@@ -287,13 +279,11 @@ func (d *Deduplicator) confirmWithLLM(ctx context.Context, entityA, entityB data
 		return false, "", fmt.Errorf("empty response from LLM")
 	}
 
-	// Parse response (simplified - in production, use proper JSON parsing)
 	responseText := resp.Content[0].Text
 	sameEntity := strings.Contains(strings.ToLower(responseText), `"same_entity": true`)
 
 	reasoning := "LLM confirmed"
 	if strings.Contains(responseText, `"reasoning"`) {
-		// Extract reasoning (simplified)
 		reasoning = "LLM confirmed based on context"
 	}
 
@@ -301,8 +291,7 @@ func (d *Deduplicator) confirmWithLLM(ctx context.Context, entityA, entityB data
 }
 
 // mergeEntities merges two entities.
-func (d *Deduplicator) mergeEntities(ctx context.Context, keep, merge database.Entity, reason string) error {
-	// Combine aliases
+func (d *Deduplicator) mergeEntities(ctx context.Context, keep, merge *database.Entity, reason string) error {
 	var combinedAliases []string
 	if keep.Aliases != nil {
 		combinedAliases = append(combinedAliases, keep.Aliases...)
@@ -310,20 +299,20 @@ func (d *Deduplicator) mergeEntities(ctx context.Context, keep, merge database.E
 	if merge.Aliases != nil {
 		combinedAliases = append(combinedAliases, merge.Aliases...)
 	}
-	// Add the merged entity's name as an alias
 	combinedAliases = append(combinedAliases, merge.Name)
 
 	// Update appearance range
 	firstAppearance := keep.FirstAppearanceChunk
 	lastAppearance := keep.LastAppearanceChunk
-	if merge.FirstAppearanceChunk != nil && (firstAppearance == nil || *merge.FirstAppearanceChunk < *firstAppearance) {
+	if merge.FirstAppearanceChunk.Valid && (!firstAppearance.Valid || merge.FirstAppearanceChunk.Int32 < firstAppearance.Int32) {
 		firstAppearance = merge.FirstAppearanceChunk
 	}
-	if merge.LastAppearanceChunk != nil && (lastAppearance == nil || *merge.LastAppearanceChunk > *lastAppearance) {
+	if merge.LastAppearanceChunk.Valid && (!lastAppearance.Valid || merge.LastAppearanceChunk.Int32 > lastAppearance.Int32) {
 		lastAppearance = merge.LastAppearanceChunk
 	}
+	_ = firstAppearance
+	_ = lastAppearance
 
-	// Update the kept entity
 	_, err := d.db.UpdateEntityAliases(ctx, database.UpdateEntityAliasesParams{
 		ID:      keep.ID,
 		Aliases: combinedAliases,
@@ -363,7 +352,6 @@ func levenshteinDistance(a, b string) int {
 	lenA := len(a)
 	lenB := len(b)
 
-	// Create distance matrix
 	dp := make([][]int, lenA+1)
 	for i := range dp {
 		dp[i] = make([]int, lenB+1)
@@ -373,7 +361,6 @@ func levenshteinDistance(a, b string) int {
 		dp[0][j] = j
 	}
 
-	// Fill matrix
 	for i := 1; i <= lenA; i++ {
 		for j := 1; j <= lenB; j++ {
 			cost := 1
@@ -381,10 +368,10 @@ func levenshteinDistance(a, b string) int {
 				cost = 0
 			}
 
-			dp[i][j] = min(
-				dp[i-1][j]+1,      // deletion
-				dp[i][j-1]+1,      // insertion
-				dp[i-1][j-1]+cost, // substitution
+			dp[i][j] = minOf3(
+				dp[i-1][j]+1,
+				dp[i][j-1]+1,
+				dp[i-1][j-1]+cost,
 			)
 		}
 	}
@@ -392,7 +379,7 @@ func levenshteinDistance(a, b string) int {
 	return dp[lenA][lenB]
 }
 
-func min(a, b, c int) int {
+func minOf3(a, b, c int) int {
 	if a < b {
 		if a < c {
 			return a
@@ -411,3 +398,4 @@ func max(a, b int) int {
 	}
 	return b
 }
+

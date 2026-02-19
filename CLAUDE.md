@@ -61,11 +61,11 @@ A tool that takes unstructured documents and extracts structured, navigable time
 
 ### What Makes Sikta Defensible
 
-1. **Source references that actually work** — every extracted item links to document + page/section
+1. **Source references that actually work** — every extracted claim links to source + page/section
 2. **Inconsistency detection** — contradictions, temporal impossibilities, narrative vs. chronological mismatches surfaced automatically
 3. **Human review workflow** — fast batch approve/reject, not painful
-4. **Cross-document intelligence** — same event in multiple sources → one entry with multiple references (post-MVP)
-5. **Confidence calibration** — uncertainty is explicit, not hidden
+4. **Cross-source intelligence** — same claim in multiple sources → one entry with multiple references (post-MVP)
+5. **Two-level confidence** — source trust and assertion confidence are explicit, not hidden
 
 ### Portfolio Context
 
@@ -99,7 +99,7 @@ All share a philosophy: reveal structure hidden in complexity.
                    │
 ┌──────────────────┴──────────────────────────┐
 │  DATA LAYER                                 │
-│  Documents · Chunks · Events · Entities     │
+│  Sources · Chunks · Claims · Entities       │
 │  Relationships · Inconsistencies · Reviews  │
 │  Source References                          │
 └─────────────────────────────────────────────┘
@@ -118,7 +118,7 @@ Chunking (split by chapter/section, preserve location metadata)
     │
     ▼
 LLM Extraction (Sonnet via API)
-    → Events: what happened, when, who was involved
+    → Claims: events, attributes, relations extracted as structured assertions
     → Entities: people, places, organizations, amounts
     → Relationships: connections between entities
     → Each with: source reference + confidence score + narrative position
@@ -185,23 +185,33 @@ Human sees: ✔ (high confidence), ⚠️ (review suggested), ❓ (uncertain), �
 
 ---
 
-## Data Model (Draft)
+## Data Model
 
-> **Note:** This is the initial draft. Schema design is an Opus-level task — refine before implementing.
+> **Migrated from initial draft.** Key renames: `documents` → `sources`, `events` → `claims`.
+> See Decision Log for rationale.
+
+### Design Principles
+
+1. **Two-level confidence:** Source trust (Level 1: how reliable is this source?) vs Assertion confidence (Level 2: how confident is the extraction?)
+2. **Three atomic primitives:** Claims (event/attribute/relation), Entities, Relations
+3. **Extensibility:** New document types = new parser + new prompt template, zero schema changes
+4. **`claim_type` discriminator:** A single `claims` table holds events, attributes, and relational claims — distinguished by `claim_type`
 
 ### Core Tables
 
 ```sql
--- Source documents
-documents (
+-- Sources (formerly "documents") — anything Sikta ingests
+sources (
     id UUID PRIMARY KEY,
     title TEXT NOT NULL,
     filename TEXT NOT NULL,
-    file_type TEXT NOT NULL,        -- 'pdf', 'txt'
+    file_type TEXT NOT NULL,        -- 'pdf', 'txt', 'docx', 'csv' (extensible)
     total_pages INTEGER,
     upload_status TEXT NOT NULL,     -- 'uploaded', 'processing', 'ready', 'error'
-    is_demo BOOLEAN DEFAULT FALSE,  -- pre-loaded demo content
-    metadata JSONB,                 -- author, publication year, etc.
+    is_demo BOOLEAN DEFAULT FALSE,
+    source_trust REAL,              -- Level 1: 0.0-1.0, how reliable is this source?
+    trust_reason TEXT,              -- why this trust score (e.g., "official document", "novel")
+    metadata JSONB,                 -- author, publication year, source type, etc.
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
 )
@@ -209,7 +219,7 @@ documents (
 -- Text chunks with position info
 chunks (
     id UUID PRIMARY KEY,
-    document_id UUID REFERENCES documents,
+    source_id UUID REFERENCES sources,
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     chapter_title TEXT,
@@ -220,20 +230,22 @@ chunks (
     created_at TIMESTAMPTZ
 )
 
--- Extracted events
-events (
+-- Claims (formerly "events") — any assertion extracted from a source
+-- claim_type discriminates: 'event', 'attribute', 'relation'
+claims (
     id UUID PRIMARY KEY,
-    document_id UUID REFERENCES documents,
+    source_id UUID REFERENCES sources,
+    claim_type TEXT NOT NULL,        -- 'event', 'attribute', 'relation'
     title TEXT NOT NULL,
     description TEXT,
-    event_type TEXT NOT NULL,        -- 'action', 'decision', 'encounter', 'battle', 'death', 'marriage', 'travel', etc.
+    event_type TEXT,                 -- subtype when claim_type='event': 'action', 'decision', 'encounter', etc.
     date_text TEXT,                  -- original text: "that spring", "15 March"
-    date_start DATE,                -- normalized (NULL if unknown)
+    date_start DATE,
     date_end DATE,
     date_precision TEXT,            -- 'exact', 'month', 'season', 'year', 'approximate', 'unknown'
-    chronological_position INTEGER, -- order on the actual timeline
-    narrative_position INTEGER,     -- order in the story
-    confidence REAL NOT NULL,       -- 0.0-1.0
+    chronological_position INTEGER,
+    narrative_position INTEGER,
+    confidence REAL NOT NULL,       -- Level 2: 0.0-1.0 assertion confidence
     confidence_reason TEXT,
     review_status TEXT NOT NULL DEFAULT 'pending',
     metadata JSONB,
@@ -245,7 +257,7 @@ events (
 source_references (
     id UUID PRIMARY KEY,
     chunk_id UUID REFERENCES chunks,
-    event_id UUID REFERENCES events,
+    claim_id UUID REFERENCES claims,
     entity_id UUID REFERENCES entities,
     relationship_id UUID REFERENCES relationships,
     excerpt TEXT NOT NULL,
@@ -257,7 +269,7 @@ source_references (
 -- Extracted entities
 entities (
     id UUID PRIMARY KEY,
-    document_id UUID REFERENCES documents,
+    source_id UUID REFERENCES sources,
     name TEXT NOT NULL,
     entity_type TEXT NOT NULL,      -- 'person', 'place', 'organization', 'object', 'amount'
     aliases TEXT[],
@@ -273,13 +285,13 @@ entities (
 -- Relationships between entities
 relationships (
     id UUID PRIMARY KEY,
-    document_id UUID REFERENCES documents,
+    source_id UUID REFERENCES sources,
     entity_a_id UUID REFERENCES entities,
     entity_b_id UUID REFERENCES entities,
     relationship_type TEXT NOT NULL,
     description TEXT,
-    start_event_id UUID REFERENCES events,
-    end_event_id UUID REFERENCES events,
+    start_claim_id UUID REFERENCES claims,
+    end_claim_id UUID REFERENCES claims,
     confidence REAL NOT NULL,
     review_status TEXT NOT NULL DEFAULT 'pending',
     metadata JSONB,
@@ -287,18 +299,18 @@ relationships (
     updated_at TIMESTAMPTZ
 )
 
--- Entity involvement in events
-event_entities (
-    event_id UUID REFERENCES events,
+-- Entity involvement in claims
+claim_entities (
+    claim_id UUID REFERENCES claims,
     entity_id UUID REFERENCES entities,
     role TEXT,                      -- 'actor', 'subject', 'witness', 'mentioned', 'location'
-    PRIMARY KEY (event_id, entity_id)
+    PRIMARY KEY (claim_id, entity_id)
 )
 
 -- Detected inconsistencies
 inconsistencies (
     id UUID PRIMARY KEY,
-    document_id UUID REFERENCES documents,
+    source_id UUID REFERENCES sources,
     inconsistency_type TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -313,13 +325,22 @@ inconsistencies (
 -- Items involved in an inconsistency
 inconsistency_items (
     inconsistency_id UUID REFERENCES inconsistencies,
-    event_id UUID REFERENCES events,
+    claim_id UUID REFERENCES claims,
     entity_id UUID REFERENCES entities,
     source_reference_id UUID REFERENCES source_references,
     side TEXT,                      -- 'a', 'b' for contradictions
-    PRIMARY KEY (inconsistency_id, COALESCE(event_id, entity_id, source_reference_id))
+    PRIMARY KEY (inconsistency_id, COALESCE(claim_id, entity_id, source_reference_id))
 )
 ```
+
+### Two-Level Confidence Model
+
+| Level | What | Score | Example |
+|-------|------|-------|---------|
+| Level 1: Source Trust | How reliable is the source itself? | `sources.source_trust` | Novel = 0.9 (consistent author), minutes = 0.95 (official record) |
+| Level 2: Assertion Confidence | How confident is this specific extraction? | `claims.confidence` | "15 March 1805" = 0.95, "that spring" = 0.5 |
+
+**Effective confidence** = source_trust * assertion_confidence (displayed to user)
 
 ---
 
@@ -536,7 +557,7 @@ Using Podman instead of Docker:
 - Date normalization
 
 ### Integration Tests (Sonnet to write)
-- Full extraction pipeline (text → events + entities)
+- Full extraction pipeline (text → claims + entities)
 - API endpoint responses
 - Database operations
 

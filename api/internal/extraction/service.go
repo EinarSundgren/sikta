@@ -10,6 +10,7 @@ import (
 
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Service handles the extraction pipeline.
@@ -32,26 +33,25 @@ func NewService(db *database.Queries, claude *claude.Client, logger *slog.Logger
 
 // ExtractionProgress tracks extraction progress.
 type ExtractionProgress struct {
-	DocumentID      string
-	TotalChunks     int
-	ProcessedChunks int
-	EventsExtracted int
-	EntitiesExtracted int
+	DocumentID             string
+	TotalChunks            int
+	ProcessedChunks        int
+	EventsExtracted        int
+	EntitiesExtracted      int
 	RelationshipsExtracted int
-	CurrentChunk    int
-	Status          string
-	Error           string
+	CurrentChunk           int
+	Status                 string
+	Error                  string
 }
 
 // ProgressCallback is called with progress updates.
 type ProgressCallback func(ExtractionProgress)
 
 // ExtractDocument extracts events, entities, and relationships from a document.
-func (s *Service) ExtractDocument(ctx context.Context, documentID string, progressCb ProgressCallback) error {
-	s.logger.Info("starting extraction", "document_id", documentID)
+func (s *Service) ExtractDocument(ctx context.Context, sourceID string, progressCb ProgressCallback) error {
+	s.logger.Info("starting extraction", "source_id", sourceID)
 
-	// Get all chunks for the document
-	chunks, err := s.db.ListChunksByDocument(ctx, database.UUID(parseUUID(documentID)))
+	chunks, err := s.db.ListChunksBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
 		return fmt.Errorf("failed to get chunks: %w", err)
 	}
@@ -59,14 +59,12 @@ func (s *Service) ExtractDocument(ctx context.Context, documentID string, progre
 	totalChunks := len(chunks)
 	s.logger.Info("processing chunks", "total", totalChunks)
 
-	// Process each chunk
 	for i, chunk := range chunks {
-		s.logger.Info("processing chunk", "index", i, "chapter", chunk.ChapterTitle)
+		s.logger.Info("processing chunk", "index", i, "chapter", chunk.ChapterTitle.String)
 
-		// Report progress
 		if progressCb != nil {
 			progressCb(ExtractionProgress{
-				DocumentID:      documentID,
+				DocumentID:      sourceID,
 				TotalChunks:     totalChunks,
 				ProcessedChunks: i,
 				CurrentChunk:    i,
@@ -74,44 +72,39 @@ func (s *Service) ExtractDocument(ctx context.Context, documentID string, progre
 			})
 		}
 
-		// Extract from this chunk
 		resp, err := s.extractFromChunk(ctx, chunk)
 		if err != nil {
 			s.logger.Error("failed to extract from chunk", "index", i, "error", err)
-			// Continue with next chunk instead of failing entirely
 			continue
 		}
 
-		// Store extractions
 		eventIDs, entityIDs, relationshipIDs, err := s.storeExtractions(ctx, chunk, resp)
 		if err != nil {
 			s.logger.Error("failed to store extractions", "index", i, "error", err)
 			continue
 		}
 
-		// Report updated progress
 		if progressCb != nil {
 			progressCb(ExtractionProgress{
-				DocumentID:           documentID,
-				TotalChunks:          totalChunks,
-				ProcessedChunks:      i + 1,
-				EventsExtracted:      len(eventIDs),
-				EntitiesExtracted:    len(entityIDs),
+				DocumentID:             sourceID,
+				TotalChunks:            totalChunks,
+				ProcessedChunks:        i + 1,
+				EventsExtracted:        len(eventIDs),
+				EntitiesExtracted:      len(entityIDs),
 				RelationshipsExtracted: len(relationshipIDs),
-				CurrentChunk:         i,
-				Status:               "processing",
+				CurrentChunk:           i,
+				Status:                 "processing",
 			})
 		}
 
-		// Small delay to avoid rate limiting
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	s.logger.Info("extraction complete", "document_id", documentID)
+	s.logger.Info("extraction complete", "source_id", sourceID)
 
 	if progressCb != nil {
 		progressCb(ExtractionProgress{
-			DocumentID: documentID,
+			DocumentID: sourceID,
 			Status:     "complete",
 		})
 	}
@@ -120,11 +113,9 @@ func (s *Service) ExtractDocument(ctx context.Context, documentID string, progre
 }
 
 // extractFromChunk extracts data from a single chunk.
-func (s *Service) extractFromChunk(ctx context.Context, chunk database.Chunk) (*ExtractionResponse, error) {
-	// Build prompt with few-shot example
+func (s *Service) extractFromChunk(ctx context.Context, chunk *database.Chunk) (*ExtractionResponse, error) {
 	userMessage := fmt.Sprintf("%s\n\n%s", FewShotExample1, chunk.Content)
 
-	// Call Claude API
 	apiResp, err := s.claude.SendSystemPrompt(ctx, ExtractionSystemPrompt, userMessage, s.model)
 	if err != nil {
 		return nil, fmt.Errorf("Claude API call failed: %w", err)
@@ -134,10 +125,8 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk database.Chunk) (*
 		return nil, fmt.Errorf("empty response from Claude")
 	}
 
-	// Strip markdown code blocks if present
 	responseText := stripMarkdownCodeBlocks(apiResp.Content[0].Text)
 
-	// Parse JSON response
 	var resp ExtractionResponse
 	if err := json.Unmarshal([]byte(responseText), &resp); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
@@ -152,18 +141,16 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk database.Chunk) (*
 }
 
 // storeExtractions stores extracted data in the database.
-func (s *Service) storeExtractions(ctx context.Context, chunk database.Chunk, resp *ExtractionResponse) ([]string, []string, []string, error) {
-	documentID := chunk.DocumentID
+func (s *Service) storeExtractions(ctx context.Context, chunk *database.Chunk, resp *ExtractionResponse) ([]string, []string, []string, error) {
+	sourceID := chunk.SourceID
 	var eventIDs []string
 	var entityIDs []string
 	var relationshipIDs []string
 
-	// Create entity name -> ID mapping for relationships
 	entityNameIDMap := make(map[string]string)
 
-	// Store entities first (relationships depend on them)
 	for _, entity := range resp.Entities {
-		entityID, err := s.storeEntity(ctx, documentID, chunk, entity)
+		entityID, err := s.storeEntity(ctx, sourceID, chunk, entity)
 		if err != nil {
 			s.logger.Error("failed to store entity", "name", entity.Name, "error", err)
 			continue
@@ -172,9 +159,8 @@ func (s *Service) storeExtractions(ctx context.Context, chunk database.Chunk, re
 		entityNameIDMap[entity.Name] = entityID
 	}
 
-	// Store events
 	for _, event := range resp.Events {
-		eventID, err := s.storeEvent(ctx, documentID, chunk, event)
+		eventID, err := s.storeEvent(ctx, sourceID, chunk, event)
 		if err != nil {
 			s.logger.Error("failed to store event", "title", event.Title, "error", err)
 			continue
@@ -182,9 +168,8 @@ func (s *Service) storeExtractions(ctx context.Context, chunk database.Chunk, re
 		eventIDs = append(eventIDs, eventID)
 	}
 
-	// Store relationships
 	for _, relationship := range resp.Relationships {
-		relID, err := s.storeRelationship(ctx, documentID, chunk, relationship, entityNameIDMap)
+		relID, err := s.storeRelationship(ctx, sourceID, chunk, relationship, entityNameIDMap)
 		if err != nil {
 			s.logger.Error("failed to store relationship", "type", relationship.Type, "error", err)
 			continue
@@ -196,29 +181,26 @@ func (s *Service) storeExtractions(ctx context.Context, chunk database.Chunk, re
 }
 
 // storeEntity stores a single entity.
-func (s *Service) storeEntity(ctx context.Context, documentID database.UUID, chunk database.Chunk, entity Entity) (string, error) {
-	// Check if entity already exists (by name and document)
-	entities, err := s.db.ListEntitiesByDocument(ctx, documentID)
+func (s *Service) storeEntity(ctx context.Context, sourceID pgtype.UUID, chunk *database.Chunk, entity Entity) (string, error) {
+	entities, err := s.db.ListEntitiesBySource(ctx, sourceID)
 	if err == nil {
 		for _, e := range entities {
 			if strings.EqualFold(e.Name, entity.Name) {
-				// Entity exists, update it
-				return e.ID.String(), nil
+				return database.UUIDStr(e.ID), nil
 			}
 		}
 	}
 
-	// Create new entity
 	params := database.CreateEntityParams{
-		DocumentID:          documentID,
-		Name:                entity.Name,
-		EntityType:          entity.Type,
-		Aliases:             entity.Aliases,
-		Description:         nil, // TODO: extract from entity.Description
-		FirstAppearanceChunk: &chunk.ChunkIndex,
-		LastAppearanceChunk:  &chunk.ChunkIndex,
-		Confidence:          entity.Confidence,
-		Metadata:            json.RawMessage("{}"),
+		SourceID:             sourceID,
+		Name:                 entity.Name,
+		EntityType:           entity.Type,
+		Aliases:              entity.Aliases,
+		Description:          pgtype.Text{},
+		FirstAppearanceChunk: pgtype.Int4{Int32: chunk.ChunkIndex, Valid: true},
+		LastAppearanceChunk:  pgtype.Int4{Int32: chunk.ChunkIndex, Valid: true},
+		Confidence:           float32(entity.Confidence),
+		Metadata:             []byte("{}"),
 	}
 
 	created, err := s.db.CreateEntity(ctx, params)
@@ -226,51 +208,53 @@ func (s *Service) storeEntity(ctx context.Context, documentID database.UUID, chu
 		return "", err
 	}
 
-	// Create source reference
 	if entity.Excerpt != "" {
 		_, _ = s.db.CreateSourceReference(ctx, database.CreateSourceReferenceParams{
-			ChunkID:  chunk.ID,
-			EntityID: &created.ID,
-			Excerpt:  entity.Excerpt,
+			ChunkID:        chunk.ID,
+			ClaimID:        pgtype.UUID{},
+			EntityID:       created.ID,
+			RelationshipID: pgtype.UUID{},
+			Excerpt:        entity.Excerpt,
 		})
 	}
 
-	return created.ID.String(), nil
+	return database.UUIDStr(created.ID), nil
 }
 
-// storeEvent stores a single event.
-func (s *Service) storeEvent(ctx context.Context, documentID database.UUID, chunk database.Chunk, event Event) (string, error) {
-	params := database.CreateEventParams{
-		DocumentID:        documentID,
+// storeEvent stores a single event as a claim.
+func (s *Service) storeEvent(ctx context.Context, sourceID pgtype.UUID, chunk *database.Chunk, event Event) (string, error) {
+	params := database.CreateClaimParams{
+		SourceID:          sourceID,
+		ClaimType:         "event",
 		Title:             event.Title,
-		Description:       &event.Description,
-		EventType:         event.Type,
-		DateText:          &event.DateText,
+		Description:       database.PgText(event.Description),
+		EventType:         database.PgText(event.Type),
+		DateText:          database.PgText(event.DateText),
 		NarrativePosition: chunk.NarrativePosition,
-		Confidence:        event.Confidence,
-		Metadata:          json.RawMessage("{}"),
+		Confidence:        float32(event.Confidence),
+		Metadata:          []byte("{}"),
 	}
 
-	created, err := s.db.CreateEvent(ctx, params)
+	created, err := s.db.CreateClaim(ctx, params)
 	if err != nil {
 		return "", err
 	}
 
-	// Create source reference
 	if event.Excerpt != "" {
 		_, _ = s.db.CreateSourceReference(ctx, database.CreateSourceReferenceParams{
-			ChunkID:  chunk.ID,
-			EventID:  &created.ID,
-			Excerpt:  event.Excerpt,
+			ChunkID:        chunk.ID,
+			ClaimID:        created.ID,
+			EntityID:       pgtype.UUID{},
+			RelationshipID: pgtype.UUID{},
+			Excerpt:        event.Excerpt,
 		})
 	}
 
-	return created.ID.String(), nil
+	return database.UUIDStr(created.ID), nil
 }
 
 // storeRelationship stores a single relationship.
-func (s *Service) storeRelationship(ctx context.Context, documentID database.UUID, chunk database.Chunk, relationship Relationship, entityMap map[string]string) (string, error) {
-	// Look up entity IDs
+func (s *Service) storeRelationship(ctx context.Context, sourceID pgtype.UUID, chunk *database.Chunk, relationship Relationship, entityMap map[string]string) (string, error) {
 	entityAID, ok := entityMap[relationship.EntityA]
 	if !ok {
 		return "", fmt.Errorf("entity A not found: %s", relationship.EntityA)
@@ -282,13 +266,13 @@ func (s *Service) storeRelationship(ctx context.Context, documentID database.UUI
 	}
 
 	params := database.CreateRelationshipParams{
-		DocumentID:       documentID,
-		EntityAID:        parseUUID(entityAID),
-		EntityBID:        parseUUID(entityBID),
+		SourceID:         sourceID,
+		EntityAID:        database.PgUUID(parseUUID(entityAID)),
+		EntityBID:        database.PgUUID(parseUUID(entityBID)),
 		RelationshipType: relationship.Type,
-		Description:      &relationship.Description,
-		Confidence:       relationship.Confidence,
-		Metadata:         json.RawMessage("{}"),
+		Description:      database.PgText(relationship.Description),
+		Confidence:       float32(relationship.Confidence),
+		Metadata:         []byte("{}"),
 	}
 
 	created, err := s.db.CreateRelationship(ctx, params)
@@ -296,26 +280,20 @@ func (s *Service) storeRelationship(ctx context.Context, documentID database.UUI
 		return "", err
 	}
 
-	return created.ID.String(), nil
+	return database.UUIDStr(created.ID), nil
 }
 
 // stripMarkdownCodeBlocks removes markdown code block formatting from text.
-// Handles both ```json and ``` formats.
 func stripMarkdownCodeBlocks(text string) string {
-	// Check if text starts with code block
 	trimmed := strings.TrimSpace(text)
 
-	// Remove opening ```json or ```
 	if strings.HasPrefix(trimmed, "```") {
 		firstNewline := strings.Index(trimmed, "\n")
 		if firstNewline != -1 {
-			// Find the closing ```
 			closingIndex := strings.LastIndex(trimmed, "```")
 			if closingIndex > firstNewline {
-				// Extract content between code blocks
 				trimmed = strings.TrimSpace(trimmed[firstNewline+1 : closingIndex])
 			} else {
-				// No closing block, just remove first line
 				trimmed = strings.TrimSpace(trimmed[firstNewline+1:])
 			}
 		}

@@ -2,13 +2,12 @@ package extraction
 
 import (
 	"github.com/google/uuid"
-	"github.com/einarsundgren/sikta/internal/database"
 )
 
-// parseUUID converts a string to database.UUID.
-func parseUUID(s string) database.UUID {
+// parseUUID converts a string to uuid.UUID.
+func parseUUID(s string) uuid.UUID {
 	id, _ := uuid.Parse(s)
-	return database.UUID(id)
+	return id
 }
 
 // stringPtr returns a pointer to a string.

@@ -7,11 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/einarsundgren/sikta/internal/config"
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -23,7 +24,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Get document path from args
 	if len(os.Args) < 2 {
 		logger.Error("usage: extract <document-path>")
 		os.Exit(1)
@@ -32,7 +32,6 @@ func main() {
 
 	ctx := context.Background()
 
-	// Connect to database
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("failed to connect to database", "error", err)
@@ -42,23 +41,20 @@ func main() {
 
 	queries := database.New(pool)
 
-	// Find document by path
-	doc, err := findDocumentByPath(ctx, queries, docPath)
+	src, err := findSourceByPath(ctx, queries, docPath)
 	if err != nil {
-		logger.Error("failed to find document", "error", err)
+		logger.Error("failed to find source", "error", err)
 		os.Exit(1)
 	}
 
-	logger.Info("starting extraction", "document", doc.Title, "chapters", countChunks(ctx, queries, doc.ID))
+	logger.Info("starting extraction", "source", src.Title, "chunks", countChunks(ctx, queries, src.ID))
 
-	// Create extraction service
 	claudeClient := claude.NewClient(cfg, logger)
 	extractService := extraction.NewService(queries, claudeClient, logger, cfg.AnthropicModelExtraction)
 
-	// Run extraction with progress tracking
 	startTime := time.Now()
 
-	err = extractService.ExtractDocument(ctx, doc.ID.String(), func(progress extraction.ExtractionProgress) {
+	err = extractService.ExtractDocument(ctx, database.UUIDStr(src.ID), func(progress extraction.ExtractionProgress) {
 		if progress.TotalChunks > 0 {
 			_ = (progress.ProcessedChunks * 100) / progress.TotalChunks
 			logger.Info("progress",
@@ -78,41 +74,40 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Show summary
-	showSummary(ctx, queries, doc.ID, logger)
+	showSummary(ctx, queries, src.ID, logger)
 }
 
-func findDocumentByPath(ctx context.Context, db *database.Queries, path string) (database.Document, error) {
-	docs, err := db.ListDocuments(ctx)
+func findSourceByPath(ctx context.Context, db *database.Queries, path string) (*database.Source, error) {
+	sources, err := db.ListSources(ctx)
 	if err != nil {
-		return database.Document{}, err
+		return nil, err
 	}
 
-	for _, doc := range docs {
-		if doc.FilePath == path {
-			return doc, nil
+	for _, src := range sources {
+		if src.FilePath == path {
+			return src, nil
 		}
 	}
 
-	return database.Document{}, fmt.Errorf("document not found: %s", path)
+	return nil, fmt.Errorf("source not found: %s", path)
 }
 
-func countChunks(ctx context.Context, db *database.Queries, docID database.UUID) int {
-	count, _ := db.CountChunksByDocument(ctx, docID)
+func countChunks(ctx context.Context, db *database.Queries, srcID pgtype.UUID) int {
+	count, _ := db.CountChunksBySource(ctx, srcID)
 	return int(count)
 }
 
-func showSummary(ctx context.Context, db *database.Queries, docID database.UUID, logger *slog.Logger) {
-	eventCount, _ := db.CountEventsByDocument(ctx, docID)
-	entityCount, _ := db.CountEntitiesByDocument(ctx, docID)
-	relationshipCount, _ := db.CountRelationshipsByDocument(ctx, docID)
+func showSummary(ctx context.Context, db *database.Queries, srcID pgtype.UUID, logger *slog.Logger) {
+	pgID := srcID
+	eventCount, _ := db.CountClaimsBySource(ctx, pgID)
+	entityCount, _ := db.CountEntitiesBySource(ctx, pgID)
+	relationshipCount, _ := db.CountRelationshipsBySource(ctx, pgID)
 
 	logger.Info("extraction summary",
 		"events", eventCount,
 		"entities", entityCount,
 		"relationships", relationshipCount)
 
-	// Validate against acceptance criteria
 	if eventCount < 50 {
 		logger.Warn("event count below expected range (50-80)", "count", eventCount)
 	}

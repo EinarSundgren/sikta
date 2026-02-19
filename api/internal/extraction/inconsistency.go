@@ -10,6 +10,7 @@ import (
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // InconsistencyType represents different types of detected inconsistencies
@@ -17,8 +18,8 @@ type InconsistencyType string
 
 const (
 	InconsistencyTypeNarrativeChronologicalMismatch InconsistencyType = "narrative_chronological_mismatch"
-	InconsistencyTypeTemporalImpossibility         InconsistencyType = "temporal_impossibility"
-	InconsistencyTypeContradiction                 InconsistencyType = "contradiction"
+	InconsistencyTypeTemporalImpossibility          InconsistencyType = "temporal_impossibility"
+	InconsistencyTypeContradiction                  InconsistencyType = "contradiction"
 	InconsistencyTypeCrossReference                 InconsistencyType = "cross_reference"
 	InconsistencyTypeDuplicateEntity                InconsistencyType = "duplicate_entity"
 	InconsistencyTypeDataMismatch                   InconsistencyType = "data_mismatch"
@@ -28,9 +29,9 @@ const (
 type Severity string
 
 const (
-	SeverityInfo     Severity = "info"
-	SeverityWarning   Severity = "warning"
-	SeverityConflict  Severity = "conflict"
+	SeverityInfo    Severity = "info"
+	SeverityWarning Severity = "warning"
+	SeverityConflict Severity = "conflict"
 )
 
 // ResolutionStatus represents the resolution state
@@ -45,52 +46,52 @@ const (
 
 // Inconsistency represents a detected inconsistency
 type Inconsistency struct {
-	ID               uuid.UUID
-	DocumentID       uuid.UUID
+	ID                uuid.UUID
+	SourceID          uuid.UUID
 	InconsistencyType InconsistencyType
-	Severity         Severity
-	Title            string
-	Description      string
-	ResolutionStatus ResolutionStatus
-	ResolutionNote   *string
-	Metadata         map[string]interface{}
+	Severity          Severity
+	Title             string
+	Description       string
+	ResolutionStatus  ResolutionStatus
+	ResolutionNote    *string
+	Metadata          map[string]interface{}
 }
 
-// InconsistencyItem links an inconsistency to events or entities
+// InconsistencyItem links an inconsistency to claims or entities
 type InconsistencyItem struct {
-	ID               uuid.UUID
-	InconsistencyID  uuid.UUID
-	EventID          *uuid.UUID
-	EntityID         *uuid.UUID
-	Side             *string // 'a', 'b', or 'neutral' for conflicts
-	Description      string
+	ID              uuid.UUID
+	InconsistencyID uuid.UUID
+	ClaimID         *uuid.UUID
+	EntityID        *uuid.UUID
+	Side            *string
+	Description     string
 }
 
 // NarrativeChronologyMismatch represents when narrative order ≠ chronological order
 type NarrativeChronologyMismatch struct {
-	EventID        uuid.UUID
-	Title          string
-	NarrativePos   int
+	ClaimID          uuid.UUID
+	Title            string
+	NarrativePos     int
 	ChronologicalPos *int
 }
 
 // TemporalImpossibility represents logically impossible timing
 type TemporalImpossibility struct {
 	Description string
-	EventIDs    []uuid.UUID
+	ClaimIDs    []uuid.UUID
 }
 
 // Contradiction represents conflicting information
 type Contradiction struct {
 	Description string
-	EventAID    uuid.UUID
-	EventBID    uuid.UUID
+	ClaimAID    uuid.UUID
+	ClaimBID    uuid.UUID
 }
 
 // CrossReference represents when the same event appears in multiple places
 type CrossReference struct {
 	Description string
-	EventIDs    []uuid.UUID
+	ClaimIDs    []uuid.UUID
 }
 
 // InconsistencyDetector handles all inconsistency detection
@@ -111,30 +112,27 @@ func NewInconsistencyDetector(db *database.Queries, claude *claude.Client, logge
 	}
 }
 
-// DetectAll runs all inconsistency detection passes for a document
-func (d *InconsistencyDetector) DetectAll(ctx context.Context, documentID string) ([]Inconsistency, error) {
-	d.logger.Info("starting inconsistency detection", "document_id", documentID)
+// DetectAll runs all inconsistency detection passes for a source
+func (d *InconsistencyDetector) DetectAll(ctx context.Context, sourceID string) ([]Inconsistency, error) {
+	d.logger.Info("starting inconsistency detection", "source_id", sourceID)
 
 	var allInconsistencies []Inconsistency
 
-	// Pass 1: Narrative vs chronological mismatches
-	narrativeMismatches, err := d.detectNarrativeChronologicalMismatches(ctx, documentID)
+	narrativeMismatches, err := d.detectNarrativeChronologicalMismatches(ctx, sourceID)
 	if err != nil {
 		d.logger.Error("narrative/chronological detection failed", "error", err)
 	} else {
 		allInconsistencies = append(allInconsistencies, narrativeMismatches...)
 	}
 
-	// Pass 2: Temporal impossibilities
-	temporalImpossibilities, err := d.detectTemporalImpossibilities(ctx, documentID)
+	temporalImpossibilities, err := d.detectTemporalImpossibilities(ctx, sourceID)
 	if err != nil {
 		d.logger.Error("temporal impossibility detection failed", "error", err)
 	} else {
 		allInconsistencies = append(allInconsistencies, temporalImpossibilities...)
 	}
 
-	// Pass 3: Cross-references
-	crossReferences, err := d.detectCrossReferences(ctx, documentID)
+	crossReferences, err := d.detectCrossReferences(ctx, sourceID)
 	if err != nil {
 		d.logger.Error("cross-reference detection failed", "error", err)
 	} else {
@@ -150,46 +148,41 @@ func (d *InconsistencyDetector) DetectAll(ctx context.Context, documentID string
 	return allInconsistencies, nil
 }
 
-// detectNarrativeChronologicalMismatches finds events where story order ≠ timeline order
-func (d *InconsistencyDetector) detectNarrativeChronologicalMismatches(ctx context.Context, documentID string) ([]Inconsistency, error) {
-	events, err := d.db.ListEventsByDocument(ctx, parseUUID(documentID))
+// detectNarrativeChronologicalMismatches finds claims where story order ≠ timeline order
+func (d *InconsistencyDetector) detectNarrativeChronologicalMismatches(ctx context.Context, sourceID string) ([]Inconsistency, error) {
+	claims, err := d.db.ListClaimsBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get events: %w", err)
+		return nil, fmt.Errorf("failed to get claims: %w", err)
 	}
 
 	var inconsistencies []Inconsistency
 
-	for _, event := range events {
-		if event.ChronologicalPosition == nil {
-			continue // Skip events without chronological position
+	for _, claim := range claims {
+		if !claim.ChronologicalPosition.Valid {
+			continue
 		}
 
-		// Check if narrative position differs significantly from chronological position
-		// Allow small differences (flashbacks/foreshadowing within chapter)
-		// Flag large differences as info-level mismatches
-		narrativePos := event.NarrativePosition
-		chronoPos := *event.ChronologicalPosition
+		narrativePos := claim.NarrativePosition
+		chronoPos := claim.ChronologicalPosition.Int32
 
-		// If position differs by more than 3, it's a significant narrative device
 		if absInt32(narrativePos-chronoPos) > 3 {
 			inconsistency := Inconsistency{
-				ID:               uuid.New(),
-				DocumentID:       parseUUID(documentID),
+				ID:                uuid.New(),
+				SourceID:          parseUUID(sourceID),
 				InconsistencyType: InconsistencyTypeNarrativeChronologicalMismatch,
-				Severity:         SeverityInfo,
-				Title:            fmt.Sprintf("Narrative order mismatch: %s", event.Title),
-				Description:      fmt.Sprintf("Event appears at narrative position %d but chronological position %d", narrativePos, chronoPos),
-				ResolutionStatus: ResolutionStatusUnresolved,
+				Severity:          SeverityInfo,
+				Title:             fmt.Sprintf("Narrative order mismatch: %s", claim.Title),
+				Description:       fmt.Sprintf("Event appears at narrative position %d but chronological position %d", narrativePos, chronoPos),
+				ResolutionStatus:  ResolutionStatusUnresolved,
 				Metadata: map[string]interface{}{
-					"event_id":           event.ID.String(),
-					"event_title":         event.Title,
-					"narrative_position":   narrativePos,
+					"claim_id":               database.UUIDStr(claim.ID),
+					"claim_title":            claim.Title,
+					"narrative_position":     narrativePos,
 					"chronological_position": chronoPos,
 				},
 			}
 
-			// Store in database
-			created, err := d.createInconsistency(ctx, inconsistency, event.ID)
+			created, err := d.createInconsistency(ctx, inconsistency, claim.ID)
 			if err != nil {
 				d.logger.Error("failed to create inconsistency", "error", err)
 				continue
@@ -203,61 +196,50 @@ func (d *InconsistencyDetector) detectNarrativeChronologicalMismatches(ctx conte
 }
 
 // detectTemporalImpossibilities detects logically impossible timing
-func (d *InconsistencyDetector) detectTemporalImpossibilities(ctx context.Context, documentID string) ([]Inconsistency, error) {
-	// Reuse existing chronology.go temporal impossibility detection
-	// This is already implemented in the ChronologicalEstimator
-
-	// For now, return empty - we can enhance this later
+func (d *InconsistencyDetector) detectTemporalImpossibilities(ctx context.Context, sourceID string) ([]Inconsistency, error) {
 	return []Inconsistency{}, nil
 }
 
 // detectCrossReferences finds when the same event is described in multiple places
-func (d *InconsistencyDetector) detectCrossReferences(ctx context.Context, documentID string) ([]Inconsistency, error) {
-	events, err := d.db.ListEventsByDocument(ctx, parseUUID(documentID))
+func (d *InconsistencyDetector) detectCrossReferences(ctx context.Context, sourceID string) ([]Inconsistency, error) {
+	claims, err := d.db.ListClaimsBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get events: %w", err)
+		return nil, fmt.Errorf("failed to get claims: %w", err)
 	}
 
 	var inconsistencies []Inconsistency
 
-	// Group events by title similarity (simple approach)
-	eventGroups := make(map[string][]database.Event)
+	claimGroups := make(map[string][]*database.Claim)
 
-	for _, event := range events {
-		// Normalize title for grouping
-		normalizedTitle := strings.ToLower(strings.TrimSpace(event.Title))
-
-		// Simple grouping: exact title match after normalization
-		eventGroups[normalizedTitle] = append(eventGroups[normalizedTitle], event)
+	for _, claim := range claims {
+		normalizedTitle := strings.ToLower(strings.TrimSpace(claim.Title))
+		claimGroups[normalizedTitle] = append(claimGroups[normalizedTitle], claim)
 	}
 
-	// Find groups with multiple events (potential cross-references)
-	for title, group := range eventGroups {
+	for title, group := range claimGroups {
 		if len(group) > 1 {
-			// Found potential cross-reference
-			var eventIDs []uuid.UUID
+			var claimIDs []uuid.UUID
 			var titles []string
 
-			for _, event := range group {
-				eventIDs = append(eventIDs, uuid.UUID(event.ID))
-				titles = append(titles, event.Title)
+			for _, claim := range group {
+				claimIDs = append(claimIDs, uuid.UUID(claim.ID.Bytes))
+				titles = append(titles, claim.Title)
 			}
 
 			inconsistency := Inconsistency{
-				ID:               uuid.New(),
-				DocumentID:       parseUUID(documentID),
+				ID:                uuid.New(),
+				SourceID:          parseUUID(sourceID),
 				InconsistencyType: InconsistencyTypeCrossReference,
-				Severity:         SeverityInfo,
-				Title:            fmt.Sprintf("Cross-reference: %s", title),
-				Description:      fmt.Sprintf("Event appears %d times: %s", len(group), strings.Join(titles, "; ")),
-				ResolutionStatus: ResolutionStatusUnresolved,
+				Severity:          SeverityInfo,
+				Title:             fmt.Sprintf("Cross-reference: %s", title),
+				Description:       fmt.Sprintf("Event appears %d times: %s", len(group), strings.Join(titles, "; ")),
+				ResolutionStatus:  ResolutionStatusUnresolved,
 				Metadata: map[string]interface{}{
-					"event_ids": eventIDs,
+					"claim_ids": claimIDs,
 					"titles":    titles,
 				},
 			}
 
-			// Store in database
 			created, err := d.createInconsistency(ctx, inconsistency)
 			if err != nil {
 				d.logger.Error("failed to create inconsistency", "error", err)
@@ -272,63 +254,52 @@ func (d *InconsistencyDetector) detectCrossReferences(ctx context.Context, docum
 }
 
 // createInconsistency stores an inconsistency in the database
-func (d *InconsistencyDetector) createInconsistency(ctx context.Context, inconsistency Inconsistency, eventID ...database.UUID) (Inconsistency, error) {
+func (d *InconsistencyDetector) createInconsistency(ctx context.Context, inconsistency Inconsistency, claimID ...pgtype.UUID) (Inconsistency, error) {
 	metadataJSON, _ := json.Marshal(inconsistency.Metadata)
 
-	var resolutionNote interface{}
-	if inconsistency.ResolutionNote != nil {
-		resolutionNote = *inconsistency.ResolutionNote
-	}
-
 	created, err := d.db.CreateInconsistency(ctx, database.CreateInconsistencyParams{
-		ID:               database.UUID(inconsistency.ID),
-		DocumentID:       inconsistency.DocumentID,
+		ID:                database.PgUUID(inconsistency.ID),
+		SourceID:          database.PgUUID(inconsistency.SourceID),
 		InconsistencyType: string(inconsistency.InconsistencyType),
-		Severity:         string(inconsistency.Severity),
-		Title:            inconsistency.Title,
-		Description:      inconsistency.Description,
-		ResolutionStatus: string(inconsistency.ResolutionStatus),
-		ResolutionNote:    resolutionNote,
-		Metadata:         metadataJSON,
+		Severity:          string(inconsistency.Severity),
+		Title:             inconsistency.Title,
+		Description:       inconsistency.Description,
+		Metadata:          metadataJSON,
 	})
 	if err != nil {
 		return Inconsistency{}, err
 	}
 
-	// Link to events if provided
-	for _, eid := range eventID {
-		eventUUID := database.UUID(eid)
+	for _, cid := range claimID {
 		_, err := d.db.CreateInconsistencyItem(ctx, database.CreateInconsistencyItemParams{
-			ID:              uuid.New(),
-			InconsistencyID: database.UUID(created.ID),
-			EventID:         &eventUUID,
-			Side:            nil,
-			Description:     "Related event",
+			ID:              database.PgUUID(uuid.New()),
+			InconsistencyID: created.ID,
+			ClaimID:         cid,
+			EntityID:        pgtype.UUID{},
+			Side:            pgtype.Text{},
+			Description:     database.PgText("Related claim"),
 		})
 		if err != nil {
-			d.logger.Error("failed to link event to inconsistency", "error", err)
+			d.logger.Error("failed to link claim to inconsistency", "error", err)
 		}
 	}
 
 	return inconsistencyFromDB(created), nil
 }
 
-// DetectContradictionsWithLLM uses LLM to detect contradictions between events
-func (d *InconsistencyDetector) DetectContradictionsWithLLM(ctx context.Context, documentID string) ([]Inconsistency, error) {
-	// Get all events for the document
-	events, err := d.db.ListEventsByDocument(ctx, parseUUID(documentID))
+// DetectContradictionsWithLLM uses LLM to detect contradictions between claims
+func (d *InconsistencyDetector) DetectContradictionsWithLLM(ctx context.Context, sourceID string) ([]Inconsistency, error) {
+	claims, err := d.db.ListClaimsBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get events: %w", err)
+		return nil, fmt.Errorf("failed to get claims: %w", err)
 	}
 
-	if len(events) < 2 {
-		return nil, nil // Need at least 2 events to have contradictions
+	if len(claims) < 2 {
+		return nil, nil
 	}
 
-	// Build events summary for LLM
-	eventsSummary := d.buildEventsSummaryForContradictionDetection(events)
+	eventsSummary := d.buildEventsSummaryForContradictionDetection(claims)
 
-	// Call LLM for contradiction detection
 	prompt := fmt.Sprintf(ContradictionDetectionPrompt, eventsSummary)
 	resp, err := d.claude.SendSystemPrompt(ctx, "", prompt, d.model)
 	if err != nil {
@@ -339,60 +310,58 @@ func (d *InconsistencyDetector) DetectContradictionsWithLLM(ctx context.Context,
 		return nil, fmt.Errorf("empty response from LLM")
 	}
 
-	// Parse response
 	var detectionResult ContradictionDetectionResult
 	if err := json.Unmarshal([]byte(resp.Content[0].Text), &detectionResult); err != nil {
 		return nil, fmt.Errorf("failed to parse LLM response: %w", err)
 	}
 
-	// Convert to Inconsistency objects
 	var inconsistencies []Inconsistency
 	for _, contradiction := range detectionResult.Contradictions {
 		inconsistency := Inconsistency{
-			ID:               uuid.New(),
-			DocumentID:       parseUUID(documentID),
+			ID:                uuid.New(),
+			SourceID:          parseUUID(sourceID),
 			InconsistencyType: InconsistencyTypeContradiction,
-			Severity:         SeverityConflict,
-			Title:            contradiction.Description,
-			Description:      contradiction.Description,
-			ResolutionStatus: ResolutionStatusUnresolved,
+			Severity:          SeverityConflict,
+			Title:             contradiction.Description,
+			Description:       contradiction.Description,
+			ResolutionStatus:  ResolutionStatusUnresolved,
 			Metadata: map[string]interface{}{
-				"event_a_id": contradiction.EventAID,
-				"event_b_id": contradiction.EventBID,
+				"claim_a_id": contradiction.EventAID,
+				"claim_b_id": contradiction.EventBID,
 			},
 		}
 
-		// Store in database
 		created, err := d.createInconsistency(ctx, inconsistency)
 		if err != nil {
 			d.logger.Error("failed to create contradiction", "error", err)
 			continue
 		}
 
-		// Link both events
-		eventAID := parseUUID(contradiction.EventAID)
-		eventBID := parseUUID(contradiction.EventBID)
+		claimAID := database.PgUUID(parseUUID(contradiction.EventAID))
+		claimBID := database.PgUUID(parseUUID(contradiction.EventBID))
 
 		_, err = d.db.CreateInconsistencyItem(ctx, database.CreateInconsistencyItemParams{
-			ID:              uuid.New(),
-			InconsistencyID: database.UUID(created.ID),
-			EventID:         &eventAID,
-			Side:            stringPtr("a"),
-			Description:     "Side A of contradiction",
+			ID:              database.PgUUID(uuid.New()),
+			InconsistencyID: database.PgUUID(created.ID),
+			ClaimID:         claimAID,
+			EntityID:        pgtype.UUID{},
+			Side:            database.PgText("a"),
+			Description:     database.PgText("Side A of contradiction"),
 		})
 		if err != nil {
-			d.logger.Error("failed to link event A", "error", err)
+			d.logger.Error("failed to link claim A", "error", err)
 		}
 
 		_, err = d.db.CreateInconsistencyItem(ctx, database.CreateInconsistencyItemParams{
-			ID:              uuid.New(),
-			InconsistencyID: database.UUID(created.ID),
-			EventID:         &eventBID,
-			Side:            stringPtr("b"),
-			Description:     "Side B of contradiction",
+			ID:              database.PgUUID(uuid.New()),
+			InconsistencyID: database.PgUUID(created.ID),
+			ClaimID:         claimBID,
+			EntityID:        pgtype.UUID{},
+			Side:            database.PgText("b"),
+			Description:     database.PgText("Side B of contradiction"),
 		})
 		if err != nil {
-			d.logger.Error("failed to link event B", "error", err)
+			d.logger.Error("failed to link claim B", "error", err)
 		}
 
 		inconsistencies = append(inconsistencies, created)
@@ -402,21 +371,21 @@ func (d *InconsistencyDetector) DetectContradictionsWithLLM(ctx context.Context,
 }
 
 // buildEventsSummaryForContradictionDetection creates a summary for LLM analysis
-func (d *InconsistencyDetector) buildEventsSummaryForContradictionDetection(events []database.Event) string {
+func (d *InconsistencyDetector) buildEventsSummaryForContradictionDetection(claims []*database.Claim) string {
 	var summary strings.Builder
 
 	summary.WriteString("Events:\n\n")
-	for _, event := range events {
-		summary.WriteString(fmt.Sprintf("- ID: %s\n", event.ID))
-		summary.WriteString(fmt.Sprintf("  Title: %s\n", event.Title))
-		if event.Description != nil {
-			summary.WriteString(fmt.Sprintf("  Description: %s\n", *event.Description))
+	for _, claim := range claims {
+		summary.WriteString(fmt.Sprintf("- ID: %s\n", database.UUIDStr(claim.ID)))
+		summary.WriteString(fmt.Sprintf("  Title: %s\n", claim.Title))
+		if claim.Description.Valid {
+			summary.WriteString(fmt.Sprintf("  Description: %s\n", claim.Description.String))
 		}
-		if event.DateText != nil {
-			summary.WriteString(fmt.Sprintf("  Date: %s\n", *event.DateText))
+		if claim.DateText.Valid {
+			summary.WriteString(fmt.Sprintf("  Date: %s\n", claim.DateText.String))
 		}
-		if event.ChronologicalPosition != nil {
-			summary.WriteString(fmt.Sprintf("  Chronological Position: %d\n", *event.ChronologicalPosition))
+		if claim.ChronologicalPosition.Valid {
+			summary.WriteString(fmt.Sprintf("  Chronological Position: %d\n", claim.ChronologicalPosition.Int32))
 		}
 		summary.WriteString("\n")
 	}
@@ -424,29 +393,22 @@ func (d *InconsistencyDetector) buildEventsSummaryForContradictionDetection(even
 	return summary.String()
 }
 
-func inconsistencyFromDB(dbInc database.Inconsistency) Inconsistency {
+func inconsistencyFromDB(dbInc *database.Inconsistency) Inconsistency {
 	var metadata map[string]interface{}
 	if dbInc.Metadata != nil {
-		// JSONB is already unmarshalled by pgx
-		metadata = dbInc.Metadata.(map[string]interface{})
-	}
-
-	var resolutionNote *string
-	if dbInc.ResolutionNote != nil {
-		note := *dbInc.ResolutionNote
-		resolutionNote = &note
+		_ = json.Unmarshal(dbInc.Metadata, &metadata)
 	}
 
 	return Inconsistency{
-		ID:               uuid.UUID(dbInc.ID),
-		DocumentID:       uuid.UUID(dbInc.DocumentID),
+		ID:                uuid.UUID(dbInc.ID.Bytes),
+		SourceID:          uuid.UUID(dbInc.SourceID.Bytes),
 		InconsistencyType: InconsistencyType(dbInc.InconsistencyType),
-		Severity:         Severity(dbInc.Severity),
-		Title:            dbInc.Title,
-		Description:      dbInc.Description,
-		ResolutionStatus: ResolutionStatus(dbInc.ResolutionStatus),
-		ResolutionNote:   resolutionNote,
-		Metadata:         metadata,
+		Severity:          Severity(dbInc.Severity),
+		Title:             dbInc.Title,
+		Description:       dbInc.Description,
+		ResolutionStatus:  ResolutionStatus(dbInc.ResolutionStatus),
+		ResolutionNote:    database.TextPtr(dbInc.ResolutionNote),
+		Metadata:          metadata,
 	}
 }
 

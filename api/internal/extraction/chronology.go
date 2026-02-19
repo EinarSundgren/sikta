@@ -10,6 +10,7 @@ import (
 
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ChronologicalEstimator handles timeline ordering of events.
@@ -32,30 +33,27 @@ func NewChronologicalEstimator(db *database.Queries, claude *claude.Client, logg
 
 // EstimationResult contains the results of chronological estimation.
 type EstimationResult struct {
-	OrderedCount    int
+	OrderedCount      int
 	AnomaliesDetected int
-	Anomalies        []Anomaly
+	Anomalies         []Anomaly
 }
 
 // EstimateChronology estimates the chronological order of events.
-func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, documentID string) (*EstimationResult, error) {
-	e.logger.Info("estimating chronology", "document_id", documentID)
+func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, sourceID string) (*EstimationResult, error) {
+	e.logger.Info("estimating chronology", "source_id", sourceID)
 
-	// Get all events for the document
-	events, err := e.db.ListEventsByDocument(ctx, database.UUID(parseUUID(documentID)))
+	claims, err := e.db.ListClaimsBySource(ctx, database.PgUUID(parseUUID(sourceID)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get events: %w", err)
+		return nil, fmt.Errorf("failed to get claims: %w", err)
 	}
 
-	if len(events) == 0 {
+	if len(claims) == 0 {
 		return &EstimationResult{}, nil
 	}
 
-	// Build events summary for LLM
-	eventsSummary := e.buildEventsSummary(events)
+	eventsSummary := e.buildEventsSummary(claims)
 
-	// Call LLM for ordering
-	prompt := fmt.Sprintf(ChronologyEstimationPrompt, eventsSummary)
+	prompt := ChronologyEstimationPrompt + "\n\n" + eventsSummary
 	resp, err := e.claude.SendSystemPrompt(ctx, "", prompt, e.model)
 	if err != nil {
 		return nil, fmt.Errorf("LLM call failed: %w", err)
@@ -65,29 +63,25 @@ func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, documen
 		return nil, fmt.Errorf("empty response from LLM")
 	}
 
-	// Parse response
 	var chronology ChronologicalOrder
 	if err := json.Unmarshal([]byte(resp.Content[0].Text), &chronology); err != nil {
 		return nil, fmt.Errorf("failed to parse chronology response: %w", err)
 	}
 
-	// Update chronological positions in database
 	orderedCount := 0
 	for _, pos := range chronology.ChronologicalOrder {
-		eventID := parseUUID(pos.EventID)
-		_, err := e.db.UpdateEventChronologicalPosition(ctx, database.UpdateEventChronologicalPositionParams{
-			ID:                    eventID,
-			ChronologicalPosition: int32(pos.ChronologicalPosition),
+		_, err := e.db.UpdateClaimChronologicalPosition(ctx, database.UpdateClaimChronologicalPositionParams{
+			ID:                    database.PgUUID(parseUUID(pos.EventID)),
+			ChronologicalPosition: pgtype.Int4{Int32: int32(pos.ChronologicalPosition), Valid: true},
 		})
 		if err != nil {
-			e.logger.Error("failed to update event position", "event_id", pos.EventID, "error", err)
+			e.logger.Error("failed to update claim position", "claim_id", pos.EventID, "error", err)
 			continue
 		}
 		orderedCount++
 	}
 
-	// Detect temporal impossibilities
-	anomalies := e.detectTemporalImpossibilities(events)
+	anomalies := e.detectTemporalImpossibilities(claims)
 
 	e.logger.Info("chronology estimation complete",
 		"ordered", orderedCount,
@@ -100,31 +94,29 @@ func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, documen
 	}, nil
 }
 
-// buildEventsSummary creates a summary of events for the LLM.
-func (e *ChronologicalEstimator) buildEventsSummary(events []database.Event) string {
+// buildEventsSummary creates a summary of claims for the LLM.
+func (e *ChronologicalEstimator) buildEventsSummary(claims []*database.Claim) string {
 	var summary strings.Builder
 
 	summary.WriteString("Events:\n")
-	for _, event := range events {
-		summary.WriteString(fmt.Sprintf("- ID: %s\n", event.ID))
-		summary.WriteString(fmt.Sprintf("  Title: %s\n", event.Title))
-		summary.WriteString(fmt.Sprintf("  Description: %s\n", safeString(event.Description)))
-		summary.WriteString(fmt.Sprintf("  Date: %s\n", safeString(event.DateText)))
-		summary.WriteString(fmt.Sprintf("  Narrative Position: %d\n", event.NarrativePosition))
+	for _, claim := range claims {
+		summary.WriteString(fmt.Sprintf("- ID: %s\n", database.UUIDStr(claim.ID)))
+		summary.WriteString(fmt.Sprintf("  Title: %s\n", claim.Title))
+		summary.WriteString(fmt.Sprintf("  Description: %s\n", claim.Description.String))
+		summary.WriteString(fmt.Sprintf("  Date: %s\n", claim.DateText.String))
+		summary.WriteString(fmt.Sprintf("  Narrative Position: %d\n", claim.NarrativePosition))
 		summary.WriteString("\n")
 	}
 
 	return summary.String()
 }
 
-// detectTemporalImpossibilities detects temporal impossibilities in events.
-func (e *ChronologicalEstimator) detectTemporalImpossibilities(events []database.Event) []Anomaly {
+// detectTemporalImpossibilities detects temporal impossibilities in claims.
+func (e *ChronologicalEstimator) detectTemporalImpossibilities(claims []*database.Claim) []Anomaly {
 	var anomalies []Anomaly
 
-	// Build character timelines
-	characterTimelines := e.buildCharacterTimelines(events)
+	characterTimelines := e.buildCharacterTimelines(claims)
 
-	// Check for overlaps
 	for character, timeline := range characterTimelines {
 		overlaps := e.findOverlappingEvents(timeline)
 		if len(overlaps) > 0 {
@@ -132,7 +124,7 @@ func (e *ChronologicalEstimator) detectTemporalImpossibilities(events []database
 				anomalies = append(anomalies, Anomaly{
 					Type:        "temporal_impossibility",
 					Description: fmt.Sprintf("%s cannot be in two places at once", character),
-					Events: overlaps,
+					Events:      overlaps,
 				})
 			}
 		}
@@ -141,70 +133,52 @@ func (e *ChronologicalEstimator) detectTemporalImpossibilities(events []database
 	return anomalies
 }
 
-// characterTimeline tracks events for a character.
-type characterTimeline struct {
-	Character string
-	Events    []database.Event
-}
-
 // buildCharacterTimelines builds timelines for each character.
-func (e *ChronologicalEstimator) buildCharacterTimelines(events []database.Event) map[string][]database.Event {
-	timelines := make(map[string][]database.Event)
+func (e *ChronologicalEstimator) buildCharacterTimelines(claims []*database.Claim) map[string][]*database.Claim {
+	timelines := make(map[string][]*database.Claim)
 
-	for _, event := range events {
-		// Get entities involved in this event
-		// For now, we'll use a simplified approach
-		// In production, you'd query event_entities table
-
-		// Extract character names from title/description
-		characters := e.extractCharacters(event)
+	for _, claim := range claims {
+		characters := e.extractCharacters(claim)
 		for _, character := range characters {
-			timelines[character] = append(timelines[character], event)
+			timelines[character] = append(timelines[character], claim)
 		}
 	}
 
 	return timelines
 }
 
-// extractCharacters extracts character names from an event.
-func (e *ChronologicalEstimator) extractCharacters(event database.Event) []string {
-	// Simplified - in production, this would query the event_entities table
-	// For now, extract from title and description
+// extractCharacters extracts character names from a claim.
+func (e *ChronologicalEstimator) extractCharacters(claim *database.Claim) []string {
 	var characters []string
-
-	// Common name patterns (Mr., Mrs., Miss, etc.)
-	// This is a very simplified implementation
 	return characters
 }
 
-// findOverlappingEvents finds events that overlap in time.
-func (e *ChronologicalEstimator) findOverlappingEvents(events []database.Event) []string {
-	if len(events) < 2 {
+// findOverlappingEvents finds claims that overlap in time.
+func (e *ChronologicalEstimator) findOverlappingEvents(claims []*database.Claim) []string {
+	if len(claims) < 2 {
 		return nil
 	}
 
-	// Sort by chronological position
-	sort.Slice(events, func(i, j int) bool {
-		posI := events[i].ChronologicalPosition
-		posJ := events[j].ChronologicalPosition
-		if posI == nil && posJ == nil {
-			return events[i].NarrativePosition < events[j].NarrativePosition
+	sort.Slice(claims, func(i, j int) bool {
+		posI := claims[i].ChronologicalPosition
+		posJ := claims[j].ChronologicalPosition
+		if !posI.Valid && !posJ.Valid {
+			return claims[i].NarrativePosition < claims[j].NarrativePosition
 		}
-		if posI == nil {
+		if !posI.Valid {
 			return false
 		}
-		if posJ == nil {
+		if !posJ.Valid {
 			return true
 		}
-		return *posI < *posJ
+		return posI.Int32 < posJ.Int32
 	})
 
-	// Check for impossible overlaps
 	var overlapping []string
-	for i := 0; i < len(events)-1; i++ {
-		for j := i + 1; j < len(events); j++ {
-			if e.eventsConflict(events[i], events[j]) {
-				overlapping = append(overlapping, events[i].ID.String(), events[j].ID.String())
+	for i := 0; i < len(claims)-1; i++ {
+		for j := i + 1; j < len(claims); j++ {
+			if e.eventsConflict(claims[i], claims[j]) {
+				overlapping = append(overlapping, database.UUIDStr(claims[i].ID), database.UUIDStr(claims[j].ID))
 			}
 		}
 	}
@@ -212,41 +186,32 @@ func (e *ChronologicalEstimator) findOverlappingEvents(events []database.Event) 
 	return overlapping
 }
 
-// eventsConflict checks if two events temporally conflict.
-func (e *ChronologicalEstimator) eventsConflict(eventA, eventB database.Event) bool {
-	// If no date information, can't determine conflict
-	if !eventA.DateStart.Valid && !eventB.DateStart.Valid {
+// eventsConflict checks if two claims temporally conflict.
+func (e *ChronologicalEstimator) eventsConflict(claimA, claimB *database.Claim) bool {
+	if !claimA.DateStart.Valid && !claimB.DateStart.Valid {
 		return false
 	}
 
-	// If both have date information, check for overlap
-	if eventA.DateStart.Valid && eventB.DateStart.Valid {
-		// Same date and different locations could be a conflict
-		// This is simplified - real implementation would need location info
+	if claimA.DateStart.Valid && claimB.DateStart.Valid {
 		return false
 	}
 
-	// Check if descriptions suggest same time, different places
-	descA := safeString(eventA.Description)
-	descB := safeString(eventB.Description)
+	descA := claimA.Description.String
+	descB := claimB.Description.String
 
-	// Look for location indicators in both
 	if e.hasLocation(descA) && e.hasLocation(descB) {
 		locationA := e.extractLocation(descA)
 		locationB := e.extractLocation(descB)
 		if locationA != "" && locationB != "" && locationA != locationB {
-			// Different locations - check if same time
-			return e.sameTime(eventA, eventB)
+			return e.sameTime(claimA, claimB)
 		}
 	}
 
 	return false
 }
 
-// verifyPossible checks if overlapping events are legitimately possible.
+// verifyPossible checks if overlapping claims are legitimately possible.
 func (e *ChronologicalEstimator) verifyPossible(eventIDs []string) bool {
-	// For now, assume overlaps are possible
-	// In production, this would check travel times, etc.
 	return true
 }
 
@@ -266,8 +231,6 @@ func (e *ChronologicalEstimator) hasLocation(text string) bool {
 
 // extractLocation extracts location from text.
 func (e *ChronologicalEstimator) extractLocation(text string) string {
-	// Simplified location extraction
-	// In production, this would use NLP
 	if strings.Contains(text, "Netherfield") {
 		return "Netherfield"
 	}
@@ -280,19 +243,16 @@ func (e *ChronologicalEstimator) extractLocation(text string) string {
 	return ""
 }
 
-// sameTime checks if two events occur at the same time.
-func (e *ChronologicalEstimator) sameTime(eventA, eventB database.Event) bool {
-	// If both have date information, compare
-	if eventA.DateStart.Valid && eventB.DateStart.Valid {
-		return eventA.DateStart.Time.Equal(eventB.DateStart.Time)
+// sameTime checks if two claims occur at the same time.
+func (e *ChronologicalEstimator) sameTime(claimA, claimB *database.Claim) bool {
+	if claimA.DateStart.Valid && claimB.DateStart.Valid {
+		return claimA.DateStart.Time.Equal(claimB.DateStart.Time)
 	}
 
-	// If both have date text, compare
-	dateA := safeString(eventA.DateText)
-	dateB := safeString(eventB.DateText)
+	dateA := claimA.DateText.String
+	dateB := claimB.DateText.String
 
 	if dateA != "" && dateB != "" {
-		// Check for same-day indicators
 		if strings.Contains(dateA, "that") && strings.Contains(dateB, "that") {
 			return true
 		}
