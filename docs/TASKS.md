@@ -296,19 +296,24 @@ Make it demo-ready. Pre-loaded data, landing experience, visual polish.
 Improve the extraction loading experience with real-time progress feedback.
 
 ### Tasks
-- [ ] Backend: Stream chunk-by-chunk progress via WebSocket or SSE (Server-Sent Events)
-- [ ] Backend: Emit events for each chunk processed (chunk index, events extracted, entities found)
-- [ ] Frontend: Real-time progress bar showing "Chunk 3 of 8" with percentage
-- [ ] Frontend: Live-updating counters (events, entities, relationships) during extraction
+- [x] Backend: Stream chunk-by-chunk progress via SSE (Server-Sent Events)
+- [x] Backend: Emit events for each chunk processed (chunk index, events extracted, entities found)
+- [x] Frontend: Real-time progress bar showing "Chunk 3 of 8" with percentage
+- [x] Frontend: Live-updating counters (events, entities, relationships) during extraction
 - [ ] Frontend: Show estimated time remaining based on average chunk processing time
 - [ ] Frontend: Animated event cards appearing one by one as they're extracted
 - [ ] Frontend: Error state per chunk (show which chunk failed, allow retry)
+- [ ] **BUG:** Fix completion detection — when last chunk finishes, UI stays in loading state and never navigates to timeline
+
+### Known Issues
+- **Completion not detected:** SSE stream receives `status: "complete"` but frontend doesn't always navigate to timeline. May be race condition between SSE close and state update.
 
 ### Acceptance Criteria
-- User sees real-time progress: "Extracting chunk 3 of 8... 47 events found"
-- Progress bar smoothly animates from 0% to 100%
-- Counters increment live as extraction proceeds
-- If extraction fails on chunk 5, user sees which chunk and can retry
+- [x] User sees real-time progress: "Extracting chunk 3 of 8... 47 events found"
+- [x] Progress bar smoothly animates from 0% to 100%
+- [x] Counters increment live as extraction proceeds
+- [ ] If extraction fails on chunk 5, user sees which chunk and can retry
+- [ ] When extraction completes, UI automatically navigates to timeline
 
 ---
 
