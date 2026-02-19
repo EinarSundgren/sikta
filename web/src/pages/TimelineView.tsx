@@ -9,7 +9,12 @@ import { TimelineEvent, Entity, Relationship, Inconsistency, ReviewProgress } fr
 
 type ActiveView = 'timeline' | 'graph' | 'review' | 'inconsistencies';
 
-const TimelineView: React.FC = () => {
+interface TimelineViewProps {
+  docId?: string;
+  onNavigateHome?: () => void;
+}
+
+const TimelineView: React.FC<TimelineViewProps> = ({ docId: propDocId, onNavigateHome }) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [entities, setEntities] = useState<Entity[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -30,11 +35,16 @@ const TimelineView: React.FC = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/documents');
-        if (!res.ok) throw new Error('Failed to fetch documents');
-        const docs = await res.json();
-        if (!docs || docs.length === 0) throw new Error('No documents found');
-        const docId = docs[0].id;
+        let docId: string;
+        if (propDocId) {
+          docId = propDocId;
+        } else {
+          const res = await fetch('/api/documents');
+          if (!res.ok) throw new Error('Failed to fetch documents');
+          const docs = await res.json();
+          if (!docs || docs.length === 0) throw new Error('No documents found');
+          docId = docs[0].id;
+        }
         setDocumentId(docId);
 
         const [eventsData, entitiesData, relationshipsData, inconsistenciesData, progressData] =
@@ -59,7 +69,7 @@ const TimelineView: React.FC = () => {
       }
     };
     load();
-  }, []);
+  }, [propDocId]);
 
   // Refresh progress after review actions
   const refreshProgress = useCallback(async () => {
@@ -180,9 +190,20 @@ const TimelineView: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm shrink-0">
         <div className="px-5 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 leading-tight">Sikta</h1>
-            <p className="text-xs text-slate-500">Document Timeline Intelligence</p>
+          <div className="flex items-center gap-3">
+            {onNavigateHome && (
+              <button
+                onClick={onNavigateHome}
+                className="text-slate-400 hover:text-slate-600 transition-colors text-sm leading-none"
+                title="Back to home"
+              >
+                ←
+              </button>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">Sikta</h1>
+              <p className="text-xs text-slate-500">Document Timeline Intelligence</p>
+            </div>
           </div>
 
           {/* View tabs */}

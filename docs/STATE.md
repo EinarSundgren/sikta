@@ -6,7 +6,7 @@
 
 ## Status
 
-**Overall:** Phase 6 Complete — Review Workflow & Inconsistency Panel done. Phase 7 (Demo Polish & Landing) is next.
+**Overall:** Phase 7 Complete — Demo Polish & Landing done. All MVP phases complete.
 
 **Last Updated:** 2026-02-19
 
@@ -14,9 +14,9 @@
 
 ## Current Phase
 
-**Phase:** 6 — Review Workflow & Inconsistency Panel
+**Phase:** 7 — Demo Polish & Landing
 
-**Goal:** Keyboard-driven review queue (approve/reject/edit), inconsistency panel with resolve/note/dismiss actions.
+**Goal:** Landing page with hero + demo CTA + upload flow, favicon, back button, seed SQL, Makefile targets.
 
 ---
 
@@ -70,6 +70,16 @@
   - Drag nodes, zoom/pan, auto-fit on load
   - Tab switching: Timeline ↔ Graph
   - Shared entity selection state across all views
+- [x] **Phase 7: Demo Polish & Landing — Complete**
+  - Landing page with hero section, demo card (events/entities/relationships counts), upload zone
+  - Drag-and-drop upload with multi-phase progress (uploading → chunking → extracting)
+  - Extraction progress polling with "View partial results" early access
+  - State-based routing in App.tsx (landing ↔ timeline)
+  - TimelineView accepts `docId` prop and `onNavigateHome` callback
+  - Back button (←) in TimelineView header
+  - Emoji favicon (🔍) and improved page title
+  - `make dump-demo` and `make seed-demo` Makefile targets
+  - `demo/seed.sql` — 1700-line dump of P&P extraction (178 events, 54 entities, 58 relationships)
 - [x] **Phase 6: Review Workflow & Inconsistency Panel — Complete**
   - Keyboard-driven review queue: J/K navigate, A approve, R reject, E edit
   - Progress bar showing reviewed/total across claims and entities
@@ -91,6 +101,7 @@
 |------|--------|----------------|-------|
 | Phase 2.5: Data Model Migration | **Complete** | Sonnet | Migration done. DB + all Go files + frontend types updated. Build passes. |
 | Phase 5: Entity Panel & Relationship Graph | **Complete** | Sonnet | EntityPanel sidebar + D3 RelationshipGraph + tab switching. claim_entities table empty (extraction didn't link events↔entities), entity filter uses text matching fallback. |
+| Phase 7: Demo Polish & Landing | **Complete** | Sonnet | Landing page, upload flow with extraction progress, favicon, back button, seed SQL, Makefile targets. Build passes. |
 | Phase 6: Review Workflow & Inconsistency Panel | **Complete** | Sonnet | Keyboard-driven review (J/K/A/R/E), EditModal, ReviewPanel, InconsistencyPanel. Backend review routes added. npm run build passes. |
 
 ---
@@ -107,6 +118,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-19 | Phase 7 complete: Landing page (hero + demo card + upload flow), state-based routing, back button in TimelineView, favicon, seed SQL (1700 lines, full P&P extraction), Makefile dump-demo/seed-demo targets. | web/src/App.tsx, web/src/pages/LandingPage.tsx, web/src/pages/TimelineView.tsx, web/index.html, Makefile, demo/seed.sql |
 | 2026-02-19 | Phase 6 complete: Review workflow (J/K/A/R/E keyboard shortcuts), edit modal, inconsistency panel with resolve/note/dismiss, "show on timeline" highlight. Backend review routes. Frontend build passes clean. | api/sql/queries/claims.sql, api/sql/queries/entities.sql, api/internal/handlers/review.go, api/cmd/server/main.go, web/src/components/review/*, web/src/components/inconsistencies/*, web/src/pages/TimelineView.tsx, web/src/components/timeline/Timeline.tsx |
 | 2026-02-19 | Phase 2.5 complete: Renamed documents→sources, events→claims throughout. Added claim_type, source_trust columns. All Go files + frontend types updated. Build passes clean. | api/sql/schema/010_rename_sources_claims.sql, api/sql/queries/*, api/internal/database/*, api/internal/handlers/*, api/internal/extraction/*, api/cmd/*/main.go, web/src/types/index.ts |
 | 2026-02-19 | Documentation updated for sources/claims data model migration | CLAUDE.md, docs/TASKS.md, docs/STATE.md |
@@ -170,15 +182,13 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 ## Next Milestone
 
-**Milestone:** Phase 7 — Demo Polish & Landing
+**Milestone:** Post-MVP — Source Text Viewer & Cross-references (Phase 8)
 
-**Why this is next:** Core pipeline and all four main views are done. Phase 7 makes it shareable: a landing page, polished visual design, pre-loaded demo that loads instantly, and a production build.
+**Why this is next:** MVP is complete. All 7 phases delivered. Phase 8 adds deep source traceability: click any event → see the exact passage it was extracted from.
 
 **Recommended model:** Sonnet for implementation.
 
 **Known issue:** `claim_entities` table is empty — the extraction pipeline stored events and entities separately but never linked them. Entity filtering on the timeline uses text-match fallback (works for Pride and Prejudice). To fix properly: update the extraction prompt to return participant entities per event, add `storeEvent` to call `CreateClaimEntity` for each participant.
-
-**After Phase 7:** Phase 8 (Source Text Viewer & Cross-references).
 
 ---
 

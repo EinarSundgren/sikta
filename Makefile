@@ -1,4 +1,4 @@
-.PHONY: dev infra backend frontend migrate migration generate test build down logs setup extract
+.PHONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo
 
 .DEFAULT_GOAL := help
 
@@ -83,3 +83,31 @@ setup: ## Install required dev tools (air, sqlc, golang-migrate, npm deps)
 extract: ## Run extraction on a document (usage: make extract doc=path/to/file.txt)
 	@if [ -z "$(doc)" ]; then echo "Error: doc is required. Usage: make extract doc=path/to/file.txt"; exit 1; fi
 	cd $(BACKEND_DIR) && go run ./cmd/extract $(doc)
+
+dump-demo: ## Dump current database to demo/seed.sql (preserves Pride and Prejudice extraction)
+	@echo "Dumping demo data to demo/seed.sql..."
+	@mkdir -p demo
+	@PGPASSWORD=$(POSTGRES_PASSWORD) pg_dump \
+		--host=$(POSTGRES_HOST) --port=$(POSTGRES_PORT) \
+		--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
+		--data-only --disable-triggers \
+		--table=sources \
+		--table=chunks \
+		--table=claims \
+		--table=entities \
+		--table=relationships \
+		--table=claim_entities \
+		--table=source_references \
+		--table=inconsistencies \
+		--table=inconsistency_items \
+		-f demo/seed.sql
+	@echo "Done. Seed file: demo/seed.sql"
+
+seed-demo: ## Load pre-extracted demo data (Pride and Prejudice) into database
+	@if [ ! -f demo/seed.sql ]; then echo "Error: demo/seed.sql not found. Run 'make dump-demo' first."; exit 1; fi
+	@echo "Seeding demo data from demo/seed.sql..."
+	@PGPASSWORD=$(POSTGRES_PASSWORD) psql \
+		--host=$(POSTGRES_HOST) --port=$(POSTGRES_PORT) \
+		--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
+		-f demo/seed.sql
+	@echo "Done. Demo data loaded."
