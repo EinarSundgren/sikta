@@ -190,29 +190,43 @@ func (h *ExtractionHandler) GetExtractionStatus(w http.ResponseWriter, r *http.R
 func (h *ExtractionHandler) runExtraction(ctx context.Context, sourceID string) {
 	h.logger.Info("starting extraction pipeline", "source_id", sourceID)
 
+	var totalEvents, totalEntities, totalRelationships int
 	err := h.extract.ExtractDocument(ctx, sourceID, func(progress extraction.ExtractionProgress) {
+		if progress.Status == "complete" {
+			return
+		}
+		totalEvents += progress.EventsExtracted
+		totalEntities += progress.EntitiesExtracted
+		totalRelationships += progress.RelationshipsExtracted
 		h.logger.Info("extraction progress",
-			"source_id", sourceID,
-			"chunk", progress.CurrentChunk,
-			"total", progress.TotalChunks,
-			"events", progress.EventsExtracted,
-			"entities", progress.EntitiesExtracted,
-			"relationships", progress.RelationshipsExtracted)
+			"chunk", progress.ProcessedChunks,
+			"of", progress.TotalChunks,
+			"events_total", totalEvents,
+			"entities_total", totalEntities,
+			"relationships_total", totalRelationships,
+		)
 	})
 	if err != nil {
 		h.logger.Error("extraction failed", "source_id", sourceID, "error", err)
 		return
 	}
 
+	h.logger.Info("extraction done, starting deduplication", "source_id", sourceID)
 	_, err = h.dedupe.DeduplicateEntities(ctx, sourceID)
 	if err != nil {
 		h.logger.Error("deduplication failed", "source_id", sourceID, "error", err)
 	}
 
+	h.logger.Info("deduplication done, estimating chronology", "source_id", sourceID)
 	_, err = h.chrono.EstimateChronology(ctx, sourceID)
 	if err != nil {
 		h.logger.Error("chronology estimation failed", "source_id", sourceID, "error", err)
 	}
 
-	h.logger.Info("extraction pipeline complete", "source_id", sourceID)
+	h.logger.Info("extraction pipeline complete",
+		"source_id", sourceID,
+		"events_total", totalEvents,
+		"entities_total", totalEntities,
+		"relationships_total", totalRelationships,
+	)
 }

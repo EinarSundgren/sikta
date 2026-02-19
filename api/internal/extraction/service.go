@@ -132,7 +132,7 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk *database.Chunk) (
 		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
-	s.logger.Debug("extraction successful",
+	s.logger.Info("extracted from chunk",
 		"events", len(resp.Events),
 		"entities", len(resp.Entities),
 		"relationships", len(resp.Relationships))

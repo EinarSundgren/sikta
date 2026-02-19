@@ -50,6 +50,7 @@ func main() {
 	mux.HandleFunc("POST /api/documents", docHandler.UploadDocument)
 	mux.HandleFunc("GET /api/documents", docHandler.ListDocuments)
 	mux.HandleFunc("GET /api/documents/{id}", docHandler.GetDocument)
+	mux.HandleFunc("GET /api/documents/{id}/status", docHandler.GetDocumentStatus)
 	mux.HandleFunc("DELETE /api/documents/{id}", docHandler.DeleteDocument)
 
 	// Start background document processor (chunks uploaded documents)
@@ -85,7 +86,7 @@ func main() {
 	timelineHandler := handlers.NewTimelineHandler(db, logger)
 	mux.HandleFunc("GET /api/documents/{id}/timeline", timelineHandler.GetTimeline)
 
-	handler := middleware.CORS(cfg.AllowedOrigins)(mux)
+	handler := middleware.RequestLogger(logger)(middleware.CORS(cfg.AllowedOrigins)(mux))
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),

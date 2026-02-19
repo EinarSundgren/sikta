@@ -105,11 +105,11 @@ export default function LandingPage({ onNavigate }: Props) {
 
       setPhase({ name: 'chunking', docId });
 
-      // 2. Poll until chunking complete (status = 'ready')
+      // 2. Poll /status until chunking complete (status = 'ready')
       await new Promise<void>((resolve, reject) => {
         const t = setInterval(async () => {
           try {
-            const d = await fetch(`/api/documents/${docId}`).then(r => r.json()) as { upload_status: string };
+            const d = await fetch(`/api/documents/${docId}/status`).then(r => r.json()) as { upload_status: string };
             if (d.upload_status === 'ready') {
               clearInterval(t);
               resolve();

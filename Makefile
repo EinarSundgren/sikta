@@ -34,8 +34,8 @@ dev: ## Start infra + backend + frontend (Ctrl+C to stop all)
 	trap 'kill %1 %2 2>/dev/null; exit 0' INT TERM; \
 	wait
 
-infra: ## Start PostgreSQL via podman-compose
-	podman-compose -f $(COMPOSE_FILE) up -d db
+infra: ## Start PostgreSQL via podman compose
+	podman compose -f $(COMPOSE_FILE) up -d db
 
 backend: ## Run backend with hot reload (air) or go run
 	@if command -v air > /dev/null 2>&1; then \
@@ -61,13 +61,13 @@ test: ## Run all tests
 	cd $(BACKEND_DIR) && go test ./...
 
 build: ## Build all containers
-	podman-compose -f $(COMPOSE_FILE) build
+	podman compose -f $(COMPOSE_FILE) build
 
 down: ## Stop all services
-	podman-compose -f $(COMPOSE_FILE) down
+	podman compose -f $(COMPOSE_FILE) down
 
 logs: ## Stream service logs
-	podman-compose -f $(COMPOSE_FILE) logs -f
+	podman compose -f $(COMPOSE_FILE) logs -f
 
 setup: ## Install required dev tools (air, sqlc, golang-migrate, npm deps)
 	@echo "Installing Go tools..."

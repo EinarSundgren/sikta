@@ -166,7 +166,7 @@ func (s *DocumentService) ProcessDocument(filePath, fileType string) (*ProcessRe
 
 	// Check for warnings
 	if len(chunks) == 1 && chunks[0].ChapterNumber == 0 {
-		warnings = append(warnings, "No chapters detected — treating as single chunk")
+		warnings = append(warnings, "Document produced a single chunk (short text)")
 	}
 
 	s.logger.Info("document processed",
@@ -229,8 +229,8 @@ func (s *DocumentService) CalculateProgress(chunksCreated int, totalChunks int) 
 
 // EstimateChunks estimates the number of chunks based on word count.
 func (s *DocumentService) EstimateChunks(wordCount int) int {
-	// Rough heuristic: ~2000 words per chapter
-	estimated := wordCount / 2000
+	// Rough heuristic: ~3000 words per chunk
+	estimated := wordCount / 3000
 	if estimated < 1 {
 		estimated = 1
 	}
