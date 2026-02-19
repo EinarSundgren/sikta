@@ -22,6 +22,38 @@ func (q *Queries) CountClaimsBySource(ctx context.Context, sourceID pgtype.UUID)
 	return count, err
 }
 
+const countClaimsByStatusForSource = `-- name: CountClaimsByStatusForSource :many
+SELECT review_status, COUNT(*) AS count
+FROM claims
+WHERE source_id = $1
+GROUP BY review_status
+`
+
+type CountClaimsByStatusForSourceRow struct {
+	ReviewStatus string `json:"review_status"`
+	Count        int64  `json:"count"`
+}
+
+func (q *Queries) CountClaimsByStatusForSource(ctx context.Context, sourceID pgtype.UUID) ([]*CountClaimsByStatusForSourceRow, error) {
+	rows, err := q.db.Query(ctx, countClaimsByStatusForSource, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*CountClaimsByStatusForSourceRow{}
+	for rows.Next() {
+		var i CountClaimsByStatusForSourceRow
+		if err := rows.Scan(&i.ReviewStatus, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createClaim = `-- name: CreateClaim :one
 INSERT INTO claims (
     source_id, claim_type, title, description, event_type, date_text, date_start, date_end,
@@ -216,6 +248,62 @@ type UpdateClaimConfidenceParams struct {
 
 func (q *Queries) UpdateClaimConfidence(ctx context.Context, arg UpdateClaimConfidenceParams) (*Claim, error) {
 	row := q.db.QueryRow(ctx, updateClaimConfidence, arg.ID, arg.Confidence, arg.ConfidenceReason)
+	var i Claim
+	err := row.Scan(
+		&i.ID,
+		&i.SourceID,
+		&i.Title,
+		&i.Description,
+		&i.EventType,
+		&i.DateText,
+		&i.DateStart,
+		&i.DateEnd,
+		&i.DatePrecision,
+		&i.ChronologicalPosition,
+		&i.NarrativePosition,
+		&i.Confidence,
+		&i.ConfidenceReason,
+		&i.ReviewStatus,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ClaimType,
+	)
+	return &i, err
+}
+
+const updateClaimData = `-- name: UpdateClaimData :one
+UPDATE claims
+SET
+    title = $2,
+    description = $3,
+    date_text = $4,
+    event_type = $5,
+    confidence = $6,
+    review_status = 'edited',
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, source_id, title, description, event_type, date_text, date_start, date_end, date_precision, chronological_position, narrative_position, confidence, confidence_reason, review_status, metadata, created_at, updated_at, claim_type
+`
+
+type UpdateClaimDataParams struct {
+	ID          pgtype.UUID `json:"id"`
+	Title       string      `json:"title"`
+	Description pgtype.Text `json:"description"`
+	DateText    pgtype.Text `json:"date_text"`
+	EventType   pgtype.Text `json:"event_type"`
+	Confidence  float32     `json:"confidence"`
+}
+
+func (q *Queries) UpdateClaimData(ctx context.Context, arg UpdateClaimDataParams) (*Claim, error) {
+	row := q.db.QueryRow(ctx, updateClaimData,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.DateText,
+		arg.EventType,
+		arg.Confidence,
+	)
 	var i Claim
 	err := row.Scan(
 		&i.ID,

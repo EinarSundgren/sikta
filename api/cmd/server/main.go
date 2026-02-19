@@ -73,6 +73,14 @@ func main() {
 	mux.HandleFunc("GET /api/inconsistencies/{id}/items", incHandler.GetInconsistencyItems)
 	mux.HandleFunc("PUT /api/inconsistencies/{id}/resolve", incHandler.ResolveInconsistency)
 
+	// Review handlers
+	reviewHandler := handlers.NewReviewHandler(db, logger)
+	mux.HandleFunc("PATCH /api/claims/{id}/review", reviewHandler.UpdateClaimReview)
+	mux.HandleFunc("PATCH /api/claims/{id}", reviewHandler.UpdateClaim)
+	mux.HandleFunc("PATCH /api/entities/{id}/review", reviewHandler.UpdateEntityReview)
+	mux.HandleFunc("PATCH /api/relationships/{id}/review", reviewHandler.UpdateRelationshipReview)
+	mux.HandleFunc("GET /api/documents/{id}/review-progress", reviewHandler.GetReviewProgress)
+
 	// Timeline handlers
 	timelineHandler := handlers.NewTimelineHandler(db, logger)
 	mux.HandleFunc("GET /api/documents/{id}/timeline", timelineHandler.GetTimeline)

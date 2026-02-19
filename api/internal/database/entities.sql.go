@@ -22,6 +22,38 @@ func (q *Queries) CountEntitiesBySource(ctx context.Context, sourceID pgtype.UUI
 	return count, err
 }
 
+const countEntitiesByStatusForSource = `-- name: CountEntitiesByStatusForSource :many
+SELECT review_status, COUNT(*) AS count
+FROM entities
+WHERE source_id = $1
+GROUP BY review_status
+`
+
+type CountEntitiesByStatusForSourceRow struct {
+	ReviewStatus string `json:"review_status"`
+	Count        int64  `json:"count"`
+}
+
+func (q *Queries) CountEntitiesByStatusForSource(ctx context.Context, sourceID pgtype.UUID) ([]*CountEntitiesByStatusForSourceRow, error) {
+	rows, err := q.db.Query(ctx, countEntitiesByStatusForSource, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*CountEntitiesByStatusForSourceRow{}
+	for rows.Next() {
+		var i CountEntitiesByStatusForSourceRow
+		if err := rows.Scan(&i.ReviewStatus, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createEntity = `-- name: CreateEntity :one
 INSERT INTO entities (
     source_id, name, entity_type, aliases, description,

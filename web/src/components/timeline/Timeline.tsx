@@ -5,6 +5,7 @@ import { TimelineEvent } from '../../types';
 interface TimelineProps {
   events: TimelineEvent[];
   onEventClick?: (event: TimelineEvent) => void;
+  highlightedIds?: string[];
   width?: number;
   height?: number;
 }
@@ -12,6 +13,7 @@ interface TimelineProps {
 const Timeline: React.FC<TimelineProps> = ({
   events,
   onEventClick,
+  highlightedIds = [],
   width = 1200,
   height = 400
 }) => {
@@ -92,14 +94,16 @@ const Timeline: React.FC<TimelineProps> = ({
       const x = chronoScale(event.chronological_position || 0);
       const y = innerHeight / 4;
 
+      const isHighlighted = highlightedIds.includes(event.id);
+
       // Event circle
       g.append('circle')
         .attr('cx', x)
         .attr('cy', y)
-        .attr('r', 8)
+        .attr('r', isHighlighted ? 11 : 8)
         .attr('fill', eventHasInconsistency(event) ? '#ef4444' : '#3b82f6')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
+        .attr('stroke', isHighlighted ? '#f59e0b' : '#fff')
+        .attr('stroke-width', isHighlighted ? 3 : 2)
         .attr('cursor', 'pointer')
         .attr('data-event-id', event.id)
         .on('click', () => onEventClick?.(event))
@@ -178,7 +182,7 @@ const Timeline: React.FC<TimelineProps> = ({
       }
     });
 
-  }, [events, width, height, onEventClick]);
+  }, [events, width, height, onEventClick, highlightedIds]);
 
   const eventHasInconsistency = (event: TimelineEvent): boolean => {
     return event.inconsistencies && event.inconsistencies.length > 0;

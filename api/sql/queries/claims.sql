@@ -33,3 +33,22 @@ RETURNING *;
 
 -- name: CountClaimsBySource :one
 SELECT COUNT(*) FROM claims WHERE source_id = $1;
+
+-- name: UpdateClaimData :one
+UPDATE claims
+SET
+    title = $2,
+    description = $3,
+    date_text = $4,
+    event_type = $5,
+    confidence = $6,
+    review_status = 'edited',
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: CountClaimsByStatusForSource :many
+SELECT review_status, COUNT(*) AS count
+FROM claims
+WHERE source_id = $1
+GROUP BY review_status;

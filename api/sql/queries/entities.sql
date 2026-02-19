@@ -26,3 +26,9 @@ RETURNING *;
 
 -- name: CountEntitiesBySource :one
 SELECT COUNT(*) FROM entities WHERE source_id = $1;
+
+-- name: CountEntitiesByStatusForSource :many
+SELECT review_status, COUNT(*) AS count
+FROM entities
+WHERE source_id = $1
+GROUP BY review_status;

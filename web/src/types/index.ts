@@ -77,6 +77,48 @@ export interface Entity {
   updated_at: string;
 }
 
+export interface ReviewCounts {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  edited: number;
+}
+
+export interface ReviewProgress {
+  claims: ReviewCounts;
+  entities: ReviewCounts;
+  total_reviewed: number;
+  total_items: number;
+}
+
+export interface InconsistencyItem {
+  id: string;
+  inconsistency_id: string;
+  claim_id: string | null;
+  entity_id: string | null;
+  side: string | null;
+  description: string | null;
+  claim_title: string | null;
+  event_type: string | null;
+  entity_name: string | null;
+  entity_type: string | null;
+}
+
+export interface Inconsistency {
+  id: string;
+  source_id: string;
+  inconsistency_type: string;
+  severity: string;
+  title: string;
+  description: string;
+  resolution_status: string;
+  resolution_note: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Relationship {
   id: string;
   source_id: string;

@@ -6,7 +6,7 @@
 
 ## Status
 
-**Overall:** Phase 5 Complete — Entity Panel & Relationship Graph done. Phase 6 (Review Workflow) is next.
+**Overall:** Phase 6 Complete — Review Workflow & Inconsistency Panel done. Phase 7 (Demo Polish & Landing) is next.
 
 **Last Updated:** 2026-02-19
 
@@ -14,9 +14,9 @@
 
 ## Current Phase
 
-**Phase:** 2.5 — Data Model Migration
+**Phase:** 6 — Review Workflow & Inconsistency Panel
 
-**Goal:** Rename `documents` → `sources`, `events` → `claims`. Add two-level confidence model and `claim_type` discriminator.
+**Goal:** Keyboard-driven review queue (approve/reject/edit), inconsistency panel with resolve/note/dismiss actions.
 
 ---
 
@@ -70,6 +70,18 @@
   - Drag nodes, zoom/pan, auto-fit on load
   - Tab switching: Timeline ↔ Graph
   - Shared entity selection state across all views
+- [x] **Phase 6: Review Workflow & Inconsistency Panel — Complete**
+  - Keyboard-driven review queue: J/K navigate, A approve, R reject, E edit
+  - Progress bar showing reviewed/total across claims and entities
+  - Filter tabs: pending / all / approved / rejected / edited
+  - Edit modal: title, description, date_text, event_type, confidence slider
+  - Inconsistency panel with severity filter (conflict/warning/info)
+  - Expand/collapse inconsistency cards
+  - Actions: Mark resolved, Add/edit note, Dismiss
+  - "Show on timeline" button — highlights related claims and switches to timeline tab
+  - Optimistic UI updates for all review status changes
+  - Backend: PATCH /api/claims/{id}/review, PATCH /api/claims/{id}, GET /api/documents/{id}/review-progress
+  - Four-tab layout: Timeline, Graph, Review, Inconsistencies
 
 ---
 
@@ -79,6 +91,7 @@
 |------|--------|----------------|-------|
 | Phase 2.5: Data Model Migration | **Complete** | Sonnet | Migration done. DB + all Go files + frontend types updated. Build passes. |
 | Phase 5: Entity Panel & Relationship Graph | **Complete** | Sonnet | EntityPanel sidebar + D3 RelationshipGraph + tab switching. claim_entities table empty (extraction didn't link events↔entities), entity filter uses text matching fallback. |
+| Phase 6: Review Workflow & Inconsistency Panel | **Complete** | Sonnet | Keyboard-driven review (J/K/A/R/E), EditModal, ReviewPanel, InconsistencyPanel. Backend review routes added. npm run build passes. |
 
 ---
 
@@ -94,6 +107,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-19 | Phase 6 complete: Review workflow (J/K/A/R/E keyboard shortcuts), edit modal, inconsistency panel with resolve/note/dismiss, "show on timeline" highlight. Backend review routes. Frontend build passes clean. | api/sql/queries/claims.sql, api/sql/queries/entities.sql, api/internal/handlers/review.go, api/cmd/server/main.go, web/src/components/review/*, web/src/components/inconsistencies/*, web/src/pages/TimelineView.tsx, web/src/components/timeline/Timeline.tsx |
 | 2026-02-19 | Phase 2.5 complete: Renamed documents→sources, events→claims throughout. Added claim_type, source_trust columns. All Go files + frontend types updated. Build passes clean. | api/sql/schema/010_rename_sources_claims.sql, api/sql/queries/*, api/internal/database/*, api/internal/handlers/*, api/internal/extraction/*, api/cmd/*/main.go, web/src/types/index.ts |
 | 2026-02-19 | Documentation updated for sources/claims data model migration | CLAUDE.md, docs/TASKS.md, docs/STATE.md |
 | 2026-02-19 | Fixed chunking: 61 chapters now detected (was 2). Fixed 8 bugs blocking extraction. Full extraction complete (178 events, 54 entities, 58 relationships). | api/internal/document/parser.go, api/internal/handlers/documents.go, api/internal/handlers/extraction.go, api/internal/database/*.go, api/internal/extraction/service.go, api/cmd/server/main.go, web/src/pages/TimelineView.tsx |
@@ -156,15 +170,15 @@ Add to PATH: `export PATH="$PATH:/Users/einar.sundgren/Library/Python/3.9/bin:$(
 
 ## Next Milestone
 
-**Milestone:** Phase 6 — Review Workflow & Inconsistency Panel
+**Milestone:** Phase 7 — Demo Polish & Landing
 
-**Why this is next:** Entity panel and graph are done. Phase 6 adds the human review loop: approve/reject/edit extracted items, keyboard shortcuts, and the inconsistency panel.
+**Why this is next:** Core pipeline and all four main views are done. Phase 7 makes it shareable: a landing page, polished visual design, pre-loaded demo that loads instantly, and a production build.
 
 **Recommended model:** Sonnet for implementation.
 
 **Known issue:** `claim_entities` table is empty — the extraction pipeline stored events and entities separately but never linked them. Entity filtering on the timeline uses text-match fallback (works for Pride and Prejudice). To fix properly: update the extraction prompt to return participant entities per event, add `storeEvent` to call `CreateClaimEntity` for each participant.
 
-**After Phase 6:** Phase 7 (Demo Polish & Landing).
+**After Phase 7:** Phase 8 (Source Text Viewer & Cross-references).
 
 ---
 
