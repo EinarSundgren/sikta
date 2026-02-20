@@ -2,12 +2,22 @@ package extraction
 
 const (
 	// ExtractionSystemPrompt is the system prompt for event/entity/relationship extraction.
-	ExtractionSystemPrompt = `You are an expert literary analyst extracting structured information from novels.
+	ExtractionSystemPrompt = `You are an expert narrative analyst extracting structured information from texts.
 
-Your task is to analyze the given text chapter and extract:
-1. EVENTS - Significant actions, decisions, encounters, announcements
+Your task is to analyze the given text passage and extract:
+1. EVENTS - Significant actions, decisions, encounters, announcements, revelations, emotional states, observations
 2. ENTITIES - People, places, organizations, objects
-3. RELATIONSHIPS - Connections between entities (family, romantic, social)
+3. RELATIONSHIPS - Connections between entities (family, romantic, social, professional)
+
+TEXT TYPES: This system works with any narrative text:
+- Novels (may have chapters, but not assumed)
+- Short stories (no chapter breaks)
+- Essays and articles
+- Letters and correspondence
+- Diaries and journals
+- Transcripts and interviews
+- Poetry with narrative elements
+- Any prose narrative
 
 For each extraction, provide:
 - A clear title/name
@@ -16,7 +26,7 @@ For each extraction, provide:
 - Confidence score (0.0-1.0) based on explicitness
 - Relevant excerpt from text (exact quote, max 100 chars)
 
-EVENT TYPES: action, decision, encounter, announcement, death, birth, marriage, travel, correspondence, social_gathering, conflict, revelation, other
+EVENT TYPES: action, decision, encounter, announcement, death, birth, marriage, travel, correspondence, social_gathering, conflict, revelation, internal_monologue, observation, realization, confession, emotion, atmosphere_change, other
 
 ENTITY TYPES: person, place, organization, object, event
 
@@ -29,12 +39,14 @@ CONFIDENCE GUIDELINES:
 - 0.3-0.5: Unclear, requires interpretation
 - 0.0-0.3: Speculative, contradicted elsewhere
 
-IMPORTANT:
-- Extract ONLY what is explicitly mentioned or strongly implied
+IMPORTANT GUIDELINES:
+- Extract what is explicitly mentioned, strongly implied, or emotionally significant
 - Include character aliases (e.g., "Lizzy" for "Elizabeth")
 - Note temporal markers (dates, times, relative timing)
-- If a chapter has no significant events, return empty arrays
-- Preserve the tone and context of the original text
+- For first-person narratives: extract internal states, feelings, observations as events
+- For short passages: extract more granular events (emotional shifts, realizations, sensory details)
+- For descriptions without action: extract atmosphere and setting as events
+- Do not skip extraction even if events seem minor - everything significant to the narrative flow counts
 
 Return valid JSON only, no markdown formatting.`
 
@@ -106,9 +118,9 @@ ENTITY CERTAINTY:
 Return JSON with classifications and confidence_score (0.0-1.0) for each item.`
 
 	// ChronologyEstimationPrompt is the system prompt for timeline ordering.
-	ChronologyEstimationPrompt = `You are analyzing the chronological order of events in a novel.
+	ChronologyEstimationPrompt = `You are analyzing the chronological order of events in a narrative.
 
-Given these events with their narrative positions (chapter order):
+Given these events with their narrative positions (order they appeared in the text):
 
 {{.Events}}
 
@@ -123,6 +135,7 @@ Consider:
 - Character ages and timelines
 - Travel time between locations
 - Causality (event A must precede event B if A causes B)
+- For short texts: events typically flow in narrative order unless explicitly stated otherwise
 
 Return JSON:
 {

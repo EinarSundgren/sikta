@@ -168,8 +168,14 @@ func (s *Service) storeExtractions(ctx context.Context, chunk *database.Chunk, r
 		entityNameIDMap[entity.Name] = entityID
 	}
 
-	for _, event := range resp.Events {
-		eventID, err := s.storeEvent(ctx, sourceID, chunk, event)
+	// Assign sequential narrative positions to events within this chunk
+	baseNarrativePos := int(chunk.NarrativePosition)
+	eventsPerChunk := 1000 // Allow up to 1000 events per chunk with sequential positions
+
+	for i, event := range resp.Events {
+		// Calculate narrative position: chunk position * eventsPerChunk + event index within chunk
+		narrativePos := baseNarrativePos*eventsPerChunk + i
+		eventID, err := s.storeEvent(ctx, sourceID, chunk, event, narrativePos)
 		if err != nil {
 			s.logger.Error("failed to store event", "title", event.Title, "error", err)
 			continue
@@ -231,17 +237,18 @@ func (s *Service) storeEntity(ctx context.Context, sourceID pgtype.UUID, chunk *
 }
 
 // storeEvent stores a single event as a claim.
-func (s *Service) storeEvent(ctx context.Context, sourceID pgtype.UUID, chunk *database.Chunk, event Event) (string, error) {
+func (s *Service) storeEvent(ctx context.Context, sourceID pgtype.UUID, chunk *database.Chunk, event Event, narrativePos int) (string, error) {
 	params := database.CreateClaimParams{
-		SourceID:          sourceID,
-		ClaimType:         "event",
-		Title:             event.Title,
-		Description:       database.PgText(event.Description),
-		EventType:         database.PgText(event.Type),
-		DateText:          database.PgText(event.DateText),
-		NarrativePosition: chunk.NarrativePosition,
-		Confidence:        float32(event.Confidence),
-		Metadata:          []byte("{}"),
+		SourceID:           sourceID,
+		ClaimType:          "event",
+		Title:              event.Title,
+		Description:        database.PgText(event.Description),
+		EventType:          database.PgText(event.Type),
+		DateText:           database.PgText(event.DateText),
+		NarrativePosition:  int32(narrativePos),
+		ChronologicalPosition: pgtype.Int4{Int32: int32(narrativePos), Valid: true},
+		Confidence:         float32(event.Confidence),
+		Metadata:           []byte("{}"),
 	}
 
 	created, err := s.db.CreateClaim(ctx, params)
