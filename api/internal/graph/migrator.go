@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/google/uuid"
@@ -338,7 +337,7 @@ func (m *Migrator) MigrateDocument(ctx context.Context, sourceID uuid.UUID) erro
 	chunkNodeIDs := make(map[uuid.UUID]uuid.UUID)
 	for _, chunk := range chunks {
 		chunkID, _ := uuid.FromBytes(chunk.ID.Bytes[:16])
-		nodeID, err := m.MigrateChunkToNode(ctx, &chunk, docNodeID)
+		nodeID, err := m.MigrateChunkToNode(ctx, chunk, docNodeID)
 		if err != nil {
 			m.logger.Warn("failed to migrate chunk", "chunk_id", chunkID, "error", err)
 			continue
@@ -355,7 +354,7 @@ func (m *Migrator) MigrateDocument(ctx context.Context, sourceID uuid.UUID) erro
 	entityNodeIDs := make(map[string]uuid.UUID)
 	for _, entity := range entities {
 		entityID, _ := uuid.FromBytes(entity.ID.Bytes[:16])
-		nodeID, err := m.MigrateEntityToNode(ctx, &entity, docNodeID)
+		nodeID, err := m.MigrateEntityToNode(ctx, entity, docNodeID)
 		if err != nil {
 			m.logger.Warn("failed to migrate entity", "entity_id", entityID, "error", err)
 			continue
@@ -372,7 +371,7 @@ func (m *Migrator) MigrateDocument(ctx context.Context, sourceID uuid.UUID) erro
 	claimNodeIDs := make(map[uuid.UUID]uuid.UUID)
 	for _, claim := range claims {
 		claimID, _ := uuid.FromBytes(claim.ID.Bytes[:16])
-		nodeID, err := m.MigrateClaimToNode(ctx, &claim, docNodeID)
+		nodeID, err := m.MigrateClaimToNode(ctx, claim, docNodeID)
 		if err != nil {
 			m.logger.Warn("failed to migrate claim", "claim_id", claimID, "error", err)
 			continue
@@ -386,7 +385,7 @@ func (m *Migrator) MigrateDocument(ctx context.Context, sourceID uuid.UUID) erro
 		m.logger.Warn("failed to get relationships", "error", err)
 	} else {
 		for _, relationship := range relationships {
-			_, err := m.MigrateRelationshipToEdge(ctx, &relationship, docNodeID, entityNodeIDs)
+			_, err := m.MigrateRelationshipToEdge(ctx, relationship, docNodeID, entityNodeIDs)
 			if err != nil {
 				m.logger.Warn("failed to migrate relationship", "rel_id", database.UUIDStr(relationship.ID), "error", err)
 				continue

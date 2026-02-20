@@ -10,6 +10,7 @@ import (
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/einarsundgren/sikta/internal/graph"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -24,14 +25,14 @@ func main() {
 	ctx := context.Background()
 
 	// Connect to database
-	db, err := database.Connect(ctx, cfg.DatabaseURL, logger)
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("failed to connect to database", "error", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer pool.Close()
 
-	queries := database.New(db)
+	queries := database.New(pool)
 	graphService := graph.NewService(queries, logger)
 	migrator := graph.NewMigrator(queries, graphService, logger)
 

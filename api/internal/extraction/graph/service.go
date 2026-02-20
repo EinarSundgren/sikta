@@ -11,7 +11,6 @@ import (
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
 	"github.com/einarsundgren/sikta/internal/graph"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // GraphService handles extraction to the graph model
@@ -145,11 +144,17 @@ func (s *GraphService) ExtractDocumentToGraph(ctx context.Context, sourceID stri
 // getDocumentNode gets or creates the document node for a source
 func (s *GraphService) getDocumentNode(ctx context.Context, sourceID string) (uuid.UUID, error) {
 	// Try to find existing document node
-	nodes, err := s.db.ListNodesByType(ctx, "document", 1)
-	if err == nil && len(nodes) > 0 {
+	nodesPtrs, err := s.db.ListNodesByType(ctx, database.ListNodesByTypeParams{
+		NodeType: "document",
+		Limit:    1,
+	})
+	if err == nil && len(nodesPtrs) > 0 {
 		// Check if this node belongs to our source
-		for _, node := range nodes {
-			provenance, _ := s.db.ListProvenanceByTarget(ctx, "node", node.ID)
+		for _, node := range nodesPtrs {
+			provenance, _ := s.db.ListProvenanceByTarget(ctx, database.ListProvenanceByTargetParams{
+				TargetType: "node",
+				TargetID:   node.ID,
+			})
 			for _, prov := range provenance {
 				if database.UUIDStr(prov.SourceID) == sourceID {
 					id, _ := uuid.FromBytes(node.ID.Bytes[:16])
@@ -224,7 +229,7 @@ func (s *GraphService) storeExtractedNode(ctx context.Context, node ExtractedNod
 	}
 
 	// Build location
-	location := graph.Location{
+	location := database.Location{
 		Chapter: chunk.ChapterTitle.String,
 	}
 	if chunk.PageStart.Valid {
@@ -291,7 +296,7 @@ func (s *GraphService) storeExtractedEdge(ctx context.Context, edge ExtractedEdg
 	}
 
 	// Build location
-	location := graph.Location{
+	location := database.Location{
 		Chapter: chunk.ChapterTitle.String,
 	}
 

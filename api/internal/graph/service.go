@@ -51,7 +51,7 @@ func (s *Service) GetNode(ctx context.Context, id uuid.UUID) (*database.Node, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node: %w", err)
 	}
-	return &node, nil
+	return node, nil
 }
 
 // CreateEdge creates a new edge and returns its ID
@@ -82,7 +82,7 @@ func (s *Service) GetEdge(ctx context.Context, id uuid.UUID) (*database.Edge, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to get edge: %w", err)
 	}
-	return &edge, nil
+	return edge, nil
 }
 
 // CreateProvenance creates a new provenance record and returns its ID
@@ -156,47 +156,77 @@ func (s *Service) GetEdgeWithProvenance(ctx context.Context, id uuid.UUID) (*dat
 		return nil, fmt.Errorf("failed to get edge: %w", err)
 	}
 
-	provenance, err := s.db.ListProvenanceByTarget(ctx, "edge", database.PgUUID(id))
+	provenance, err := s.db.ListProvenanceByTarget(ctx, database.ListProvenanceByTargetParams{
+		TargetType: "edge",
+		TargetID:   database.PgUUID(id),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get provenance: %w", err)
 	}
 
 	return &database.EdgeWithProvenance{
-		Edge:       edge,
+		Edge:       *edge,
 		Provenance: provenance,
 	}, nil
 }
 
 // ListNodesByType lists all nodes of a given type
 func (s *Service) ListNodesByType(ctx context.Context, nodeType database.NodeType, limit int32) ([]database.Node, error) {
-	nodes, err := s.db.ListNodesByType(ctx, string(nodeType), limit)
+	nodesPtrs, err := s.db.ListNodesByType(ctx, database.ListNodesByTypeParams{
+		NodeType: string(nodeType),
+		Limit:    limit,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %w", err)
+	}
+	// Convert pointer slice to value slice
+	nodes := make([]database.Node, len(nodesPtrs))
+	for i, n := range nodesPtrs {
+		if n != nil {
+			nodes[i] = *n
+		}
 	}
 	return nodes, nil
 }
 
 // ListEdgesByType lists all edges of a given type
 func (s *Service) ListEdgesByType(ctx context.Context, edgeType database.EdgeType, limit int32) ([]database.Edge, error) {
-	edges, err := s.db.ListEdgesByType(ctx, string(edgeType), limit)
+	edgesPtrs, err := s.db.ListEdgesByType(ctx, database.ListEdgesByTypeParams{
+		EdgeType: string(edgeType),
+		Limit:    limit,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list edges: %w", err)
+	}
+	// Convert pointer slice to value slice
+	edges := make([]database.Edge, len(edgesPtrs))
+	for i, e := range edgesPtrs {
+		if e != nil {
+			edges[i] = *e
+		}
 	}
 	return edges, nil
 }
 
 // ListNodesBySource lists all nodes that have provenance from a specific source
 func (s *Service) ListNodesBySource(ctx context.Context, sourceID uuid.UUID) ([]database.Node, error) {
-	nodes, err := s.db.ListNodesBySource(ctx, database.PgUUID(sourceID))
+	nodesPtrs, err := s.db.ListNodesBySource(ctx, database.PgUUID(sourceID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes by source: %w", err)
+	}
+	// Convert pointer slice to value slice
+	nodes := make([]database.Node, len(nodesPtrs))
+	for i, n := range nodesPtrs {
+		if n != nil {
+			nodes[i] = *n
+		}
 	}
 	return nodes, nil
 }
 
 // UpdateProvenanceStatus updates the status of a provenance record
 func (s *Service) UpdateProvenanceStatus(ctx context.Context, provenanceID uuid.UUID, status database.ReviewStatus) error {
-	err := s.db.UpdateProvenanceStatus(ctx, database.UpdateProvenanceStatusParams{
+	_, err := s.db.UpdateProvenanceStatus(ctx, database.UpdateProvenanceStatusParams{
 		ID:     database.PgUUID(provenanceID),
 		Status: string(status),
 	})

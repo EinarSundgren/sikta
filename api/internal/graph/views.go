@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Views provides query-time resolution strategies for graph data
@@ -40,7 +40,10 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 		}
 
 		// Get provenance for this node
-		provenance, err := v.db.ListProvenanceByTarget(ctx, "node", database.PgUUID(node.ID))
+		provenance, err := v.db.ListProvenanceByTarget(ctx, database.ListProvenanceByTargetParams{
+			TargetType: "node",
+			TargetID:   node.ID,
+		})
 		if err != nil {
 			v.logger.Warn("failed to get provenance for node", "node_id", node.ID, "error", err)
 			continue
@@ -50,16 +53,16 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 		selectedProv := v.selectProvenance(provenance, strategy)
 
 		// Extract temporal info
-		var dateStart, dateEnd *int64
+		var dateStart, dateEnd *time.Time
 		var dateText string
 		for _, prov := range provenance {
 			if prov.ClaimedTimeStart.Valid {
-				ts := prov.ClaimedTimeStart.Time.Unix()
-				dateStart = &ts
+				t := prov.ClaimedTimeStart.Time
+				dateStart = &t
 			}
 			if prov.ClaimedTimeEnd.Valid {
-				ts := prov.ClaimedTimeEnd.Time.Unix()
-				dateEnd = &ts
+				t := prov.ClaimedTimeEnd.Time
+				dateEnd = &t
 			}
 			if prov.ClaimedTimeText.Valid && prov.ClaimedTimeText.String != "" {
 				dateText = prov.ClaimedTimeText.String
@@ -80,15 +83,8 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 			ChronologicalPosition: chronoPos,
 			Confidence:            selectedProv.Confidence,
 			ReviewStatus:          selectedProv.Status,
-		}
-
-		if dateStart != nil {
-			t := pgtype.Time{Time: *selectedProv.ClaimedTimeStart.Time, Valid: true}
-			event.DateStart = &t.Time
-		}
-		if dateEnd != nil {
-			t := pgtype.Time{Time: *selectedProv.ClaimedTimeEnd.Time, Valid: true}
-			event.DateEnd = &t.Time
+			DateStart:             dateStart,
+			DateEnd:               dateEnd,
 		}
 
 		events = append(events, event)
@@ -115,7 +111,10 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 		}
 
 		// Get provenance
-		provenance, err := v.db.ListProvenanceByTarget(ctx, "node", database.PgUUID(node.ID))
+		provenance, err := v.db.ListProvenanceByTarget(ctx, database.ListProvenanceByTargetParams{
+			TargetType: "node",
+			TargetID:   node.ID,
+		})
 		if err != nil {
 			continue
 		}
@@ -138,7 +137,7 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 		}
 
 		// Get same_as edges for identity claims
-		edges, err := v.db.ListEdgesBySource(ctx, database.PgUUID(node.ID))
+		edges, err := v.db.ListEdgesBySource(ctx, node.ID)
 		if err == nil {
 			for _, edge := range edges {
 				if edge.EdgeType == string(database.EdgeTypeSameAs) {
@@ -192,31 +191,36 @@ func (v *Views) ResolveIdentity(ctx context.Context, entityID uuid.UUID, strateg
 }
 
 // selectProvenance applies the view strategy to select the best provenance record
-func (v *Views) selectProvenance(provenance []database.Provenance, strategy ViewStrategy) database.Provenance {
+func (v *Views) selectProvenance(provenance []*database.Provenance, strategy ViewStrategy) *database.Provenance {
 	if len(provenance) == 0 {
-		return database.Provenance{}
+		return nil
 	}
 
-	switch strategy {
-	case ViewStrategyHumanDecided:
-		// Prefer approved provenance
+	// ViewStrategyHumanDecided: prefer approved provenance, fall through to trust weighted
+	if strategy == ViewStrategyHumanDecided {
 		for _, p := range provenance {
 			if p.Status == string(database.StatusApproved) {
 				return p
 			}
 		}
-		// Fall through to trust weighted
+		// No approved provenance, use trust weighted
+		strategy = ViewStrategyTrustWeighted
+	}
 
+	switch strategy {
 	case ViewStrategyTrustWeighted:
 		// Select highest effective confidence (trust * assertion confidence)
-		var best database.Provenance
+		var best *database.Provenance
 		bestScore := float32(0)
 		for _, p := range provenance {
-			score := p.EffectiveConfidence()
+			score := p.Trust * p.Confidence
 			if score > bestScore {
 				best = p
 				bestScore = score
 			}
+		}
+		if best == nil && len(provenance) > 0 {
+			best = provenance[0]
 		}
 		return best
 
@@ -227,9 +231,9 @@ func (v *Views) selectProvenance(provenance []database.Provenance, strategy View
 	case ViewStrategyConflict:
 		// Return the provenance with lowest confidence (to show disagreement)
 		worst := provenance[0]
-		worstScore := worst.EffectiveConfidence()
+		worstScore := worst.Trust * worst.Confidence
 		for _, p := range provenance[1:] {
-			score := p.EffectiveConfidence()
+			score := p.Trust * p.Confidence
 			if score < worstScore {
 				worst = p
 				worstScore = score

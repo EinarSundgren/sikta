@@ -70,13 +70,13 @@ const (
 // NodeWithProvenance extends Node with its provenance records
 type NodeWithProvenance struct {
 	Node       Node
-	Provenance []Provenance
+	Provenance []*Provenance
 }
 
 // EdgeWithProvenance extends Edge with its provenance records
 type EdgeWithProvenance struct {
 	Edge       Edge
-	Provenance []Provenance
+	Provenance []*Provenance
 }
 
 // Location represents where in a source something was found

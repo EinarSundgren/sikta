@@ -5,7 +5,6 @@ import (
 
 	"github.com/einarsundgren/sikta/internal/database"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ViewStrategy determines how to resolve conflicting claims
