@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	targetWords = 3000
-	maxWords    = 4500
-	minWords    = 1500
+	targetWords = 2000
+	maxWords    = 3000
+	minWords    = 1000
 )
 
 // StripGutenbergBoilerplate removes Project Gutenberg header and footer.

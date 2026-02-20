@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"strings"
 	"time"
 
@@ -136,9 +137,18 @@ func (s *Service) extractFromChunk(ctx context.Context, chunk *database.Chunk) (
 
 	responseText := stripMarkdownCodeBlocks(apiResp.Content[0].Text)
 
+	// Fallback: if JSON parsing fails, try to extract JSON from markdown code blocks
 	var resp ExtractionResponse
 	if err := json.Unmarshal([]byte(responseText), &resp); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
+		// Try to find JSON in markdown code blocks
+		if jsonStr := extractJSONFromMarkdown(responseText); jsonStr != "" {
+			responseText = jsonStr
+			if err := json.Unmarshal([]byte(responseText), &resp); err != nil {
+				return nil, fmt.Errorf("failed to parse JSON response after markdown extraction: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse JSON response: %w", err)
+		}
 	}
 
 	s.logger.Info("extracted from chunk",
@@ -316,4 +326,36 @@ func stripMarkdownCodeBlocks(text string) string {
 	}
 
 	return trimmed
+}
+
+// extractJSONFromMarkdown attempts to extract JSON from markdown code blocks.
+// Returns empty string if no valid JSON is found.
+func extractJSONFromMarkdown(text string) string {
+	// Look for markdown code blocks with JSON
+	pattern := regexp.MustCompile("```(?:json)?\\s*\\{[\\s\\S]*?\\}\\s*```")
+	matches := pattern.FindStringSubmatch(text)
+	if len(matches) > 1 {
+		return strings.TrimSpace(matches[1])
+	}
+
+	// Fallback: look for the outermost JSON object
+	startIdx := strings.Index(text, "{")
+	if startIdx == -1 {
+		return ""
+	}
+
+	// Find matching closing brace by counting
+	depth := 0
+	for i := startIdx; i < len(text); i++ {
+		if text[i] == '{' {
+			depth++
+		} else if text[i] == '}' {
+			depth--
+			if depth == 0 {
+				return text[startIdx : i+1]
+			}
+		}
+	}
+
+	return ""
 }
