@@ -1,4 +1,4 @@
-.PHONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo
+.PONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo migrate-to-graph backup-db rollback-graph
 
 .DEFAULT_GOAL := help
 
@@ -111,3 +111,41 @@ seed-demo: ## Load pre-extracted demo data (Pride and Prejudice) into database
 		--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
 		-f demo/seed.sql
 	@echo "Done. Demo data loaded."
+
+migrate-to-graph: ## Migrate a document to graph model (usage: make migrate-to-graph doc=<source_id>)
+	@if [ -z "$(doc)" ]; then \
+		echo "Usage: make migrate-to-graph doc=<source_id>"; \
+		echo ""; \
+		echo "Available sources:"; \
+		PGPASSWORD=$(POSTGRES_PASSWORD) psql \
+			--host=$(POSTGRES_HOST) --port=$(POSTGRES_PORT) \
+			--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
+			-c "SELECT id, title FROM sources;" | tail -n +2; \
+		exit 1; \
+	fi
+	cd $(BACKEND_DIR) && go run ./cmd/migrate $(doc)
+
+backup-db: ## Backup database before migration
+	@echo "Backing up database..."
+	@mkdir -p backups
+	@PGPASSWORD=$(POSTGRES_PASSWORD) pg_dump \
+		--host=$(POSTGRES_HOST) --port=$(POSTGRES_PORT) \
+		--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
+		--format=plain \
+		--no-owner --no-privileges \
+		-f backups/sikta-backup-$$(date +%Y%m%d-%H%M%S).sql
+	@echo "Database backed up to backups/"
+
+rollback-graph: ## Rollback graph migration (delete graph tables)
+	@echo "WARNING: This will delete all graph data. Continue? [y/N]"
+	@read -r response; \
+	if [ "$$response" = "y" ] || [ "$$response" = "Y" ]; then \
+		echo "Rolling back graph migration..."; \
+		PGPASSWORD=$(POSTGRES_PASSWORD) psql \
+			--host=$(POSTGRES_HOST) --port=$(POSTGRES_PORT) \
+			--username=$(POSTGRES_USER) --dbname=$(POSTGRES_DB) \
+			-c "DROP TABLE IF EXISTS provenance, edges, nodes CASCADE;"; \
+		echo "Graph tables dropped. Legacy data intact."; \
+	else \
+		echo "Rollback cancelled."; \
+	fi
