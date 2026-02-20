@@ -49,6 +49,17 @@ type ClaimEntity struct {
 	Role     pgtype.Text `json:"role"`
 }
 
+type Edge struct {
+	ID         pgtype.UUID        `json:"id"`
+	EdgeType   string             `json:"edge_type"`
+	SourceNode pgtype.UUID        `json:"source_node"`
+	TargetNode pgtype.UUID        `json:"target_node"`
+	Properties []byte             `json:"properties"`
+	IsNegated  bool               `json:"is_negated"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Entity struct {
 	ID                   pgtype.UUID        `json:"id"`
 	SourceID             pgtype.UUID        `json:"source_id"`
@@ -87,6 +98,36 @@ type InconsistencyItem struct {
 	Side            pgtype.Text        `json:"side"`
 	Description     pgtype.Text        `json:"description"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+}
+
+type Node struct {
+	ID         pgtype.UUID        `json:"id"`
+	NodeType   string             `json:"node_type"`
+	Label      string             `json:"label"`
+	Properties []byte             `json:"properties"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Provenance struct {
+	ID               pgtype.UUID        `json:"id"`
+	TargetType       string             `json:"target_type"`
+	TargetID         pgtype.UUID        `json:"target_id"`
+	SourceID         pgtype.UUID        `json:"source_id"`
+	Excerpt          string             `json:"excerpt"`
+	Location         []byte             `json:"location"`
+	Confidence       float32            `json:"confidence"`
+	Trust            float32            `json:"trust"`
+	Status           string             `json:"status"`
+	Modality         string             `json:"modality"`
+	ClaimedTimeStart pgtype.Timestamptz `json:"claimed_time_start"`
+	ClaimedTimeEnd   pgtype.Timestamptz `json:"claimed_time_end"`
+	ClaimedTimeText  pgtype.Text        `json:"claimed_time_text"`
+	ClaimedGeoRegion pgtype.Text        `json:"claimed_geo_region"`
+	ClaimedGeoText   pgtype.Text        `json:"claimed_geo_text"`
+	ClaimedBy        pgtype.UUID        `json:"claimed_by"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Relationship struct {
