@@ -120,36 +120,26 @@ Return JSON with classifications and confidence_score (0.0-1.0) for each item.`
 	// ChronologyEstimationPrompt is the system prompt for timeline ordering.
 	ChronologyEstimationPrompt = `You are analyzing the chronological order of events in a narrative.
 
-Given these events with their narrative positions (order they appeared in the text):
+Each event has an ID, title, description, date text (if any), and narrative_position (the order it appeared in the text).
 
-{{.Events}}
+IMPORTANT: Non-linear storytelling is common in fiction. Flashbacks, flash-forwards, and in media res openings mean the narrative order often differs from chronological order.
 
 Task:
-1. Determine which events happen BEFORE others in actual timeline
-2. Identify flashbacks, flash-forwards, or non-linear storytelling
-3. Detect temporal impossibilities (character in two places at once)
-4. Assign each event a chronological_position (integer, starting from 0)
+1. Determine the ACTUAL CHRONOLOGICAL ORDER of events (when they happened in the story's timeline, not when they appear in the text)
+2. Look for explicit temporal markers: "three days earlier", "the following spring", "years later", "meanwhile"
+3. Look for structural clues: dream sequences, memories, flashbacks indicated by text
+4. Look for causality: event A must precede event B if A causes B
+5. Consider character logic: people cannot be in two places at once
+6. For flashbacks: the events happening in the flashback occurred BEFORE the current narrative moment
+7. Assign each event a chronological_position (integer, starting from 0) representing its place in the actual timeline
 
-Consider:
-- Relative dates ("three days later", "the following spring")
-- Character ages and timelines
-- Travel time between locations
-- Causality (event A must precede event B if A causes B)
-- For short texts: events typically flow in narrative order unless explicitly stated otherwise
-
-Return JSON:
+Return JSON ONLY, no markdown:
 {
   "chronological_order": [
-    {"event_id": "id1", "chronological_position": 0, "reasoning": "First event in story timeline"},
-    {"event_id": "id2", "chronological_position": 1, "reasoning": "Occurs three days after event 1"}
+    {"event_id": "id1", "chronological_position": 0, "reasoning": "First event chronologically - happens before all others"},
+    {"event_id": "id2", "chronological_position": 1, "reasoning": "Occurs immediately after event 1"}
   ],
-  "anomalies": [
-    {
-      "type": "temporal_impossibility",
-      "description": "Character cannot be in in both locations",
-      "events": ["id1", "id2"]
-    }
-  ]
+  "anomalies": []
 }`
 
 	// EntityDeduplicationPrompt is used to confirm if two entities are the same.

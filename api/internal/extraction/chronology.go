@@ -63,10 +63,25 @@ func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, sourceI
 		return nil, fmt.Errorf("empty response from LLM")
 	}
 
+	// Strip markdown code blocks before parsing
+	responseText := stripMarkdownCodeBlocks(resp.Content[0].Text)
+
+	// Fallback: try to extract JSON from markdown if primary parsing fails
 	var chronology ChronologicalOrder
-	if err := json.Unmarshal([]byte(resp.Content[0].Text), &chronology); err != nil {
-		return nil, fmt.Errorf("failed to parse chronology response: %w", err)
+	if err := json.Unmarshal([]byte(responseText), &chronology); err != nil {
+		if jsonStr := extractJSONFromMarkdown(responseText); jsonStr != "" {
+			responseText = jsonStr
+			if err := json.Unmarshal([]byte(responseText), &chronology); err != nil {
+				return nil, fmt.Errorf("failed to parse chronology response after markdown extraction: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to parse chronology response: %w", err)
+		}
 	}
+
+	e.logger.Info("chronology parsed",
+		"events_ordered", len(chronology.ChronologicalOrder),
+		"anomalies", len(chronology.Anomalies))
 
 	orderedCount := 0
 	for _, pos := range chronology.ChronologicalOrder {
@@ -98,13 +113,16 @@ func (e *ChronologicalEstimator) EstimateChronology(ctx context.Context, sourceI
 func (e *ChronologicalEstimator) buildEventsSummary(claims []*database.Claim) string {
 	var summary strings.Builder
 
-	summary.WriteString("Events:\n")
+	summary.WriteString("EVENTS WITH NARRATIVE ORDER:\n\n")
 	for _, claim := range claims {
-		summary.WriteString(fmt.Sprintf("- ID: %s\n", database.UUIDStr(claim.ID)))
+		summary.WriteString(fmt.Sprintf("Event ID: %s\n", database.UUIDStr(claim.ID)))
 		summary.WriteString(fmt.Sprintf("  Title: %s\n", claim.Title))
 		summary.WriteString(fmt.Sprintf("  Description: %s\n", claim.Description.String))
-		summary.WriteString(fmt.Sprintf("  Date: %s\n", claim.DateText.String))
-		summary.WriteString(fmt.Sprintf("  Narrative Position: %d\n", claim.NarrativePosition))
+		if claim.DateText.String != "" {
+			summary.WriteString(fmt.Sprintf("  Date Reference: %s\n", claim.DateText.String))
+		}
+		summary.WriteString(fmt.Sprintf("  Type: %s\n", claim.EventType.String))
+		summary.WriteString(fmt.Sprintf("  Narrative Position: %d (order in text)\n", claim.NarrativePosition))
 		summary.WriteString("\n")
 	}
 
