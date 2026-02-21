@@ -20,14 +20,14 @@ const (
 
 // CreateNodeParams contains parameters for creating a node
 type CreateNodeParams struct {
-	NodeType   database.NodeType
+	NodeType   string // open text — any value is valid
 	Label      string
 	Properties map[string]interface{}
 }
 
 // CreateEdgeParams contains parameters for creating an edge
 type CreateEdgeParams struct {
-	EdgeType   database.EdgeType
+	EdgeType   string // open text — any value is valid
 	SourceNode uuid.UUID
 	TargetNode uuid.UUID
 	Properties map[string]interface{}
@@ -43,7 +43,7 @@ type CreateProvenanceParams struct {
 	Location   database.Location
 	Confidence float32
 	Trust      float32
-	Modality   database.Modality
+	Modality   string               // open text — any value is valid
 	Status     database.ReviewStatus
 
 	// Temporal claims

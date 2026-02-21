@@ -7,15 +7,14 @@ import (
 )
 
 type Config struct {
-	Port                      string
-	DatabaseURL               string
-	AllowedOrigins            []string
-	AnthropicAPIKey           string
-	AnthropicAPIURL           string
-	AnthropicModelExtraction  string
+	Port                         string
+	DatabaseURL                  string
+	AllowedOrigins               []string
+	AnthropicAPIKey              string
+	AnthropicAPIURL              string
+	AnthropicModelExtraction     string
 	AnthropicModelClassification string
-	AnthropicModelChronology  string
-	UseGraphModel             bool   // If true, use graph primitives; otherwise use legacy tables
+	AnthropicModelChronology     string
 }
 
 func Load() (*Config, error) {
@@ -38,7 +37,6 @@ func Load() (*Config, error) {
 		AnthropicModelExtraction:     getEnv("ANTHROPIC_MODEL_EXTRACTION", "claude-sonnet-4-20250514"),
 		AnthropicModelClassification: getEnv("ANTHROPIC_MODEL_CLASSIFICATION", "claude-haiku-4-20250514"),
 		AnthropicModelChronology:     getEnv("ANTHROPIC_MODEL_CHRONOLOGY", "claude-sonnet-4-20250514"),
-		UseGraphModel:                getEnv("USE_GRAPH_MODEL", "false") == "true",
 	}, nil
 }
 

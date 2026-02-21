@@ -1,410 +1,248 @@
 # TASKS.md
 
-> Phased backlog. Each phase has tasks, size estimates, model recommendations, and acceptance criteria.
-> Total MVP estimate: ~21-28 hours across 7 phases.
+> Phased backlog. Each phase has tasks, model recommendations, and acceptance criteria.
 
 ---
 
-## Phase 0: Project Scaffolding
-**Size:** S (1-2 hours) | **Model:** Sonnet
+## Completed MVP Phases (0-7)
 
-Foundation: running Go backend + React frontend + PostgreSQL, all wired together.
+All MVP phases are complete. See `docs/STATE.md` for details.
 
-### Tasks
-- [ ] Initialize Go module with project structure (see CLAUDE.md file structure)
-- [ ] Set up PostgreSQL with podman-compose.yml
-- [ ] Create React app with TypeScript, Vite, Tailwind CSS
-- [ ] Makefile with `dev`, `infra`, `backend`, `frontend`, `migrate`, `test`, `build`, `down` targets
-- [ ] Environment configuration (.env.example, config package)
-- [ ] CORS middleware configured
-- [ ] Health endpoint (`GET /health`)
-- [ ] sqlc configured and code generation working
-- [ ] Hot-reload for backend (air) and frontend (Vite HMR)
-
-### Acceptance Criteria
-- `make dev` starts backend + frontend + database via podman-compose
-- Backend responds on `GET /health` with 200
-- Frontend displays "Sikta" heading and can call backend
-- Database connection verified
-- sqlc generates code from a test query
+- **Phase 0:** Project Scaffolding — Go + React + PostgreSQL + Makefile
+- **Phase 1:** Document Ingestion & Chunking — Structure-agnostic paragraph chunking
+- **Phase 2:** LLM Extraction Pipeline — 178 events, 54 entities, 58 relationships from P&P
+- **Phase 2.5:** Data Model Migration — documents->sources, events->claims, two-level confidence
+- **Phase 3:** Inconsistency Detection — Narrative vs chronological, contradictions, temporal
+- **Phase 4:** Timeline Hero View — D3 dual-lane timeline with connectors
+- **Phase 5:** Entity Panel & Relationship Graph — D3 force-directed graph
+- **Phase 6:** Review Workflow & Inconsistency Panel — Keyboard-driven J/K/A/R/E
+- **Phase 7:** Demo Polish & Landing — Landing page, upload flow, seed SQL
 
 ---
 
-## Phase 1: Document Ingestion & Chunking ✅ COMPLETE
-**Size:** M (3-4 hours) | **Model:** Opus for chunking strategy, Sonnet for implementation
+## Current: Graph Model Alignment
 
-Upload documents, extract text, split into chunks with position metadata.
+**Context:** The data model spec defines three primitives (Node, Edge, Provenance) with strict rules. The database schema is correct. The Go service layer has 6 critical violations against the spec. This is fixable — not a restart.
 
-### Tasks
-- [x] Database migrations: `documents`, `chunks`
-- [x] sqlc queries for documents and chunks CRUD
-- [x] TXT file parser: split by chapters/sections, track line numbers
-- [x] PDF parser: pdftotext integration with page number tracking
-- [x] ~~Chapter detection heuristic (regex + patterns)~~ → Replaced with structure-agnostic chunking
-- [x] Structure-agnostic chunking: paragraph boundaries + word budget (3000 target, 4500 max, 1500 min merge)
-- [x] Gutenberg boilerplate stripping (standard START/END markers)
-- [x] Chunking service: document → ordered chunks with narrative_position, page_start, page_end
-- [x] Document upload API endpoint (`POST /api/documents`)
-- [x] Document status tracking (uploaded → processing → ready → error)
-- [x] Processing progress API (`GET /api/documents/:id/status`)
-- [x] Download and store Pride and Prejudice (Project Gutenberg TXT) in `demo/`
+**Verdict: Fix, don't restart.** Schema is sound. sqlc layer is sound. Violations are in ~5 Go files.
 
-### Acceptance Criteria
-- [x] Upload a TXT file → document stored, text split into word-budget chunks
-- [x] Each chunk has: content, narrative_position, page references (PDF only)
-- [x] Pride and Prejudice splits into ~61 chunks correctly (now ~42 with new chunker)
-- [x] Upload a PDF → text extracted with page numbers preserved
-- [x] Status endpoint shows processing progress
+### What's Correct (Keep As-Is)
 
-**The test:** Upload Pride and Prejudice. Verify chunks contain coherent text blocks. Works on any plain text (Dr Jekyll, Wuthering Heights, etc.).
+- `api/sql/schema/011_graph_primitives.sql` — schema matches spec (except modality CHECK)
+- `api/sql/schema/012_graph_indexes.sql` — good indexes
+- `api/sql/queries/nodes.sql`, `edges.sql`, `provenance.sql` — correct
+- `api/internal/database/models.go` — generated, correct
+- `api/internal/database/graph.go` — helper methods fine; only type declarations need changing
+- `api/internal/extraction/graph/types.go` — already uses `string` for node_type/edge_type
+- `api/internal/extraction/graph/service.go` — correctly stores temporal claims in provenance
+- Frontend (`web/`) — no changes needed
 
 ---
 
-## Phase 2: LLM Extraction Pipeline ✅ COMPLETE
-**Size:** L (4-5 hours) | **Model:** Opus for prompt design, Sonnet for pipeline implementation
+### Phase G1: Open the Type System ✅ COMPLETE
+**Model: Sonnet** | **Size:** S (30 min)
 
-The intelligence layer. Send chunks to Claude API, get structured claims/entities/relationships back.
+NodeType, EdgeType, Modality become untyped string constants. All function signatures accept `string`.
 
-### Tasks
-- [x] Database migrations: `events`, `entities`, `relationships`, `event_entities`, `source_references`
-- [x] sqlc queries for all extraction tables
-- [x] Design extraction prompt: given a chunk, extract events, entities, relationships as structured JSON
-- [x] Claude API client (Go): call Sonnet for extraction
-- [x] Extraction service: iterate chunks, call LLM, parse responses, store results
-- [x] Source reference creation: link every extracted item to its chunk + excerpt + char positions
-- [x] Narrative position tracking: record which chapter each event comes from
-- [x] Chronological position estimation: LLM-assisted ordering of events on the actual timeline
-- [x] Extraction CLI tool (`make extract doc=path/to/file.txt`)
-- [x] Progress tracking: events emitted as chunks are processed
+#### Tasks
+- [ ] `api/internal/database/graph.go`: Remove `type NodeType string`, `type EdgeType string`, `type Modality string`. Keep consts as plain strings
+- [ ] `api/internal/graph/types.go`: Change CreateNodeParams.NodeType, CreateEdgeParams.EdgeType, CreateProvenanceParams.Modality/Status to `string`
+- [ ] `api/internal/graph/service.go`: Change ListNodesByType, ListEdgesByType, UpdateProvenanceStatus params to `string`. Remove `string()` casts
+- [ ] `api/internal/graph/migrator.go`: Remove all `database.NodeType(...)`, `database.EdgeType(...)` casts
+- [ ] `api/internal/extraction/graph/service.go`: Remove `database.NodeType()`, `database.Modality()`, `database.EdgeType()` casts
+- [ ] `api/internal/graph/views.go`: Remove `string()` casts on type comparisons
 
-### Results
-- Pride and Prejudice: 61 chapters → 178 events, 54 entities, 58 relationships extracted
-- Timeline Hero View working with D3 dual-lane visualization
-- Inconsistency detection implemented (Phase 3 also complete)
-
-**The test:** Pick 10 random extracted events. Click through to source text. Verify each reference points to the correct passage and the extraction is accurate.
+#### Acceptance
+- `go build ./...` passes. Zero behavior change.
+- Any string value can be passed as node_type or edge_type without compile error.
 
 ---
 
-## Phase 2.5: Data Model Migration
-**Size:** M (3-4 hours) | **Model:** Sonnet for implementation
+### Phase G2: Drop Modality CHECK Constraint ✅ COMPLETE
+**Model: Haiku** | **Size:** XS (10 min)
 
-Rename `documents` → `sources` and `events` → `claims` throughout the codebase. Add two-level confidence model (source trust + assertion confidence) and `claim_type` discriminator.
+Allow arbitrary modality values in provenance.
 
-### Tasks
-- [ ] SQL migration: rename `documents` table → `sources`, add `source_trust` and `trust_reason` columns
-- [ ] SQL migration: rename `events` table → `claims`, add `claim_type` column (event/attribute/relation)
-- [ ] SQL migration: rename all foreign keys `document_id` → `source_id`, `event_id` → `claim_id`
-- [ ] SQL migration: rename `event_entities` → `claim_entities`
-- [ ] Update all sqlc queries (`.sql` files) with new table/column names
-- [ ] Run `sqlc generate` to regenerate Go database layer
-- [ ] Update Go handlers: `documents.go`, `extraction.go`, `timeline.go`, `inconsistencies.go`
-- [ ] Update Go extraction service: `service.go`, `deduplicator.go`, `chronology.go`, `inconsistency.go`, `types.go`
-- [ ] Update Go CLI tools: `cmd/extract/main.go`, `cmd/chunk/main.go`
-- [ ] Update repository.go with renamed methods
-- [ ] Update frontend TypeScript types (`types/index.ts`)
-- [ ] Update frontend API client (`api/timeline.ts`)
-- [ ] Re-upload Pride and Prejudice and re-run extraction with new schema
-- [ ] Verify timeline UI works with renamed fields
+#### Tasks
+- [ ] New migration `api/sql/schema/000014_open_modality.up.sql`: `ALTER TABLE provenance DROP CONSTRAINT IF EXISTS provenance_modality_check`
+- [ ] Corresponding `.down.sql` to restore the constraint
 
-### Acceptance Criteria
-- All `document_id` references in code → `source_id`
-- All `event_id` references in code → `claim_id` (where referring to the claims table)
-- `sources` table has `source_trust` and `trust_reason` columns
-- `claims` table has `claim_type` discriminator column
-- Extraction pipeline produces claims with `claim_type = 'event'`
-- Timeline renders correctly with renamed data
-- HTTP API routes remain `/api/documents/...` (external API unchanged)
-
-**The test:** Full pipeline: upload P&P → chunking → extraction → timeline renders. All 61 chapters, ~178 claims, ~54 entities, ~58 relationships.
+#### Acceptance
+- `make migrate` succeeds.
+- Can insert provenance with `modality = 'narrative_ordering'`.
 
 ---
 
-## Phase 3: Inconsistency Detection
-**Size:** M (2-3 hours) | **Model:** Opus for detection logic design, Sonnet for implementation
+### Phase G3: Move Ordering Data to Provenance ✅ COMPLETE
+**Model: Sonnet** | **Size:** M (1.5 hr)
 
-Detect and store contradictions, temporal impossibilities, and narrative vs. chronological mismatches.
+`narrative_position` and `chronological_position` stop being node properties. They become provenance records with ordering in `location` JSONB.
 
-### Tasks
-- [ ] Database migrations: `inconsistencies`, `inconsistency_items` (already created, may need migration for renamed FKs)
-- [ ] sqlc queries for inconsistencies CRUD
-- [ ] Narrative vs. chronological ordering: compare narrative_position (chapter order) with chronological_position (timeline order) for all claims
-- [ ] Contradiction detection prompt: given overlapping claims/facts, identify conflicts
-- [ ] Temporal impossibility detection: flag claims where timing is logically impossible
-- [ ] Cross-reference detection: identify when the same event is described multiple times
-- [ ] Inconsistency service: run detection passes after extraction, store results
-- [ ] Link inconsistencies to involved claims/entities via inconsistency_items
-- [ ] Severity classification: info (narrative order difference), warning (ambiguity), conflict (contradiction)
-- [ ] API endpoints for inconsistencies (`GET /api/documents/:id/inconsistencies`)
+#### Design Decision
 
-### Acceptance Criteria
-- Narrative vs. chronological mismatches detected (if any exist in Pride and Prejudice)
-- Cross-references identified (same claim mentioned in different chapters)
-- Each inconsistency links to the specific claims/entities and source references involved
-- Severity levels assigned appropriately
-- API returns inconsistencies with full context
+Extend `Location` struct with `PositionType` ("narrative"/"chronological") and `Position` (int). Narrative position = "where in the source text." Chronological position = "where in the inferred timeline." Both are claims with confidence/trust.
 
-**The test:** Review all detected inconsistencies. Each should be genuinely interesting — either a real narrative device, an actual ambiguity, or a cross-reference worth noting. No false positives from bad parsing.
+#### Tasks
+- [x] `api/internal/database/graph.go`: Add `PositionType string` and `Position int` to Location struct
+- [x] `api/internal/graph/migrator.go` — `MigrateClaimToNode`: Remove position from properties, create two additional provenance records (narrative + chronological ordering)
+- [x] `api/internal/graph/migrator.go` — `MigrateChunkToNode`: Remove `narrative_position` from properties
+- [x] `api/internal/graph/migrator.go` — `MigrateEntityToNode`: Remove `first_appearance_chunk` and `last_appearance_chunk` from properties
+- [x] `api/internal/graph/views.go` — `GetEventsForTimeline`: Replace property-based position reading with provenance-based. New helper: `extractOrderingFromProvenance()`
+
+#### Acceptance
+- `go build ./...` passes
+- After `MigrateDocument`: `SELECT count(*) FROM provenance WHERE location->>'position_type' = 'narrative'` returns ~178 rows
+- Timeline endpoint returns correct positions
 
 ---
 
-## Phase 4: Timeline Hero View 🎯 THE MONEY SHOT
-**Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for D3 architecture
+### Phase G4: Fix Runtime Bugs in Views ✅ COMPLETE
+**Model: Sonnet** | **Size:** M (1.5 hr)
 
-The horizontal dual-lane timeline. This is what people see first and what makes them want to use Sikta.
+Eliminate nil pointer panics, type assertion panics. Implement relationship retrieval.
 
-### Tasks
-- [ ] API endpoints: `GET /api/documents/:id/timeline` (claims with entities, sources, inconsistencies)
-- [ ] API endpoints: `GET /api/documents/:id/entities`, `GET /api/documents/:id/relationships`
-- [ ] D3 horizontal timeline component: render events on a scrollable horizontal axis
-- [ ] Dual-lane layout: chronological lane (top) + narrative lane (bottom)
-- [ ] Connector lines between lanes linking the same event — crossed lines reveal non-linear storytelling
-- [ ] Event cards: title, date/period, entity chips (colored by type), confidence marker, page reference
-- [ ] Click event → source text slide-out panel (right side)
-- [ ] Source text viewer: excerpt highlighted, document + page/chapter reference, cross-reference count
-- [ ] Filter bar: by entity, confidence level, event type, conflict status
-- [ ] Smooth zoom and pan on the timeline
-- [ ] Color coding: event types get distinct colors
-- [ ] Inline inconsistency markers: ⚡ icon on conflicting events, dashed connector lines between them
-- [ ] Responsive: works well on large screens (primary) and degrades gracefully on smaller
-- [ ] Loading state with progress animation during extraction
+#### Tasks
+- [x] `api/internal/graph/views.go`: Add nil guard after `selectProvenance` (line 75 and line 184)
+- [x] `api/internal/graph/views.go`: Fix aliases type assertion — `[]interface{}` not `[]string` from JSON unmarshal
+- [x] `api/internal/graph/views.go`: Extract `findDocumentNode` helper (deduplicate 3 copies of lookup pattern)
+- [x] `api/sql/queries/nodes.sql`: Fix `GetDocumentNodeByLegacySourceID` param type (`$1::text`)
+- [x] `api/sql/queries/edges.sql`: Add `ListEdgesBySourceDocument` query (edges with provenance from a document)
+- [x] `api/internal/graph/views.go`: Implement `GetRelationshipsForGraph` using new query
+- [x] Run `sqlc generate`
 
-### Acceptance Criteria
-- Timeline renders all events from Pride and Prejudice horizontally
-- Dual lanes visible: chronological and narrative order
-- Connectors between lanes — any crossed lines immediately visible
-- Click any event → source text appears in slide-out with correct passage highlighted
-- Filters work: select "Elizabeth Bennet" → only her events visible
-- Confidence markers visible on every event card
-- Inconsistency markers (⚡) visible on conflicting events
-- Smooth zoom/pan, no jank at 50-80 events
-- Looks polished enough to screenshot and share
-
-**The test:** Show the timeline to someone unfamiliar with the project. Within 10 seconds they should understand: this is a timeline of events from a book, the two lanes show different orderings, and they can click things to see the source text.
+#### Acceptance
+- No panics when nodes have empty provenance
+- `GET /api/documents/{id}/relationships` returns relationship data
+- `sqlc generate` succeeds
 
 ---
 
-## Phase 5: Entity Panel & Relationship Graph
-**Size:** M (3-4 hours) | **Model:** Sonnet for implementation
+### Phase G5: Graph-Based Review Handlers ✅ COMPLETE
+**Model: Sonnet** | **Size:** M (1.5 hr)
 
-Entity sidebar and D3 force-directed relationship network.
+Replace legacy review handlers. Review status lives on provenance records.
 
-### Tasks
-- [ ] Entity sidebar panel: list all entities, grouped by type (people, places, organizations)
-- [ ] Entity cards: name, type icon, first/last appearance, event count, relationship count
-- [ ] Click entity → timeline filters to show only their events
-- [ ] Entity search/filter within sidebar
-- [ ] D3 force-directed graph component: entities as nodes, relationships as edges
-- [ ] Node sizing: proportional to event involvement count
-- [ ] Edge labels: relationship type (married, friends, enemies, siblings, etc.)
-- [ ] Edge styling: line style indicates relationship nature (solid for family, dashed for social, etc.)
-- [ ] Click node → highlights connected nodes, filters timeline
-- [ ] Click edge → shows establishing events in a tooltip or panel
-- [ ] Graph layout controls: zoom, pan, optional force adjustment
-- [ ] Toggle between timeline view and graph view (tabs or toggle)
+#### Design
 
-### Acceptance Criteria
-- Entity sidebar shows all extracted characters from Pride and Prejudice
-- Clicking "Mr. Darcy" filters timeline to his events only
-- Relationship graph shows the Bennet family connections, Darcy-Elizabeth arc, Bingley-Jane arc
-- Graph is readable — not a hairball. Key characters are central, minor ones peripheral.
-- Clicking a relationship edge shows the events that define it
+When a user approves a claim, they approve the **provenance record** that supports it. For frontend compatibility, the handler receives a node/edge ID, finds its provenance records, and updates their status.
 
-**The test:** Someone who hasn't read Pride and Prejudice can look at the relationship graph and understand the key character dynamics — who's related to whom, who's connected through marriage, who's in conflict.
+#### Tasks
+- [x] `api/sql/queries/provenance.sql`: Add `CountClaimProvenanceByStatusForSource`, `CountEntityProvenanceByStatusForSource`, `UpdateProvenanceStatusByTarget` queries
+- [x] New file `api/internal/handlers/graph/review.go`: ReviewHandler with UpdateNodeReview, UpdateEdgeReview, UpdateNodeData, GetReviewProgress
+- [x] `api/cmd/server/main.go`: Wire graph review handlers inside UseGraphModel block; legacy review handlers moved inside else block
+- [x] Run `sqlc generate`
+
+#### Acceptance
+- Frontend review workflow works: approve/reject/edit claims
+- Review progress bar shows correct counts
+- `go build ./...` passes
 
 ---
 
-## Phase 6: Review Workflow & Inconsistency Panel
-**Size:** M (3-4 hours) | **Model:** Sonnet for implementation
+### Phase G6: Remove Feature Flag, Clean Up Legacy ✅ COMPLETE
+**Model: Sonnet** | **Size:** S (30 min)
 
-Fast human review and dedicated inconsistency exploration.
+Graph model becomes the only path.
 
-### Tasks
-- [ ] Review status management: API endpoints to update review_status (approve, reject, edit)
-- [ ] Batch update endpoint: approve/reject multiple items at once
-- [ ] Review mode UI: dedicated view or toggle that highlights pending items
-- [ ] Keyboard navigation: J/K to navigate items, A to approve, R to reject, E to edit
-- [ ] Edit modal: modify event title, description, date, type, confidence
-- [ ] Review progress bar: "47 of 156 items reviewed" with completion percentage
-- [ ] Queue sorting: lowest confidence first (surface uncertain items)
-- [ ] Filter: show only pending, only approved, only rejected
-- [ ] Inconsistency panel: dedicated tab/view listing all detected inconsistencies
-- [ ] Inconsistency cards: type icon, title, description, both sides with source references
-- [ ] Resolution actions per inconsistency: resolve (pick correct side), note (add explanation), dismiss
-- [ ] Resolution note text field
-- [ ] Inconsistency status tracking: unresolved → resolved / noted / dismissed
-- [ ] Visual connection: clicking an inconsistency highlights the involved events on the timeline
+#### Tasks
+- [x] `api/cmd/server/main.go`: Remove `if cfg.UseGraphModel` conditional, keep only graph handlers
+- [x] `api/internal/config/config.go`: Remove `UseGraphModel` field
+- [x] Delete `api/internal/handlers/timeline.go` (replaced by graph handler)
+- [x] Delete `api/internal/handlers/review.go` (replaced by graph handler)
+- [x] Clean up `api/internal/handlers/extraction.go` — removed `GetEvents`, `GetEntities`, `GetRelationships`, `GetExtractionStatus`
 
-### Acceptance Criteria
-- Can approve/reject/edit any extracted event, entity, or relationship
-- Keyboard shortcuts work fluidly in review mode
-- Progress bar updates as items are reviewed
-- Inconsistency panel shows all detected inconsistencies with full context
-- Can resolve an inconsistency by picking a side or adding a note
-- Clicking an inconsistency card navigates to and highlights the relevant timeline events
+#### Keep
+- `api/internal/handlers/documents.go` — upload staging
+- `api/internal/handlers/inconsistencies.go` — no graph equivalent yet
+- Legacy SQL queries for sources/chunks — staging tables
 
-**The test:** Review 20 items using only keyboard shortcuts. It should feel fast — comparable to triaging email. No mouse required for basic approve/reject flow.
+#### Acceptance
+- `go build ./...` passes with no feature flag
+- All four frontend tabs work: Timeline, Graph, Review, Inconsistencies
+- `USE_GRAPH_MODEL` not referenced anywhere
 
 ---
 
-## Phase 7: Demo Polish & Landing
-**Size:** M (2-3 hours) | **Model:** Sonnet for implementation
+### Phase G7 (Future): Full Legacy Table Removal
 
-Make it demo-ready. Pre-loaded data, landing experience, visual polish.
+Not in scope. Requires:
+- Graph-based inconsistency detection
+- Graph-based extraction replaces legacy extraction
+- Migration of demo seed data to graph format
+- Drop legacy tables (claims, entities, relationships, inconsistencies, etc.)
 
-### Tasks
-- [ ] Pre-extract Pride and Prejudice and store as seed SQL (`demo/seed.sql`)
-- [ ] Seed command: `make seed-demo` loads pre-extracted data
-- [ ] Landing page: hero section explaining what Sikta does, "Explore Demo" button → timeline
-- [ ] Upload section on landing: drag-and-drop to try your own document
-- [ ] Processing animation: show progress when extracting a new document
-- [ ] Dark mode: toggle in header, persist preference
-- [ ] Visual polish pass: consistent spacing, typography, animations
-- [ ] Timeline zoom animation on initial load (zoom from overview to detail)
-- [ ] Screenshot-friendly: timeline and graph look good in static screenshots
-- [ ] Error states: graceful handling for failed uploads, extraction errors
-- [ ] Mobile: basic responsiveness (timeline scrolls horizontally, panels stack)
-- [ ] Favicon and page title
+---
 
-### Acceptance Criteria
-- First visit → landing page → click "Explore Demo" → immediately see Pride and Prejudice timeline
-- Upload a new TXT file → processing animation → results appear
-- Dark mode works and looks good
-- Screenshots of timeline and graph are impressive enough to share on social media
-- No broken states or ugly error screens
+## Files Modified (Graph Alignment Summary)
 
-**The test:** Share the URL with 3 people who don't know what Sikta is. They should understand the product within 30 seconds and find it interesting enough to explore for at least 2 minutes.
+| File | Phase | Change |
+|------|-------|--------|
+| `api/internal/database/graph.go` | G1, G3 | Remove typed enums, extend Location struct |
+| `api/internal/graph/types.go` | G1 | Open signatures to string |
+| `api/internal/graph/service.go` | G1 | Open signatures to string |
+| `api/internal/graph/migrator.go` | G1, G3 | Remove casts, move ordering to provenance |
+| `api/internal/graph/views.go` | G1, G3, G4 | Fix nil bugs, read ordering from provenance, implement relationships |
+| `api/internal/extraction/graph/service.go` | G1 | Remove type casts |
+| `api/sql/schema/000014_open_modality.up.sql` | G2 | New migration |
+| `api/sql/queries/nodes.sql` | G4 | Fix parameter type |
+| `api/sql/queries/edges.sql` | G4 | Add ListEdgesBySourceDocument |
+| `api/sql/queries/provenance.sql` | G5 | Add review queries |
+| `api/internal/handlers/graph/review.go` | G5 | New file |
+| `api/cmd/server/main.go` | G5, G6 | Wire review handlers, remove flag |
+| `api/internal/config/config.go` | G6 | Remove UseGraphModel |
+| `api/internal/handlers/timeline.go` | G6 | Delete |
+| `api/internal/handlers/review.go` | G6 | Delete |
 
 ---
 
 ## Future Phases (Post-MVP)
 
 > **North Star Vision:** Multi-document, multi-type projects with unified timeline and cross-document anomaly detection.
->
-> **Phasing:**
-> - **Now (MVP):** Single document (novel) → prove extraction + timeline + review works brilliantly
-> - **Phase 8:** Extraction Progress UX — improved loading bar and real-time feedback
-> - **Phase 9:** Multi-file projects — upload and analyze multiple documents as one coherent set
-> - **Phase 10:** Mixed document types (protocols + invoices + emails) → unified timeline with cross-document anomaly detection
-> - **Phase 11:** Multiple LLM provider support (OpenAI, Azure, local models)
->
-> The data model already supports this trajectory: sources table is type-agnostic, source_references link to specific chunks, claims use claim_type discriminator for extensibility, and inconsistencies can span sources via inconsistency_items.
 
 ### Phase 8: Extraction Progress UX
 **Size:** S (1-2 hours) | **Model:** Sonnet
 
-Improve the extraction loading experience with real-time progress feedback.
-
-### Tasks
-- [x] Backend: Stream chunk-by-chunk progress via SSE (Server-Sent Events)
-- [x] Backend: Emit events for each chunk processed (chunk index, events extracted, entities found)
-- [x] Frontend: Real-time progress bar showing "Chunk 3 of 8" with percentage
-- [x] Frontend: Live-updating counters (events, entities, relationships) during extraction
-- [ ] Frontend: Show estimated time remaining based on average chunk processing time
-- [ ] Frontend: Animated event cards appearing one by one as they're extracted
-- [ ] Frontend: Error state per chunk (show which chunk failed, allow retry)
-- [ ] **BUG:** Fix completion detection — when last chunk finishes, UI stays in loading state and never navigates to timeline
-
-### Known Issues
-- **Completion not detected:** SSE stream receives `status: "complete"` but frontend doesn't always navigate to timeline. May be race condition between SSE close and state update.
-
-### Acceptance Criteria
-- [x] User sees real-time progress: "Extracting chunk 3 of 8... 47 events found"
-- [x] Progress bar smoothly animates from 0% to 100%
-- [x] Counters increment live as extraction proceeds
-- [ ] If extraction fails on chunk 5, user sees which chunk and can retry
-- [ ] When extraction completes, UI automatically navigates to timeline
-
----
+- [x] Backend: SSE streaming chunk-by-chunk progress
+- [x] Frontend: Real-time progress bar and live counters
+- [ ] Frontend: Estimated time remaining
+- [ ] Frontend: Error state per chunk with retry
+- [ ] **BUG:** Fix completion detection — SSE `status: "complete"` doesn't always navigate to timeline
 
 ### Phase 9: Multi-File Projects
-**Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for cross-document entity resolution design
+**Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for cross-document entity resolution
 
-Upload and analyze multiple documents together as one coherent set of evidence on the same timeline.
-
-### Tasks
-- [ ] **Database:** Add `projects` table (id, name, description, created_at, metadata)
-- [ ] **Database:** Add `project_id` foreign key to `sources` table
-- [ ] **Database:** Update queries to filter by project_id
-- [ ] **Backend:** Project CRUD endpoints (`POST /api/projects`, `GET /api/projects`, `GET /api/projects/:id`)
-- [ ] **Backend:** Multi-file upload endpoint (`POST /api/projects/:id/documents` accepts multiple files)
-- [ ] **Backend:** Sequential or parallel extraction for project documents
-- [ ] **Backend:** Project-level extraction status aggregation
-- [ ] **Extraction:** Cross-document entity resolution ("John Smith" in doc A + doc B → same entity)
-- [ ] **Extraction:** Cross-document event deduplication (same event in multiple sources → one claim with multiple references)
-- [ ] **Frontend:** Project creation flow (name, description)
-- [ ] **Frontend:** Multi-file drop zone for project upload
-- [ ] **Frontend:** Project-level progress dashboard (Doc 1: done, Doc 2: extracting, Doc 3: queued)
-- [ ] **Frontend:** Unified timeline showing all project documents
-- [ ] **Frontend:** Source document badges on events (which doc this came from)
-- [ ] **Frontend:** Filter timeline by source document
-
-### Acceptance Criteria
-- Create a project "Board Meetings 2020-2024"
-- Upload 5 PDFs, see all 5 processing in parallel/sequence
-- Unified timeline shows events from all documents
-- Click an event → see which document(s) it came from
-- Same entity mentioned across documents shows once with multiple source references
-- Filter by "Q1 Meeting" shows only events from that document
-
-**The test:** Upload 3 related documents (e.g., meeting minutes from 3 consecutive meetings). Timeline shows unified view. Cross-references between documents are surfaced. User understands the complete picture.
+- Projects table, multi-file upload, cross-document entity resolution
+- Unified timeline showing all project documents
+- Source document badges on events
 
 ### Phase 10: Mixed Document Types + Cross-Document Anomaly Detection
-- **Document-type-specific extraction:**
-  - Board protocols → decisions, votes, action items
-  - Invoices → line items, totals, due dates
-  - Emails → senders, recipients, attachments
-  - Interviews → questions, answers, evidence
-  - Legal docs → clauses, obligations, deadlines
-  - CSV/Excel → data rows, calculations, references
-- **Cross-document anomaly detection:**
-  - Temporal contradictions: "Event A says March 15, Event B says March 16"
-  - Entity conflicts: Same name, different roles/contexts across documents
-  - Missing references: Invoice mentions PO that doesn't exist in any document
-  - Duplicate events: Similar events across different documents
-  - Data inconsistencies: Excel total ≠ sum of rows
-- **Unified event model:** All document types map to common event/entity/relationship structures
-- **Anomaly resolution workflow:** Flag conflicts, show both sources, human picks correct side
+- Document-type-specific extraction (protocols, invoices, emails, legal docs)
+- Cross-document anomaly detection (temporal contradictions, entity conflicts, missing references)
 
 ### Phase 11: Multiple LLM Provider Support
-- **Provider abstraction layer:** Support Anthropic, OpenAI, Azure OpenAI, local models
-- **Configuration:** LLM_PROVIDER=anthropic|openai|azure|local
-- **Model selection per task:** Configure which model to use for extraction, classification, chronology
-- **Cost optimization:** Use cheaper models (Haiku/GPT-4o-mini) for classification, premium models (Opus/GPT-4) for complex extraction
-- **Fallback and redundancy:** Failover between providers, rate limiting across multiple API keys
+- Provider abstraction (Anthropic, OpenAI, Azure, local)
+- Model selection per task, cost optimization, fallback
 
 ### Phase 12: Board Protocol Mode (Swedish Market Focus)
-- Specialized extraction prompts for Swedish board protocols (styrelsebeslut, protokoll)
-- Decision trail view: follow one topic across multiple meetings
-- Budget tracking across protocols
-- Swedish UI option
+- Swedish board protocol extraction prompts
+- Decision trail view, budget tracking
 
 ### Phase 13: Export & Sharing
-- Export timeline as PDF/PNG
-- Export data as JSON/CSV
-- Shareable link (read-only view)
-- Embeddable timeline widget
+- PDF/PNG/JSON/CSV export, shareable links, embeddable widget
 
 ### Phase 14: Authentication & Multi-Tenant
-- User accounts
-- Project management (multiple document collections)
-- Sharing and collaboration
-- Billing (Stripe)
+- User accounts, project management, sharing, billing
 
 ### Phase 15: Legal / Due Diligence Mode
-- Contract obligation extraction
-- Deadline tracking
-- Entity relationship mapping across corporate documents
-- Privileged document handling
+- Contract obligation extraction, deadline tracking, entity mapping
 
 ---
 
 ## Icebox
 
-Ideas that might be interesting but are not validated:
-- Real-time collaborative review (multiple reviewers)
+- Real-time collaborative review
 - AI-assisted resolution suggestions for inconsistencies
 - Timeline comparison (two documents side by side)
-- API for programmatic access to extraction results
+- API for programmatic access
 - Plugin system for custom extraction types
-- Integration with Sundla (association documents → timeline)
+- Integration with Sundla (association documents)

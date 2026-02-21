@@ -209,6 +209,44 @@ func (q *Queries) ListEdgesBySource(ctx context.Context, sourceNode pgtype.UUID)
 	return items, nil
 }
 
+const listEdgesBySourceDocument = `-- name: ListEdgesBySourceDocument :many
+SELECT DISTINCT e.id, e.edge_type, e.source_node, e.target_node, e.properties, e.is_negated, e.created_at, e.updated_at
+FROM edges e
+INNER JOIN provenance p ON p.target_type = 'edge' AND p.target_id = e.id
+WHERE p.source_id = $1
+ORDER BY e.created_at DESC
+`
+
+// List all edges that have provenance from a specific document node
+func (q *Queries) ListEdgesBySourceDocument(ctx context.Context, sourceID pgtype.UUID) ([]*Edge, error) {
+	rows, err := q.db.Query(ctx, listEdgesBySourceDocument, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Edge{}
+	for rows.Next() {
+		var i Edge
+		if err := rows.Scan(
+			&i.ID,
+			&i.EdgeType,
+			&i.SourceNode,
+			&i.TargetNode,
+			&i.Properties,
+			&i.IsNegated,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listEdgesByTarget = `-- name: ListEdgesByTarget :many
 SELECT id, edge_type, source_node, target_node, properties, is_negated, created_at, updated_at FROM edges
 WHERE target_node = $1

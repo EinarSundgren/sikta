@@ -24,18 +24,33 @@ func NewViews(db *database.Queries, logger *slog.Logger) *Views {
 	}
 }
 
+// findDocumentNode looks up the document node for a legacy source ID.
+// Returns an error if no document node exists for this source.
+func (v *Views) findDocumentNode(ctx context.Context, sourceID uuid.UUID) (*database.Node, error) {
+	node, err := v.db.GetDocumentNodeByLegacySourceID(ctx, sourceID.String())
+	if err != nil {
+		return nil, fmt.Errorf("document node not found for source_id %s: %w", sourceID, err)
+	}
+	return node, nil
+}
+
 // GetEventsForTimeline returns event nodes formatted for the timeline view
 // using the specified view strategy to resolve conflicts
 func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, strategy ViewStrategy) ([]TimelineEvent, error) {
-	// Get all event nodes for this source
-	nodes, err := v.db.ListNodesBySource(ctx, database.PgUUID(sourceID))
+	docNode, err := v.findDocumentNode(ctx, sourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all nodes that have provenance from this document node
+	nodes, err := v.db.ListNodesBySource(ctx, docNode.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nodes: %w", err)
 	}
 
 	var events []TimelineEvent
 	for _, node := range nodes {
-		if node.NodeType != string(database.NodeTypeEvent) {
+		if node.NodeType != database.NodeTypeEvent {
 			continue
 		}
 
@@ -49,10 +64,16 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 			continue
 		}
 
-		// Apply view strategy to select which provenance to use
-		selectedProv := v.selectProvenance(provenance, strategy)
+		// Apply view strategy only to assertion provenance, not ordering records
+		selectedProv := v.selectProvenance(assertionOnly(provenance), strategy)
+		confidence := float32(0)
+		reviewStatus := string(database.StatusPending)
+		if selectedProv != nil {
+			confidence = selectedProv.Confidence
+			reviewStatus = selectedProv.Status
+		}
 
-		// Extract temporal info
+		// Extract temporal info from all provenance records
 		var dateStart, dateEnd *time.Time
 		var dateText string
 		for _, prov := range provenance {
@@ -69,9 +90,8 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 			}
 		}
 
-		// Get position from properties
-		narrativePos := int32(node.GetProperty("narrative_position", int32(0)).(int32))
-		chronoPos := int32(node.GetProperty("chronological_position", int32(0)).(int32))
+		// Get position from ordering provenance records
+		narrativePos, chronoPos := extractOrderingFromProvenance(provenance)
 
 		event := TimelineEvent{
 			ID:                    database.UUIDStr(node.ID),
@@ -81,8 +101,8 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 			DateText:              dateText,
 			NarrativePosition:     narrativePos,
 			ChronologicalPosition: chronoPos,
-			Confidence:            selectedProv.Confidence,
-			ReviewStatus:          selectedProv.Status,
+			Confidence:            confidence,
+			ReviewStatus:          reviewStatus,
 			DateStart:             dateStart,
 			DateEnd:               dateEnd,
 		}
@@ -95,18 +115,22 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 
 // GetEntitiesForGraph returns entity nodes for the graph view
 func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]GraphEntity, error) {
-	nodes, err := v.db.ListNodesBySource(ctx, database.PgUUID(sourceID))
+	docNode, err := v.findDocumentNode(ctx, sourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes, err := v.db.ListNodesBySource(ctx, docNode.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nodes: %w", err)
 	}
 
 	var entities []GraphEntity
 	for _, node := range nodes {
-		nodeType := database.NodeType(node.NodeType)
-		if nodeType != database.NodeTypePerson &&
-			nodeType != database.NodeTypePlace &&
-			nodeType != database.NodeTypeOrganization &&
-			nodeType != database.NodeTypeObject {
+		if node.NodeType != database.NodeTypePerson &&
+			node.NodeType != database.NodeTypePlace &&
+			node.NodeType != database.NodeTypeOrganization &&
+			node.NodeType != database.NodeTypeObject {
 			continue
 		}
 
@@ -118,12 +142,25 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 		if err != nil {
 			continue
 		}
-		selectedProv := v.selectProvenance(provenance, ViewStrategyTrustWeighted)
 
-		// Extract aliases
+		selectedProv := v.selectProvenance(assertionOnly(provenance), ViewStrategyTrustWeighted)
+		confidence := float32(0)
+		reviewStatus := string(database.StatusPending)
+		if selectedProv != nil {
+			confidence = selectedProv.Confidence
+			reviewStatus = selectedProv.Status
+		}
+
+		// Extract aliases — JSON unmarshal produces []interface{}, not []string
 		var aliases []string
-		if aliasVal := node.GetProperty("aliases", []string{}); aliasVal != nil {
-			aliases = aliasVal.([]string)
+		if raw := node.GetProperty("aliases", nil); raw != nil {
+			if arr, ok := raw.([]interface{}); ok {
+				for _, item := range arr {
+					if s, ok := item.(string); ok {
+						aliases = append(aliases, s)
+					}
+				}
+			}
 		}
 
 		entity := GraphEntity{
@@ -132,15 +169,15 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 			Type:         node.NodeType,
 			Aliases:      aliases,
 			Description:  node.GetProperty("description", "").(string),
-			Confidence:   selectedProv.Confidence,
-			ReviewStatus: selectedProv.Status,
+			Confidence:   confidence,
+			ReviewStatus: reviewStatus,
 		}
 
 		// Get same_as edges for identity claims
 		edges, err := v.db.ListEdgesBySource(ctx, node.ID)
 		if err == nil {
 			for _, edge := range edges {
-				if edge.EdgeType == string(database.EdgeTypeSameAs) {
+				if edge.EdgeType == database.EdgeTypeSameAs {
 					entity.SameAsEdges = append(entity.SameAsEdges, SameAsEdge{
 						TargetEntityID: database.UUIDStr(edge.TargetNode),
 						Confidence:     1.0, // Would come from edge properties
@@ -158,9 +195,54 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 
 // GetRelationshipsForGraph returns relationship edges for the graph view
 func (v *Views) GetRelationshipsForGraph(ctx context.Context, sourceID uuid.UUID) ([]GraphRelationship, error) {
-	// This would query edges between entity nodes
-	// For now, return empty slice
-	return []GraphRelationship{}, nil
+	docNode, err := v.findDocumentNode(ctx, sourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	edges, err := v.db.ListEdgesBySourceDocument(ctx, docNode.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get edges: %w", err)
+	}
+
+	var relationships []GraphRelationship
+	for _, edge := range edges {
+		// Skip structural/internal edges — only surface semantic relationship edges
+		if edge.EdgeType == database.EdgeTypeInvolvedIn ||
+			edge.EdgeType == database.EdgeTypeSameAs {
+			continue
+		}
+
+		// Get provenance for this edge
+		provenance, err := v.db.ListProvenanceByTarget(ctx, database.ListProvenanceByTargetParams{
+			TargetType: "edge",
+			TargetID:   edge.ID,
+		})
+		if err != nil {
+			v.logger.Warn("failed to get provenance for edge", "edge_id", edge.ID, "error", err)
+		}
+
+		selectedProv := v.selectProvenance(provenance, ViewStrategyTrustWeighted)
+		confidence := float32(0)
+		reviewStatus := string(database.StatusPending)
+		if selectedProv != nil {
+			confidence = selectedProv.Confidence
+			reviewStatus = selectedProv.Status
+		}
+
+		rel := GraphRelationship{
+			ID:               database.UUIDStr(edge.ID),
+			EntityAID:        database.UUIDStr(edge.SourceNode),
+			EntityBID:        database.UUIDStr(edge.TargetNode),
+			RelationshipType: edge.EdgeType,
+			Description:      edge.GetProperty("description", "").(string),
+			Confidence:       confidence,
+			ReviewStatus:     reviewStatus,
+		}
+		relationships = append(relationships, rel)
+	}
+
+	return relationships, nil
 }
 
 // ResolveIdentity returns the "canonical" entity ID based on same_as edges and view strategy
@@ -175,7 +257,7 @@ func (v *Views) ResolveIdentity(ctx context.Context, entityID uuid.UUID, strateg
 
 	var candidateIDs []uuid.UUID
 	for _, edge := range edges {
-		if edge.EdgeType == string(database.EdgeTypeSameAs) {
+		if edge.EdgeType == database.EdgeTypeSameAs {
 			targetID, _ := uuid.FromBytes(edge.TargetNode.Bytes[:16])
 			candidateIDs = append(candidateIDs, targetID)
 		}
@@ -188,6 +270,34 @@ func (v *Views) ResolveIdentity(ctx context.Context, entityID uuid.UUID, strateg
 	// For now, return the first candidate
 	// In production, this would check provenance, confidence, approval status
 	return candidateIDs[0], nil
+}
+
+// assertionOnly filters out ordering provenance records (modality="inferred",
+// PositionType set), returning only the substantive assertion records.
+// This prevents ordering records from polluting confidence/status selection.
+func assertionOnly(provenance []*database.Provenance) []*database.Provenance {
+	var result []*database.Provenance
+	for _, p := range provenance {
+		if p.GetLocation().PositionType == "" {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+// extractOrderingFromProvenance reads narrative and chronological positions from
+// ordering provenance records (those with location.position_type set).
+func extractOrderingFromProvenance(provenance []*database.Provenance) (narrativePos, chronoPos int32) {
+	for _, prov := range provenance {
+		loc := prov.GetLocation()
+		switch loc.PositionType {
+		case "narrative":
+			narrativePos = int32(loc.Position)
+		case "chronological":
+			chronoPos = int32(loc.Position)
+		}
+	}
+	return
 }
 
 // selectProvenance applies the view strategy to select the best provenance record

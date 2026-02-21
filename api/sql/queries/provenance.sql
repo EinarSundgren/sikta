@@ -64,3 +64,31 @@ SELECT modality, COUNT(*) as count
 FROM provenance
 GROUP BY modality
 ORDER BY count DESC;
+
+-- name: CountClaimProvenanceByStatusForSource :many
+-- Count claim/event nodes by their asserted provenance status for a document node
+SELECT p.status, COUNT(*) as count
+FROM provenance p
+INNER JOIN nodes n ON n.id = p.target_id AND p.target_type = 'node'
+WHERE p.source_id = $1
+  AND n.node_type IN ('event', 'attribute', 'relation')
+  AND p.modality = 'asserted'
+GROUP BY p.status;
+
+-- name: CountEntityProvenanceByStatusForSource :many
+-- Count entity nodes by their asserted provenance status for a document node
+SELECT p.status, COUNT(*) as count
+FROM provenance p
+INNER JOIN nodes n ON n.id = p.target_id AND p.target_type = 'node'
+WHERE p.source_id = $1
+  AND n.node_type IN ('person', 'place', 'organization', 'object')
+  AND p.modality = 'asserted'
+GROUP BY p.status;
+
+-- name: UpdateProvenanceStatusByTarget :exec
+-- Update status on asserted provenance records for a given target node or edge
+UPDATE provenance
+SET status = $3
+WHERE target_type = $1
+  AND target_id = $2
+  AND modality = 'asserted';

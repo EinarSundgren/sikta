@@ -42,3 +42,9 @@ SELECT node_type, COUNT(*) as count
 FROM nodes
 GROUP BY node_type
 ORDER BY count DESC;
+
+-- name: GetDocumentNodeByLegacySourceID :one
+SELECT * FROM nodes
+WHERE node_type = 'document'
+  AND properties->>'source_id' = $1::text
+LIMIT 1;

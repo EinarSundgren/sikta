@@ -9,52 +9,47 @@ import (
 
 // Graph helper types and methods for working with Node, Edge, Provenance
 
-// NodeType represents the type of a node
-type NodeType string
-
+// Node type constants — open strings, not a closed enum.
+// Any value is valid; these are convenience constants for common types.
 const (
-	NodeTypeDocument   NodeType = "document"
-	NodeTypeEvent      NodeType = "event"
-	NodeTypeAttribute  NodeType = "attribute"
-	NodeTypeRelation   NodeType = "relation"
-	NodeTypePerson     NodeType = "person"
-	NodeTypePlace      NodeType = "place"
-	NodeTypeOrganization NodeType = "organization"
-	NodeTypeObject     NodeType = "object"
-	NodeTypeChunk      NodeType = "chunk"
-	NodeTypeValue      NodeType = "value"
-	NodeTypeInconsistency NodeType = "inconsistency"
-	NodeTypeReviewAction NodeType = "review_action"
+	NodeTypeDocument      = "document"
+	NodeTypeEvent         = "event"
+	NodeTypeAttribute     = "attribute"
+	NodeTypeRelation      = "relation"
+	NodeTypePerson        = "person"
+	NodeTypePlace         = "place"
+	NodeTypeOrganization  = "organization"
+	NodeTypeObject        = "object"
+	NodeTypeChunk         = "chunk"
+	NodeTypeValue         = "value"
+	NodeTypeInconsistency = "inconsistency"
+	NodeTypeReviewAction  = "review_action"
 )
 
-// EdgeType represents the type of an edge
-type EdgeType string
-
+// Edge type constants — open strings, not a closed enum.
 const (
-	EdgeTypeInvolvedIn EdgeType = "involved_in"
-	EdgeTypeSameAs     EdgeType = "same_as"
-	EdgeTypeRelatedTo  EdgeType = "related_to"
-	EdgeTypeLocatedAt  EdgeType = "located_at"
-	EdgeTypeCauses     EdgeType = "causes"
-	EdgeTypeAsserts    EdgeType = "asserts"
-	EdgeTypeContradicts EdgeType = "contradicts"
-	EdgeTypePerformedBy EdgeType = "performed_by"
-	EdgeTypeApproves   EdgeType = "approves"
-	EdgeTypeRejects    EdgeType = "rejects"
-	EdgeTypeHasValue   EdgeType = "has_value"
+	EdgeTypeInvolvedIn  = "involved_in"
+	EdgeTypeSameAs      = "same_as"
+	EdgeTypeRelatedTo   = "related_to"
+	EdgeTypeLocatedAt   = "located_at"
+	EdgeTypeCauses      = "causes"
+	EdgeTypeAsserts     = "asserts"
+	EdgeTypeContradicts = "contradicts"
+	EdgeTypePerformedBy = "performed_by"
+	EdgeTypeApproves    = "approves"
+	EdgeTypeRejects     = "rejects"
+	EdgeTypeHasValue    = "has_value"
 )
 
-// Modality represents the type of claim
-type Modality string
-
+// Modality constants — open strings, not a closed enum.
 const (
-	ModalityAsserted    Modality = "asserted"
-	ModalityHypothetical Modality = "hypothetical"
-	ModalityDenied      Modality = "denied"
-	ModalityConditional Modality = "conditional"
-	ModalityInferred    Modality = "inferred"
-	ModalityObligatory  Modality = "obligatory"
-	ModalityPermitted   Modality = "permitted"
+	ModalityAsserted     = "asserted"
+	ModalityHypothetical = "hypothetical"
+	ModalityDenied       = "denied"
+	ModalityConditional  = "conditional"
+	ModalityInferred     = "inferred"
+	ModalityObligatory   = "obligatory"
+	ModalityPermitted    = "permitted"
 )
 
 // ReviewStatus represents the review status of a provenance record
@@ -81,12 +76,14 @@ type EdgeWithProvenance struct {
 
 // Location represents where in a source something was found
 type Location struct {
-	Page        int    `json:"page,omitempty"`
-	Section     string `json:"section,omitempty"`
-	Chapter     string `json:"chapter,omitempty"`
-	Paragraph   int    `json:"paragraph,omitempty"`
-	CharStart   int    `json:"char_start,omitempty"`
-	CharEnd     int    `json:"char_end,omitempty"`
+	Page         int    `json:"page,omitempty"`
+	Section      string `json:"section,omitempty"`
+	Chapter      string `json:"chapter,omitempty"`
+	Paragraph    int    `json:"paragraph,omitempty"`
+	CharStart    int    `json:"char_start,omitempty"`
+	CharEnd      int    `json:"char_end,omitempty"`
+	PositionType string `json:"position_type,omitempty"` // "narrative" or "chronological"
+	Position     int    `json:"position,omitempty"`
 }
 
 // Properties helper methods for Node

@@ -6,7 +6,7 @@
 
 ## Status
 
-**Overall:** Phase 7 Complete — Demo Polish & Landing done. All MVP phases complete.
+**Overall:** Graph Model Alignment Complete — Phases G1–G6 done. Graph model is the only path.
 
 **Last Updated:** 2026-02-19
 
@@ -104,6 +104,12 @@
 | Phase 5: Entity Panel & Relationship Graph | **Complete** | Sonnet | EntityPanel sidebar + D3 RelationshipGraph + tab switching. claim_entities table empty (extraction didn't link events↔entities), entity filter uses text matching fallback. |
 | Phase 7: Demo Polish & Landing | **Complete** | Sonnet | Landing page, upload flow with extraction progress, favicon, back button, seed SQL, Makefile targets. Build passes. |
 | Phase 6: Review Workflow & Inconsistency Panel | **Complete** | Sonnet | Keyboard-driven review (J/K/A/R/E), EditModal, ReviewPanel, InconsistencyPanel. Backend review routes added. npm run build passes. |
+| **Graph Alignment G1: Open the Type System** | **Complete** | Sonnet | Removed typed Go enums for NodeType, EdgeType, Modality. Plain untyped string constants. All function signatures accept string. ReviewStatus stays typed. `go build ./...` passes. |
+| **Graph Alignment G2: Drop Modality CHECK** | **Complete** | Sonnet | Created migration 000014_open_modality. Drops `provenance_modality_check` constraint. Run `make migrate` when DB is up. |
+| **Graph Alignment G3: Move Ordering Data to Provenance** | **Complete** | Sonnet | Extended Location struct with PositionType/Position. MigrateClaimToNode now creates two ordering provenance records instead of storing positions as node properties. MigrateChunkToNode/MigrateEntityToNode: removed resolved position values. GetEventsForTimeline: reads positions from provenance via extractOrderingFromProvenance(). `go build ./...` passes. |
+| **Graph Alignment G4: Fix Runtime Bugs in Views** | **Complete** | Sonnet | Added findDocumentNode helper (uses GetDocumentNodeByLegacySourceID with $1::text fix). Nil guards on all selectProvenance calls. Fixed aliases type assertion ([]interface{} not []string). Implemented GetRelationshipsForGraph with ListEdgesBySourceDocument query. sqlc generate passes. `go build ./...` passes. |
+| **Graph Alignment G5: Graph-Based Review Handlers** | **Complete** | Sonnet | Added 3 provenance SQL queries (CountClaimProvenance/CountEntityProvenance/UpdateProvenanceStatusByTarget). Created handlers/graph/review.go with UpdateNodeReview, UpdateEdgeReview, UpdateNodeData, GetReviewProgress. Wired inside UseGraphModel block; legacy review handlers moved to else branch. `go build ./...` passes. |
+| **Graph Alignment G6: Remove Feature Flag, Clean Up Legacy** | **Complete** | Sonnet | Removed UseGraphModel from Config. Removed if/else in main.go — graph handlers now unconditional. Deleted handlers/timeline.go and handlers/review.go. Removed GetEvents, GetEntities, GetRelationships, GetExtractionStatus from extraction.go. `go build ./...` and `go vet ./...` pass. Zero references to USE_GRAPH_MODEL in Go code. |
 
 ---
 

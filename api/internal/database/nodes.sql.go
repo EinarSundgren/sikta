@@ -66,6 +66,27 @@ func (q *Queries) DeleteNode(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const getDocumentNodeByLegacySourceID = `-- name: GetDocumentNodeByLegacySourceID :one
+SELECT id, node_type, label, properties, created_at, updated_at FROM nodes
+WHERE node_type = 'document'
+  AND properties->>'source_id' = $1::text
+LIMIT 1
+`
+
+func (q *Queries) GetDocumentNodeByLegacySourceID(ctx context.Context, dollar_1 string) (*Node, error) {
+	row := q.db.QueryRow(ctx, getDocumentNodeByLegacySourceID, dollar_1)
+	var i Node
+	err := row.Scan(
+		&i.ID,
+		&i.NodeType,
+		&i.Label,
+		&i.Properties,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
 const getNode = `-- name: GetNode :one
 SELECT id, node_type, label, properties, created_at, updated_at FROM nodes
 WHERE id = $1

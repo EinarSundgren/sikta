@@ -44,12 +44,6 @@ func main() {
 	}
 	logger.Info("database connected")
 
-	if cfg.UseGraphModel {
-		logger.Info("Using graph model (Node/Edge/Provenance)")
-	} else {
-		logger.Info("Using legacy data model")
-	}
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handlers.Health)
 
@@ -70,37 +64,29 @@ func main() {
 	// Progress tracker for real-time extraction updates
 	progressTracker := extraction.NewProgressTracker()
 
-	// Route based on model selection
-	if cfg.UseGraphModel {
-		// Graph model handlers
-		graphTimelineHandler := graphhandlers.NewTimelineHandler(db, logger)
-		graphEntitiesHandler := graphhandlers.NewEntitiesHandler(db, logger)
-		graphRelationshipsHandler := graphhandlers.NewRelationshipsHandler(db, logger)
-
-		mux.HandleFunc("GET /api/documents/{id}/timeline", graphTimelineHandler.GetTimeline)
-		mux.HandleFunc("GET /api/documents/{id}/entities", graphEntitiesHandler.GetEntities)
-		mux.HandleFunc("GET /api/documents/{id}/relationships", graphRelationshipsHandler.GetRelationships)
-		mux.HandleFunc("GET /api/documents/{id}/events", graphTimelineHandler.GetTimeline) // Alias for timeline
-	} else {
-		// Legacy handlers
-		extractionHandler := handlers.NewExtractionHandler(db, cfg, logger, progressTracker)
-		mux.HandleFunc("GET /api/documents/{id}/events", extractionHandler.GetEvents)
-		mux.HandleFunc("GET /api/documents/{id}/entities", extractionHandler.GetEntities)
-		mux.HandleFunc("GET /api/documents/{id}/relationships", extractionHandler.GetRelationships)
-		mux.HandleFunc("POST /api/documents/{id}/extract", extractionHandler.TriggerExtraction)
-		mux.HandleFunc("GET /api/documents/{id}/extract/status", extractionHandler.GetExtractionStatus)
-		mux.HandleFunc("GET /api/documents/{id}/extract/progress", extractionHandler.StreamProgress)
-
-		// Timeline handler
-		timelineHandler := handlers.NewTimelineHandler(db, logger)
-		mux.HandleFunc("GET /api/documents/{id}/timeline", timelineHandler.GetTimeline)
-	}
-
-	// Extraction endpoints (currently only legacy)
+	// Extraction endpoints (shared - extraction process is the same)
 	extractionHandler := handlers.NewExtractionHandler(db, cfg, logger, progressTracker)
 	mux.HandleFunc("POST /api/documents/{id}/extract", extractionHandler.TriggerExtraction)
-	mux.HandleFunc("GET /api/documents/{id}/extract/status", extractionHandler.GetExtractionStatus)
 	mux.HandleFunc("GET /api/documents/{id}/extract/progress", extractionHandler.StreamProgress)
+
+	// Graph model handlers
+	graphTimelineHandler := graphhandlers.NewTimelineHandler(db, logger)
+	graphEntitiesHandler := graphhandlers.NewEntitiesHandler(db, logger)
+	graphRelationshipsHandler := graphhandlers.NewRelationshipsHandler(db, logger)
+	graphStatusHandler := graphhandlers.NewStatusHandler(db, logger)
+	graphReviewHandler := graphhandlers.NewReviewHandler(db, logger)
+
+	mux.HandleFunc("GET /api/documents/{id}/timeline", graphTimelineHandler.GetTimeline)
+	mux.HandleFunc("GET /api/documents/{id}/entities", graphEntitiesHandler.GetEntities)
+	mux.HandleFunc("GET /api/documents/{id}/relationships", graphRelationshipsHandler.GetRelationships)
+	mux.HandleFunc("GET /api/documents/{id}/events", graphTimelineHandler.GetTimeline) // Alias for timeline
+	mux.HandleFunc("GET /api/documents/{id}/extract/status", graphStatusHandler.GetExtractionStatus)
+
+	mux.HandleFunc("PATCH /api/claims/{id}/review", graphReviewHandler.UpdateNodeReview)
+	mux.HandleFunc("PATCH /api/claims/{id}", graphReviewHandler.UpdateNodeData)
+	mux.HandleFunc("PATCH /api/entities/{id}/review", graphReviewHandler.UpdateNodeReview)
+	mux.HandleFunc("PATCH /api/relationships/{id}/review", graphReviewHandler.UpdateEdgeReview)
+	mux.HandleFunc("GET /api/documents/{id}/review-progress", graphReviewHandler.GetReviewProgress)
 
 	// Inconsistency handlers (currently only legacy)
 	incHandler := handlers.NewInconsistencyHandler(db, cfg, logger)
@@ -108,14 +94,6 @@ func main() {
 	mux.HandleFunc("POST /api/documents/{id}/detect-inconsistencies", incHandler.TriggerInconsistencyDetection)
 	mux.HandleFunc("GET /api/inconsistencies/{id}/items", incHandler.GetInconsistencyItems)
 	mux.HandleFunc("PUT /api/inconsistencies/{id}/resolve", incHandler.ResolveInconsistency)
-
-	// Review handlers (currently only legacy)
-	reviewHandler := handlers.NewReviewHandler(db, logger)
-	mux.HandleFunc("PATCH /api/claims/{id}/review", reviewHandler.UpdateClaimReview)
-	mux.HandleFunc("PATCH /api/claims/{id}", reviewHandler.UpdateClaim)
-	mux.HandleFunc("PATCH /api/entities/{id}/review", reviewHandler.UpdateEntityReview)
-	mux.HandleFunc("PATCH /api/relationships/{id}/review", reviewHandler.UpdateRelationshipReview)
-	mux.HandleFunc("GET /api/documents/{id}/review-progress", reviewHandler.GetReviewProgress)
 
 	handler := middleware.RequestLogger(logger)(middleware.CORS(cfg.AllowedOrigins)(mux))
 

@@ -34,9 +34,10 @@ func (m *Migrator) MigrateSourceToNode(ctx context.Context, source *database.Sou
 
 	// Create properties map
 	properties := map[string]interface{}{
-		"filename":  source.Filename,
-		"file_type": source.FileType,
-		"is_demo":   source.IsDemo,
+		"filename":   source.Filename,
+		"file_type":  source.FileType,
+		"is_demo":    source.IsDemo,
+		"source_id":  sourceID.String(), // Store original source ID for lookup
 	}
 
 	if source.TotalPages.Valid {
@@ -83,8 +84,7 @@ func (m *Migrator) MigrateChunkToNode(ctx context.Context, chunk *database.Chunk
 	}
 
 	properties := map[string]interface{}{
-		"chunk_index":       chunk.ChunkIndex,
-		"narrative_position": chunk.NarrativePosition,
+		"chunk_index": chunk.ChunkIndex,
 	}
 
 	if chunk.ChapterTitle.Valid {
@@ -136,7 +136,7 @@ func (m *Migrator) MigrateClaimToNode(ctx context.Context, claim *database.Claim
 	}
 
 	// Determine node type from claim type
-	var nodeType database.NodeType
+	var nodeType string
 	switch claim.ClaimType {
 	case "event":
 		nodeType = database.NodeTypeEvent
@@ -148,12 +148,10 @@ func (m *Migrator) MigrateClaimToNode(ctx context.Context, claim *database.Claim
 		nodeType = database.NodeTypeEvent
 	}
 
-	// Build properties
+	// Build properties — no positions here; ordering is expressed as provenance records
 	properties := map[string]interface{}{
-		"event_type": claim.EventType.String,
+		"event_type":  claim.EventType.String,
 		"description": claim.Description.String,
-		"narrative_position": claim.NarrativePosition,
-		"chronological_position": claim.ChronologicalPosition.Int32,
 	}
 
 	// Create claim node
@@ -166,8 +164,7 @@ func (m *Migrator) MigrateClaimToNode(ctx context.Context, claim *database.Claim
 		return uuid.Nil, err
 	}
 
-	// Create provenance with temporal info
-	location := database.Location{}
+	// Create main provenance with temporal info
 	var claimedTimeText string
 	if claim.DateText.Valid {
 		claimedTimeText = claim.DateText.String
@@ -178,7 +175,7 @@ func (m *Migrator) MigrateClaimToNode(ctx context.Context, claim *database.Claim
 		TargetID:        nodeID,
 		SourceID:        docNodeID,
 		Excerpt:         claim.Description.String,
-		Location:        location,
+		Location:        database.Location{},
 		Confidence:      claim.Confidence,
 		Trust:           1.0,
 		Modality:        database.ModalityAsserted,
@@ -187,6 +184,40 @@ func (m *Migrator) MigrateClaimToNode(ctx context.Context, claim *database.Claim
 	})
 	if err != nil {
 		m.logger.Warn("failed to create provenance for claim", "claim_id", claimID, "error", err)
+	}
+
+	// Create narrative ordering provenance — position in story sequence is an inferred claim
+	_, err = m.graph.CreateProvenance(ctx, CreateProvenanceParams{
+		TargetType: "node",
+		TargetID:   nodeID,
+		SourceID:   docNodeID,
+		Excerpt:    fmt.Sprintf("Narrative position: %d", claim.NarrativePosition),
+		Location:   database.Location{PositionType: "narrative", Position: int(claim.NarrativePosition)},
+		Confidence: 1.0,
+		Trust:      1.0,
+		Modality:   database.ModalityInferred,
+		Status:     database.StatusApproved,
+	})
+	if err != nil {
+		m.logger.Warn("failed to create narrative ordering provenance", "claim_id", claimID, "error", err)
+	}
+
+	// Create chronological ordering provenance (only if set)
+	if claim.ChronologicalPosition.Valid {
+		_, err = m.graph.CreateProvenance(ctx, CreateProvenanceParams{
+			TargetType: "node",
+			TargetID:   nodeID,
+			SourceID:   docNodeID,
+			Excerpt:    fmt.Sprintf("Chronological position: %d", claim.ChronologicalPosition.Int32),
+			Location:   database.Location{PositionType: "chronological", Position: int(claim.ChronologicalPosition.Int32)},
+			Confidence: 1.0,
+			Trust:      1.0,
+			Modality:   database.ModalityInferred,
+			Status:     database.StatusApproved,
+		})
+		if err != nil {
+			m.logger.Warn("failed to create chronological ordering provenance", "claim_id", claimID, "error", err)
+		}
 	}
 
 	m.logger.Info("claim migrated to node", "claim_id", claimID, "node_id", nodeID)
@@ -200,12 +231,10 @@ func (m *Migrator) MigrateEntityToNode(ctx context.Context, entity *database.Ent
 		return uuid.Nil, fmt.Errorf("failed to parse entity ID: %w", err)
 	}
 
-	// Build properties - Aliases is already []string
+	// Build properties — appearance positions are resolved values, omit per spec
 	properties := map[string]interface{}{
 		"entity_type": entity.EntityType,
-		"aliases":      entity.Aliases,
-		"first_appearance_chunk": entity.FirstAppearanceChunk.Int32,
-		"last_appearance_chunk": entity.LastAppearanceChunk.Int32,
+		"aliases":     entity.Aliases,
 	}
 
 	description := ""
@@ -216,7 +245,7 @@ func (m *Migrator) MigrateEntityToNode(ctx context.Context, entity *database.Ent
 
 	// Create entity node
 	nodeID, err := m.graph.CreateNode(ctx, CreateNodeParams{
-		NodeType:   database.NodeType(entity.EntityType),
+		NodeType:   entity.EntityType,
 		Label:      entity.Name,
 		Properties: properties,
 	})
@@ -262,7 +291,7 @@ func (m *Migrator) MigrateRelationshipToEdge(ctx context.Context, relationship *
 
 	// Create edge
 	edgeID, err := m.graph.CreateEdge(ctx, CreateEdgeParams{
-		EdgeType:   database.EdgeType(relationship.RelationshipType),
+		EdgeType:   relationship.RelationshipType,
 		SourceNode: entityAID,
 		TargetNode: entityBID,
 		Properties: map[string]interface{}{

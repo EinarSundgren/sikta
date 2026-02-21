@@ -52,3 +52,11 @@ SELECT edge_type, COUNT(*) as count
 FROM edges
 GROUP BY edge_type
 ORDER BY count DESC;
+
+-- name: ListEdgesBySourceDocument :many
+-- List all edges that have provenance from a specific document node
+SELECT DISTINCT e.*
+FROM edges e
+INNER JOIN provenance p ON p.target_type = 'edge' AND p.target_id = e.id
+WHERE p.source_id = $1
+ORDER BY e.created_at DESC;

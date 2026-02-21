@@ -220,7 +220,7 @@ func (s *GraphService) extractFromChunk(ctx context.Context, chunk *database.Chu
 func (s *GraphService) storeExtractedNode(ctx context.Context, node ExtractedNode, chunk *database.Chunk, docNodeID uuid.UUID) (uuid.UUID, error) {
 	// Create the node
 	nodeID, err := s.graph.CreateNode(ctx, graph.CreateNodeParams{
-		NodeType:   database.NodeType(node.NodeType),
+		NodeType:   node.NodeType,
 		Label:      node.Label,
 		Properties: node.Properties,
 	})
@@ -239,7 +239,7 @@ func (s *GraphService) storeExtractedNode(ctx context.Context, node ExtractedNod
 	// Determine modality
 	modality := database.ModalityAsserted
 	if node.Modality != "" {
-		modality = database.Modality(node.Modality)
+		modality = node.Modality
 	}
 
 	// Create provenance
@@ -280,12 +280,12 @@ func (s *GraphService) storeExtractedEdge(ctx context.Context, edge ExtractedEdg
 	// Determine modality
 	modality := database.ModalityAsserted
 	if edge.Modality != "" {
-		modality = database.Modality(edge.Modality)
+		modality = edge.Modality
 	}
 
 	// Create the edge
 	edgeID, err := s.graph.CreateEdge(ctx, graph.CreateEdgeParams{
-		EdgeType:   database.EdgeType(edge.EdgeType),
+		EdgeType:   edge.EdgeType,
 		SourceNode: sourceID,
 		TargetNode: targetID,
 		Properties: edge.Properties,

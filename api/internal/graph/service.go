@@ -28,7 +28,7 @@ func NewService(db *database.Queries, logger *slog.Logger) *Service {
 // CreateNode creates a new node and returns its ID
 func (s *Service) CreateNode(ctx context.Context, params CreateNodeParams) (uuid.UUID, error) {
 	node, err := s.db.CreateNode(ctx, database.CreateNodeParams{
-		NodeType:   string(params.NodeType),
+		NodeType:   params.NodeType,
 		Label:      params.Label,
 		Properties: database.JSONB(params.Properties),
 	})
@@ -57,7 +57,7 @@ func (s *Service) GetNode(ctx context.Context, id uuid.UUID) (*database.Node, er
 // CreateEdge creates a new edge and returns its ID
 func (s *Service) CreateEdge(ctx context.Context, params CreateEdgeParams) (uuid.UUID, error) {
 	edge, err := s.db.CreateEdge(ctx, database.CreateEdgeParams{
-		EdgeType:   string(params.EdgeType),
+		EdgeType:   params.EdgeType,
 		SourceNode: database.PgUUID(params.SourceNode),
 		TargetNode: database.PgUUID(params.TargetNode),
 		Properties: database.JSONB(params.Properties),
@@ -107,7 +107,7 @@ func (s *Service) CreateProvenance(ctx context.Context, params CreateProvenanceP
 		Confidence:       params.Confidence,
 		Trust:            params.Trust,
 		Status:           string(params.Status),
-		Modality:         string(params.Modality),
+		Modality:         params.Modality,
 		ClaimedTimeStart: database.PgTimePtr(params.ClaimedTimeStart),
 		ClaimedTimeEnd:   database.PgTimePtr(params.ClaimedTimeEnd),
 		ClaimedTimeText:  database.PgText(params.ClaimedTimeText),
@@ -171,9 +171,9 @@ func (s *Service) GetEdgeWithProvenance(ctx context.Context, id uuid.UUID) (*dat
 }
 
 // ListNodesByType lists all nodes of a given type
-func (s *Service) ListNodesByType(ctx context.Context, nodeType database.NodeType, limit int32) ([]database.Node, error) {
+func (s *Service) ListNodesByType(ctx context.Context, nodeType string, limit int32) ([]database.Node, error) {
 	nodesPtrs, err := s.db.ListNodesByType(ctx, database.ListNodesByTypeParams{
-		NodeType: string(nodeType),
+		NodeType: nodeType,
 		Limit:    limit,
 	})
 	if err != nil {
@@ -190,9 +190,9 @@ func (s *Service) ListNodesByType(ctx context.Context, nodeType database.NodeTyp
 }
 
 // ListEdgesByType lists all edges of a given type
-func (s *Service) ListEdgesByType(ctx context.Context, edgeType database.EdgeType, limit int32) ([]database.Edge, error) {
+func (s *Service) ListEdgesByType(ctx context.Context, edgeType string, limit int32) ([]database.Edge, error) {
 	edgesPtrs, err := s.db.ListEdgesByType(ctx, database.ListEdgesByTypeParams{
-		EdgeType: string(edgeType),
+		EdgeType: edgeType,
 		Limit:    limit,
 	})
 	if err != nil {

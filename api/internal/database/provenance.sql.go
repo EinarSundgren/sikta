@@ -11,6 +11,78 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countClaimProvenanceByStatusForSource = `-- name: CountClaimProvenanceByStatusForSource :many
+SELECT p.status, COUNT(*) as count
+FROM provenance p
+INNER JOIN nodes n ON n.id = p.target_id AND p.target_type = 'node'
+WHERE p.source_id = $1
+  AND n.node_type IN ('event', 'attribute', 'relation')
+  AND p.modality = 'asserted'
+GROUP BY p.status
+`
+
+type CountClaimProvenanceByStatusForSourceRow struct {
+	Status string `json:"status"`
+	Count  int64  `json:"count"`
+}
+
+// Count claim/event nodes by their asserted provenance status for a document node
+func (q *Queries) CountClaimProvenanceByStatusForSource(ctx context.Context, sourceID pgtype.UUID) ([]*CountClaimProvenanceByStatusForSourceRow, error) {
+	rows, err := q.db.Query(ctx, countClaimProvenanceByStatusForSource, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*CountClaimProvenanceByStatusForSourceRow{}
+	for rows.Next() {
+		var i CountClaimProvenanceByStatusForSourceRow
+		if err := rows.Scan(&i.Status, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countEntityProvenanceByStatusForSource = `-- name: CountEntityProvenanceByStatusForSource :many
+SELECT p.status, COUNT(*) as count
+FROM provenance p
+INNER JOIN nodes n ON n.id = p.target_id AND p.target_type = 'node'
+WHERE p.source_id = $1
+  AND n.node_type IN ('person', 'place', 'organization', 'object')
+  AND p.modality = 'asserted'
+GROUP BY p.status
+`
+
+type CountEntityProvenanceByStatusForSourceRow struct {
+	Status string `json:"status"`
+	Count  int64  `json:"count"`
+}
+
+// Count entity nodes by their asserted provenance status for a document node
+func (q *Queries) CountEntityProvenanceByStatusForSource(ctx context.Context, sourceID pgtype.UUID) ([]*CountEntityProvenanceByStatusForSourceRow, error) {
+	rows, err := q.db.Query(ctx, countEntityProvenanceByStatusForSource, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*CountEntityProvenanceByStatusForSourceRow{}
+	for rows.Next() {
+		var i CountEntityProvenanceByStatusForSourceRow
+		if err := rows.Scan(&i.Status, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countProvenanceByModality = `-- name: CountProvenanceByModality :one
 SELECT modality, COUNT(*) as count
 FROM provenance
@@ -408,4 +480,24 @@ func (q *Queries) UpdateProvenanceStatus(ctx context.Context, arg UpdateProvenan
 		&i.UpdatedAt,
 	)
 	return &i, err
+}
+
+const updateProvenanceStatusByTarget = `-- name: UpdateProvenanceStatusByTarget :exec
+UPDATE provenance
+SET status = $3
+WHERE target_type = $1
+  AND target_id = $2
+  AND modality = 'asserted'
+`
+
+type UpdateProvenanceStatusByTargetParams struct {
+	TargetType string      `json:"target_type"`
+	TargetID   pgtype.UUID `json:"target_id"`
+	Status     string      `json:"status"`
+}
+
+// Update status on asserted provenance records for a given target node or edge
+func (q *Queries) UpdateProvenanceStatusByTarget(ctx context.Context, arg UpdateProvenanceStatusByTargetParams) error {
+	_, err := q.db.Exec(ctx, updateProvenanceStatusByTarget, arg.TargetType, arg.TargetID, arg.Status)
+	return err
 }
