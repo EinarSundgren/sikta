@@ -1,0 +1,96 @@
+EXAMPLE — BRF PROTOCOL (Swedish):
+
+Text: "§5 Fasadrenovering — beslut om upphandling. Styrelsen beslutade: att uppdra åt ordföranden att inhämta offerter från minst tre (3) entreprenörer för fasadrenovering inkluderande puts, fogning och fönsterbänkar. att budget för projektet inte ska överstiga 650 000 kr exkl. moms. att arbetet ska vara slutfört senast 2023-10-31."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "organization",
+      "label": "Brf Stenbacken 3",
+      "properties": {
+        "type": "organization",
+        "aliases": ["styrelsen", "föreningen"]
+      },
+      "excerpt": "Styrelsen beslutade",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Anna Lindqvist",
+      "properties": {
+        "type": "person",
+        "role": "ordförande",
+        "aliases": ["ordföranden", "Anna"]
+      },
+      "excerpt": "att uppdra åt ordföranden",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Beslut om upphandling av fasadrenovering",
+      "properties": {
+        "event_type": "decision",
+        "description": "Styrelsen beslutar att inhämta offerter från minst tre entreprenörer för fasadrenovering"
+      },
+      "claimed_time_text": "2023-03-15",
+      "claimed_time_start": "2023-03-15",
+      "excerpt": "§5 Fasadrenovering — beslut om upphandling",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "value",
+      "label": "Budget 650 000 kr exkl. moms",
+      "properties": {
+        "type": "value",
+        "amount": 650000,
+        "currency": "SEK",
+        "tax_excluded": true
+      },
+      "excerpt": "inte ska överstiga 650 000 kr exkl. moms",
+      "confidence": 1.0,
+      "modality": "obligatory"
+    },
+    {
+      "node_type": "obligation",
+      "label": "Arbetet ska vara slutfört senast 2023-10-31",
+      "properties": {
+        "type": "obligation",
+        "deadline": "2023-10-31"
+      },
+      "claimed_time_text": "senast 2023-10-31",
+      "claimed_time_end": "2023-10-31",
+      "excerpt": "att arbetet ska vara slutfört senast 2023-10-31",
+      "confidence": 1.0,
+      "modality": "obligatory"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Anna Lindqvist",
+      "target_node": "Beslut om upphandling av fasadrenovering",
+      "properties": {
+        "role": "beslutsfattare",
+        "action": "ska uppdras att inhämta offerter"
+      },
+      "excerpt": "att uppdra åt ordföranden",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "has_value",
+      "source_node": "Beslut om upphandling av fasadrenovering",
+      "target_node": "Budget 650 000 kr exkl. moms",
+      "properties": {
+        "constraint": "inte ska överstiga"
+      },
+      "excerpt": "budget för projektet inte ska överstiga 650 000 kr",
+      "confidence": 1.0,
+      "modality": "obligatory"
+    }
+  ]
+}

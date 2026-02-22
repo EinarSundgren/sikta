@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/einarsundgren/sikta/internal/config"
@@ -121,16 +122,43 @@ func (c *Client) doRequest(ctx context.Context, reqBody []byte) (*Response, erro
 	req.Header.Set("x-api-key", c.apiKey)
 	req.Header.Set("anthropic-version", apiVersion)
 
+	// Log HTTP request details to stderr
+	maskedKey := c.apiKey
+	if len(maskedKey) > 10 {
+		maskedKey = maskedKey[:10] + "..."
+	}
+	fmt.Fprintf(os.Stderr, "=== HTTP REQUEST ===\n")
+	fmt.Fprintf(os.Stderr, "URL: %s\n", req.URL.String())
+	fmt.Fprintf(os.Stderr, "Method: %s\n", req.Method)
+	fmt.Fprintf(os.Stderr, "Headers:\n")
+	fmt.Fprintf(os.Stderr, "  Content-Type: %s\n", req.Header.Get("Content-Type"))
+	fmt.Fprintf(os.Stderr, "  x-api-key: %s\n", maskedKey)
+	fmt.Fprintf(os.Stderr, "  anthropic-version: %s\n", req.Header.Get("anthropic-version"))
+	fmt.Fprintf(os.Stderr, "Body length: %d bytes\n", len(reqBody))
+	fmt.Fprintf(os.Stderr, "=== END HTTP REQUEST ===\n\n")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "HTTP request failed: %v\n", err)
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read response body: %v\n", err)
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
+
+	// Log HTTP response details
+	fmt.Fprintf(os.Stderr, "=== HTTP RESPONSE ===\n")
+	fmt.Fprintf(os.Stderr, "Status: %d %s\n", resp.StatusCode, resp.Status)
+	fmt.Fprintf(os.Stderr, "Content-Type: %s\n", resp.Header.Get("Content-Type"))
+	fmt.Fprintf(os.Stderr, "Body length: %d bytes\n", len(body))
+	if resp.StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "Error body: %s\n", string(body))
+	}
+	fmt.Fprintf(os.Stderr, "=== END HTTP RESPONSE ===\n\n")
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
@@ -152,7 +180,7 @@ func (c *Client) doRequest(ctx context.Context, reqBody []byte) (*Response, erro
 func (c *Client) SendSystemPrompt(ctx context.Context, systemPrompt, userMessage string, model string) (*Response, error) {
 	req := Request{
 		Model:     model,
-		MaxTokens: 4096,
+		MaxTokens: 8192, // Increased from 4096 to prevent truncation on long documents
 		System:    systemPrompt,
 		Messages: []Message{
 			{

@@ -1,0 +1,47 @@
+TEKNISK UNDERSÖKNING — KAMERAÖVERVAKNING
+
+Ärende: 5000-K234891-24
+Utfärdad av: Tek. utr. Marcus Öhman, IT-forensik
+Datum: 2024-09-17
+
+SYSTEM: Axis M3057-PLVE, 3 kameror, plan -1, Lindholmen Science Park
+Inspelningsperiod begärd: 2024-09-13 kl. 18:00 — 2024-09-14 kl. 08:00
+
+OBSERVATIONER:
+
+Kamera 1 (Infart/utfart plan -1):
+  20:14 — Svart Audi A4, regnr ABC 123, kör in. Förare: man,
+           ej identifierbar (mörka kläder, keps)
+  20:17 — Samma fordon parkerar på plats 34
+
+Kamera 2 (Ramp mellan plan -1 och -2):
+  23:47 — Person 1 syns gå nerför rampen mot plan -2
+           (mörka kläder, medellängd)
+  00:03 — Samma person (bedömning) går uppför rampen
+           tillbaka till plan -1
+  00:04 — Person 2 syns gå nerför rampen mot plan -2
+           (ljusare kläder, verkar vara Mohammadi baserat på
+           kroppslängd och klädsel matchande hustrus beskrivning)
+  00:06 — Person 1 återkommer, går nerför rampen igen
+  00:09 — Inget mer registrerat på kamera 2 (kameran slutar
+           spela in pga lagringsproblem, se not nedan)
+
+Kamera 3 (Hissområde plan -1):
+  Ur funktion sedan 2024-09-01. Felanmälan gjord till
+  Lindholmen Science Park AB den 2024-09-03, ej åtgärdad.
+
+NOT: Kamera 2 slutade spela in kl. 00:09 den 14 september
+pga att lagringsutrymmet var fullt. Inspelning återupptogs
+automatiskt kl. 04:32 efter att äldre filer raderats.
+
+LUCKA I INSPELNING: 00:09 — 04:32
+
+Kamera 1 (Infart/utfart), fortsättning:
+  02:38 — Svart Audi A4, regnr ABC 123, kör ut.
+           Förare: ej identifierbar.
+  06:55 — Första övriga fordon anländer (morgontidig besökare)
+
+NOTERING: Fordon ABC 123 registrerat på Viktor Lindgren,
+          Kvillegatan 18, Göteborg.
+
+Bifogat: USB-minne med samtliga inspelningar i MP4-format.

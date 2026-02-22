@@ -1,0 +1,3091 @@
+{
+  "Corpus": "brf",
+  "PromptVersion": "v1.txt",
+  "Documents": [
+    {
+      "DocumentID": "A1",
+      "Filename": "A1-protocol-2023-03-15.txt",
+      "Nodes": [
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Brf Stenbacken 3",
+          "properties": {
+            "aliases": [
+              "föreningen"
+            ],
+            "org_number": "769612-4455",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3, org.nr 769612-4455"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Anna Lindqvist",
+          "properties": {
+            "aliases": [
+              "ordföranden",
+              "Anna"
+            ],
+            "role": "ordförande",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Erik Johansson",
+          "properties": {
+            "additional_roles": [
+              "justerare"
+            ],
+            "aliases": [
+              "Erik"
+            ],
+            "role": "ledamot",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Maria Bergström",
+          "properties": {
+            "aliases": [
+              "Maria"
+            ],
+            "role": "sekreterare",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Per Sandberg",
+          "properties": {
+            "aliases": [
+              "Per"
+            ],
+            "role": "suppleant",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "status": "adjungerad",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant (adjungerad)"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Jonas Åkesson",
+          "properties": {
+            "absence_reason": "sjukanmäld",
+            "aliases": [
+              "Jonas"
+            ],
+            "role": "kassör",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "status": "frånvarande",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson, kassör (sjukanmäld)"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Föreningslokalen",
+          "properties": {
+            "address": "Storgatan 14",
+            "city": "Sundsvall",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "place"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Plats: Föreningslokalen, Storgatan 14, Sundsvall",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "description": "Ordinarie styrelsemöte för Brf Stenbacken 3",
+            "event_type": "meeting",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Datum: 2023-03-15",
+          "claimed_time_start": "2023-03-15T18:30:00",
+          "claimed_time_end": "2023-03-15T19:45:00",
+          "claimed_time_text": "2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets öppnande",
+          "properties": {
+            "description": "Ordföranden öppnade mötet",
+            "event_type": "procedural",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Ordföranden Anna Lindqvist öppnade mötet kl. 18:30",
+          "claimed_time_start": "2023-03-15T18:30:00",
+          "claimed_time_text": "kl. 18:30"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Val av justerare",
+          "properties": {
+            "description": "Erik Johansson valdes till justerare",
+            "event_type": "election",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson valdes till justerare",
+          "claimed_time_text": "2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Protokoll från styrelsemöte 2023-01-20",
+          "properties": {
+            "document_type": "protocol",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "status": "godkänt",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Protokollet från styrelsemöte 2023-01-20 godkändes",
+          "claimed_time_text": "2023-01-20"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Likvida medel 847 000 kr",
+          "properties": {
+            "amount": 847000,
+            "currency": "SEK",
+            "description": "Föreningens likvida medel",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "likvida medel uppgår till 847 000 kr per 2023-02-28"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Byggkonsult Norrland AB",
+          "properties": {
+            "organization_type": "company",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Byggkonsult Norrland AB"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Fasadjnspektion",
+          "properties": {
+            "description": "Inspektion där fuktskador konstaterades",
+            "event_type": "inspection",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "inspektion utförd av Byggkonsult Norrland AB den 12 januari 2023",
+          "claimed_time_start": "2023-01-12",
+          "claimed_time_text": "12 januari 2023"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Fuktskador konstaterade",
+          "properties": {
+            "description": "Fuktskador vid fasaden mot gården konstaterade",
+            "event_type": "finding",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fuktskador har konstaterats vid inspektion",
+          "claimed_time_start": "2023-01-12",
+          "claimed_time_text": "12 januari 2023"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beslut om upphandling av fasadrenovering",
+          "properties": {
+            "description": "Styrelsen beslutar att inhämta offerter från minst tre entreprenörer för fasadrenovering",
+            "event_type": "decision",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att uppdra åt ordföranden att inhämta offerter",
+          "claimed_time_start": "2023-03-15",
+          "claimed_time_text": "2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Budget 650 000 kr exkl. moms",
+          "properties": {
+            "amount": 650000,
+            "constraint": "max",
+            "currency": "SEK",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "budget för projektet inte ska överstiga 650 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Arbetet ska vara slutfört senast 2023-10-31",
+          "properties": {
+            "deadline": "2023-10-31",
+            "description": "Fasadrenovering ska vara slutförd",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "arbetet ska vara slutfört senast 2023-10-31",
+          "claimed_time_end": "2023-10-31",
+          "claimed_time_text": "senast 2023-10-31"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Vattenläcka i lägenhet 7",
+          "properties": {
+            "description": "Vattenläcka rapporterad i lägenhet 7",
+            "event_type": "incident",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "vattenläcka i lägenhet 7 (Karlsson)",
+          "claimed_geo_text": "lägenhet 7"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Karlsson",
+          "properties": {
+            "apartment": "7",
+            "role": "hyresgäst",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "person"
+          },
+          "confidence": 0.9,
+          "modality": "asserted",
+          "excerpt": "lägenhet 7 (Karlsson)"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Sundsvalls Rör AB",
+          "properties": {
+            "organization_type": "company",
+            "service": "rörledningar",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Sundsvalls Rör AB"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Jourutryckning för vattenläcka",
+          "properties": {
+            "description": "Jourutryckning för att åtgärda vattenläcka",
+            "event_type": "service_call",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jourutryckning har genomförts av Sundsvalls Rör AB",
+          "claimed_time_text": "före 2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Kostnad för jourutryckning 4 200 kr",
+          "properties": {
+            "amount": 4200,
+            "currency": "SEK",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kostnad: 4 200 kr"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Fråga om laddstolpar för elbilar",
+          "properties": {
+            "description": "Per Sandberg lyfte frågan om laddstolpar i garaget",
+            "event_type": "discussion",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg lyfte frågan om laddstolpar för elbilar i garaget",
+          "claimed_time_text": "2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beslut om utredning av laddstolpar",
+          "properties": {
+            "description": "Styrelsen beslutade att utreda frågan till nästa möte",
+            "event_type": "decision",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att utreda frågan till nästa möte",
+          "claimed_time_text": "2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Utreda laddstolpar till nästa möte",
+          "properties": {
+            "description": "Utreda frågan om laddstolpar till nästa möte",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "beslutade att utreda frågan till nästa möte"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets avslutande",
+          "properties": {
+            "description": "Mötet avslutades",
+            "event_type": "procedural",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Mötet avslutades kl. 19:45",
+          "claimed_time_start": "2023-03-15T19:45:00",
+          "claimed_time_text": "kl. 19:45"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Fasaden mot gården",
+          "properties": {
+            "description": "Fasaden på gårdssidan av fastigheten",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "place"
+          },
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "fasaden mot gården"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Garaget",
+          "properties": {
+            "description": "Föreningens garage",
+            "source_doc": "A1",
+            "source_file": "A1-protocol-2023-03-15.txt",
+            "type": "place"
+          },
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "i garaget"
+        }
+      ],
+      "Edges": [
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "ordförande"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Erik Johansson",
+          "target_node": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "ledamot"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "sekreterare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "attendance": "adjungerad",
+            "role": "suppleant"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant (adjungerad)"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Styrelsemöte 2023-03-15",
+          "properties": {
+            "role": "organisatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3"
+        },
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Styrelsemöte 2023-03-15",
+          "target_node": "Föreningslokalen",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Plats: Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Mötets öppnande",
+          "properties": {
+            "role": "utförare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Ordföranden Anna Lindqvist öppnade mötet"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Erik Johansson",
+          "target_node": "Val av justerare",
+          "properties": {
+            "role": "vald"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson valdes till justerare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Likvida medel 847 000 kr",
+          "properties": {
+            "relation": "ägare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Föreningens likvida medel uppgår till 847 000 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Byggkonsult Norrland AB",
+          "target_node": "Fasadinspektion",
+          "properties": {
+            "role": "utförare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "inspektion utförd av Byggkonsult Norrland AB"
+        },
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Fasadinspektion",
+          "target_node": "Fasaden mot gården",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "fasaden mot gården"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Fasadinspektion",
+          "target_node": "Fuktskador konstaterade",
+          "properties": {
+            "relation": "konstaterade"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fuktskador har konstaterats vid inspektion"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Beslut om upphandling av fasadrenovering",
+          "properties": {
+            "action": "ska inhämta offerter",
+            "role": "beslutsfattare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "att uppdra åt ordföranden att inhämta offerter"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Beslut om upphandling av fasadrenovering",
+          "properties": {
+            "role": "beslutsfattare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Beslut om upphandling av fasadrenovering",
+          "target_node": "Budget 650 000 kr exkl. moms",
+          "properties": {
+            "constraint": "inte ska överstiga"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "budget för projektet inte ska överstiga 650 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Beslut om upphandling av fasadrenovering",
+          "target_node": "Arbetet ska vara slutfört senast 2023-10-31",
+          "properties": {
+            "relation": "tidsram"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "arbetet ska vara slutfört senast 2023-10-31"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Vattenläcka i lägenhet 7",
+          "properties": {
+            "role": "rapportör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström rapporterade om en vattenläcka"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Karlsson",
+          "target_node": "Vattenläcka i lägenhet 7",
+          "properties": {
+            "role": "drabbad"
+          },
+          "is_negated": false,
+          "confidence": 0.9,
+          "modality": "asserted",
+          "excerpt": "lägenhet 7 (Karlsson)"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Sundsvalls Rör AB",
+          "target_node": "Jourutryckning för vattenläcka",
+          "properties": {
+            "role": "utförare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jourutryckning har genomförts av Sundsvalls Rör AB"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Vattenläcka i lägenhet 7",
+          "target_node": "Jourutryckning för vattenläcka",
+          "properties": {
+            "relation": "orsakade"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jourutryckning har genomförts"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Jourutryckning för vattenläcka",
+          "target_node": "Kostnad för jourutryckning 4 200 kr",
+          "properties": {
+            "relation": "kostnad"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kostnad: 4 200 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Fråga om laddstolpar för elbilar",
+          "properties": {
+            "role": "initiativtagare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg lyfte frågan om laddstolpar"
+        },
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Fråga om laddstolpar för elbilar",
+          "target_node": "Garaget",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "i garaget"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Fråga om laddstolpar för elbilar",
+          "target_node": "Beslut om utredning av laddstolpar",
+          "properties": {
+            "relation": "led till"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att utreda frågan"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Beslut om utredning av laddstolpar",
+          "properties": {
+            "role": "beslutsfattare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att utreda"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Beslut om utredning av laddstolpar",
+          "target_node": "Utreda laddstolpar till nästa möte",
+          "properties": {
+            "relation": "skapade"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "beslutade att utreda frågan till nästa möte"
+        }
+      ],
+      "Error": ""
+    },
+    {
+      "DocumentID": "A2",
+      "Filename": "A2-offert-norrbygg.txt",
+      "Nodes": [
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "NorrBygg Fasad AB",
+          "properties": {
+            "address": "Hantverksvägen 8, 856 34 Sundsvall",
+            "org_nr": "559234-1187",
+            "phone": "060-12 34 56",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Brf Stenbacken 3",
+          "properties": {
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Anna Lindqvist",
+          "properties": {
+            "aliases": [
+              "Anna"
+            ],
+            "role": "ordförande",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "person"
+          },
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "Att: Anna Lindqvist"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Tommy Eriksson",
+          "properties": {
+            "aliases": [
+              "Tommy"
+            ],
+            "phone": "070-234 56 78",
+            "role": "projektledare",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kontaktperson: Tommy Eriksson, projektledare"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Niklas Holm",
+          "properties": {
+            "aliases": [
+              "Niklas"
+            ],
+            "role": "VD",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Niklas Holm, VD"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Storgatan 14, Sundsvall",
+          "properties": {
+            "address": "Storgatan 14",
+            "city": "Sundsvall",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "place"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "FASADRENOVERING — Storgatan 14, Sundsvall",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Offert nr: OF-2023-0891",
+          "properties": {
+            "document_type": "offert",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "document",
+            "valid_until": "2023-06-22"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Offert nr: OF-2023-0891",
+          "claimed_time_start": "2023-04-22",
+          "claimed_time_text": "2023-04-22"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Fasadrenovering Storgatan 14",
+          "properties": {
+            "event_type": "project",
+            "scope": "Borttagning av puts, ny putsning, omfogning, byte av fönsterbänkar, ställningsbygge",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "FASADRENOVERING — Storgatan 14, Sundsvall",
+          "claimed_time_start": "2023-08-07",
+          "claimed_time_end": "2023-10-01",
+          "claimed_time_text": "v.32 (7 augusti 2023)"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Offertsumma 525 000 kr exkl. moms",
+          "properties": {
+            "amount": 525000,
+            "currency": "SEK",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "tax_amount": 131250,
+            "tax_excluded": true,
+            "total_including_tax": 656250,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Summa exkl. moms 525 000 kr"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Betalningsvillkor 30 dagar netto",
+          "properties": {
+            "payment_schedule": [
+              {
+                "milestone": "byggstart",
+                "percentage": 30
+              },
+              {
+                "milestone": "halvtid",
+                "percentage": 40
+              },
+              {
+                "milestone": "godkänd slutbesiktning",
+                "percentage": 30
+              }
+            ],
+            "payment_terms": "30 dagar netto",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Betalningsvillkor: 30 dagar netto"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Garanti 5 år på utfört arbete",
+          "properties": {
+            "guarantee_years": 5,
+            "scope": "utfört arbete",
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Garanti: 5 år på utfört arbete"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Beräknad tid 8 veckor",
+          "properties": {
+            "duration_unit": "veckor",
+            "duration_weeks": 8,
+            "source_doc": "A2",
+            "source_file": "A2-offert-norrbygg.txt",
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Beräknad färdigställandetid: 8 veckor"
+        }
+      ],
+      "Edges": [
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Offert nr: OF-2023-0891",
+          "properties": {
+            "role": "utfärdare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Offert nr: OF-2023-0891",
+          "properties": {
+            "role": "mottagare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Till: Brf Stenbacken 3"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Offert nr: OF-2023-0891",
+          "properties": {
+            "role": "kontaktperson mottagare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Att: Anna Lindqvist"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Tommy Eriksson",
+          "target_node": "Offert nr: OF-2023-0891",
+          "properties": {
+            "role": "kontaktperson utfärdare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kontaktperson: Tommy Eriksson, projektledare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Niklas Holm",
+          "target_node": "Offert nr: OF-2023-0891",
+          "properties": {
+            "role": "undertecknare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Niklas Holm, VD, NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Fasadrenovering Storgatan 14",
+          "properties": {
+            "role": "entreprenör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "FASADRENOVERING — Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Fasadrenovering Storgatan 14",
+          "target_node": "Storgatan 14, Sundsvall",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "FASADRENOVERING — Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Offert nr: OF-2023-0891",
+          "target_node": "Offertsumma 525 000 kr exkl. moms",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Summa exkl. moms 525 000 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Fasadrenovering Storgatan 14",
+          "target_node": "Beräknad tid 8 veckor",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Beräknad färdigställandetid: 8 veckor"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Offert nr: OF-2023-0891",
+          "target_node": "Fasadrenovering Storgatan 14",
+          "properties": {
+            "relation": "avser"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "FASADRENOVERING — Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Offert nr: OF-2023-0891",
+          "target_node": "Betalningsvillkor 30 dagar netto",
+          "properties": {
+            "relation": "innehåller"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Betalningsvillkor: 30 dagar netto"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Fasadrenovering Storgatan 14",
+          "target_node": "Garanti 5 år på utfört arbete",
+          "properties": {
+            "relation": "garantis"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Garanti: 5 år på utfört arbete"
+        }
+      ],
+      "Error": ""
+    },
+    {
+      "DocumentID": "A3",
+      "Filename": "A3-protocol-2023-05-10.txt",
+      "Nodes": [
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Brf Stenbacken 3",
+          "properties": {
+            "aliases": [
+              "föreningen",
+              "styrelsen"
+            ],
+            "org_nr": "769612-4455",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3, org.nr 769612-4455"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Föreningslokalen, Storgatan 14, Sundsvall",
+          "properties": {
+            "address": "Storgatan 14",
+            "city": "Sundsvall",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "place"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Plats: Föreningslokalen, Storgatan 14, Sundsvall",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Anna Lindqvist",
+          "properties": {
+            "aliases": [
+              "ordföranden",
+              "Anna"
+            ],
+            "role": "ordförande",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Erik Johansson",
+          "properties": {
+            "aliases": [
+              "Erik"
+            ],
+            "role": "ledamot",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Jonas Åkesson",
+          "properties": {
+            "aliases": [
+              "Jonas",
+              "kassören"
+            ],
+            "role": "kassör",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson, kassör"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Maria Bergström",
+          "properties": {
+            "aliases": [
+              "Maria"
+            ],
+            "role": "sekreterare",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Per Sandberg",
+          "properties": {
+            "aliases": [
+              "Per"
+            ],
+            "role": "suppleant",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "description": "Ordinarie styrelsemöte för Brf Stenbacken 3",
+            "event_type": "meeting",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Datum: 2023-05-10",
+          "claimed_time_start": "2023-05-10",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets öppnande",
+          "properties": {
+            "description": "Ordföranden öppnade mötet",
+            "event_type": "procedural",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Ordföranden öppnade mötet kl. 18:15",
+          "claimed_time_start": "2023-05-10T18:15",
+          "claimed_time_text": "kl. 18:15"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Val av justerare",
+          "properties": {
+            "description": "Jonas Åkesson valdes till justerare",
+            "event_type": "decision",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson valdes till justerare",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Godkännande av föregående protokoll",
+          "properties": {
+            "description": "Protokollet från 2023-03-15 godkändes",
+            "event_type": "decision",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Protokollet från 2023-03-15 godkändes",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Protokoll 2023-03-15",
+          "properties": {
+            "document_type": "protocol",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Protokollet från 2023-03-15"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Presentation av ekonomisk rapport",
+          "properties": {
+            "description": "Kassören presenterade ekonomin med likvida medel 831 000 kr",
+            "event_type": "presentation",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kassören Jonas Åkesson presenterade ekonomin",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Likvida medel 831 000 kr",
+          "properties": {
+            "amount": 831000,
+            "currency": "SEK",
+            "description": "Likvida medel per 2023-04-30",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Likvida medel: 831 000 kr per 2023-04-30"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "NorrBygg Fasad AB",
+          "properties": {
+            "role": "entreprenör",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB: 525 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Sundsvalls Bygg AB",
+          "properties": {
+            "role": "entreprenör",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Sundsvalls Bygg AB: 610 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Fasadgruppen Nord",
+          "properties": {
+            "role": "entreprenör",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fasadgruppen Nord: 495 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Offert NorrBygg 525 000 kr",
+          "properties": {
+            "amount": 525000,
+            "currency": "SEK",
+            "description": "Offert för fasadrenovering",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB: 525 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Offert Sundsvalls Bygg 610 000 kr",
+          "properties": {
+            "amount": 610000,
+            "currency": "SEK",
+            "description": "Offert för fasadrenovering",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Sundsvalls Bygg AB: 610 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Offert Fasadgruppen Nord 495 000 kr",
+          "properties": {
+            "amount": 495000,
+            "currency": "SEK",
+            "description": "Offert för fasadrenovering",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fasadgruppen Nord: 495 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beslut om val av entreprenör för fasadrenovering",
+          "properties": {
+            "description": "Styrelsen beslutade att anta offerten från NorrBygg Fasad AB",
+            "event_type": "decision",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade: att anta offerten från NorrBygg Fasad AB",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Bemyndigande att teckna avtal med NorrBygg",
+          "properties": {
+            "description": "Ordföranden bemyndigas att teckna avtal med NorrBygg Fasad AB",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "att ordföranden bemyndigas att teckna avtal med NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Finansiering ur underhållsfond",
+          "properties": {
+            "description": "Finansiering ska ske ur föreningens underhållsfond",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "att finansiering sker ur föreningens underhållsfond"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Budgetram fasadrenovering 600 000 kr",
+          "properties": {
+            "amount": 600000,
+            "currency": "SEK",
+            "description": "Maximal budget inklusive oförutsedda kostnader",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "budgetramarna för projektet fastställs till maximalt 600 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Redovisning av utredning om laddstolpar",
+          "properties": {
+            "description": "Erik Johansson redovisade utredningen om laddstolpar",
+            "event_type": "presentation",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson redovisade utredningen om laddstolpar",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Kostnad laddstolpar 180 000 kr",
+          "properties": {
+            "amount": 180000,
+            "currency": "SEK",
+            "description": "Beräknad installationskostnad för 4 laddplatser",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "value"
+          },
+          "confidence": 0.9,
+          "modality": "asserted",
+          "excerpt": "Installationskostnad beräknas till ca 180 000 kr för 4 laddplatser"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beslut om hänvisning till föreningsstämma",
+          "properties": {
+            "description": "Styrelsen beslutade att hänskjuta frågan om laddstolpar till föreningsstämman 2024",
+            "event_type": "decision",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att hänskjuta frågan till föreningsstämman 2024",
+          "claimed_time_text": "2023-05-10"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Föreningsstämma 2024",
+          "properties": {
+            "description": "Kommande föreningsstämma där laddstolpsfrågan ska behandlas",
+            "event_type": "meeting",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 0.9,
+          "modality": "hypothetical",
+          "excerpt": "föreningsstämman 2024",
+          "claimed_time_start": "2024",
+          "claimed_time_text": "2024"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets avslutande",
+          "properties": {
+            "description": "Mötet avslutades",
+            "event_type": "procedural",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Mötet avslutades kl. 19:30",
+          "claimed_time_start": "2023-05-10T19:30",
+          "claimed_time_text": "kl. 19:30"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Styrelseprotokoll 2023-05-10",
+          "properties": {
+            "document_type": "styrelseprotokoll",
+            "source_doc": "A3",
+            "source_file": "A3-protocol-2023-05-10.txt",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Vid protokollet: Maria Bergström, sekreterare"
+        }
+      ],
+      "Edges": [
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Styrelsemöte 2023-05-10",
+          "target_node": "Föreningslokalen, Storgatan 14, Sundsvall",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Plats: Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "role": "närvarande, ordförande"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Erik Johansson",
+          "target_node": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "role": "närvarande, ledamot"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "role": "närvarande, kassör, justerare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson, kassör"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "role": "närvarande, sekreterare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Styrelsemöte 2023-05-10",
+          "properties": {
+            "role": "frånvarande, suppleant"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Mötets öppnande",
+          "properties": {
+            "role": "initiator"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Ordföranden öppnade mötet kl. 18:15"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Val av justerare",
+          "properties": {
+            "role": "vald"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson valdes till justerare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Presentation av ekonomisk rapport",
+          "properties": {
+            "role": "presentatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kassören Jonas Åkesson presenterade ekonomin"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Presentation av ekonomisk rapport",
+          "target_node": "Likvida medel 831 000 kr",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Likvida medel: 831 000 kr per 2023-04-30"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Offert NorrBygg 525 000 kr",
+          "properties": {
+            "relation": "offert"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB: 525 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Sundsvalls Bygg AB",
+          "target_node": "Offert Sundsvalls Bygg 610 000 kr",
+          "properties": {
+            "relation": "offert"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Sundsvalls Bygg AB: 610 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Fasadgruppen Nord",
+          "target_node": "Offert Fasadgruppen Nord 495 000 kr",
+          "properties": {
+            "relation": "offert"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fasadgruppen Nord: 495 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Beslut om val av entreprenör för fasadrenovering",
+          "properties": {
+            "role": "beslutsfattare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade: att anta offerten från NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Beslut om val av entreprenör för fasadrenovering",
+          "properties": {
+            "role": "antagen entreprenör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "att anta offerten från NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Bemyndigande att teckna avtal med NorrBygg",
+          "properties": {
+            "role": "bemyndigad"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "att ordföranden bemyndigas att teckna avtal med NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Bemyndigande att teckna avtal med NorrBygg",
+          "properties": {
+            "role": "avtalspart"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "teckna avtal med NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Beslut om val av entreprenör för fasadrenovering",
+          "target_node": "Budgetram fasadrenovering 600 000 kr",
+          "properties": {
+            "constraint": "maximalt"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "budgetramarna för projektet fastställs till maximalt 600 000 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Erik Johansson",
+          "target_node": "Redovisning av utredning om laddstolpar",
+          "properties": {
+            "role": "presentatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson redovisade utredningen om laddstolpar"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Redovisning av utredning om laddstolpar",
+          "target_node": "Beslut om hänvisning till föreningsstämma",
+          "properties": {
+            "relation": "led till"
+          },
+          "is_negated": false,
+          "confidence": 0.9,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade att hänskjuta frågan till föreningsstämman 2024"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Föreningsstämma 2024",
+          "target_node": "Beslut om hänvisning till föreningsstämma",
+          "properties": {
+            "role": "mottagande organ"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "hänskjuta frågan till föreningsstämman 2024"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Styrelseprotokoll 2023-05-10",
+          "properties": {
+            "role": "sekreterare, upprättare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Vid protokollet: Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Styrelseprotokoll 2023-05-10",
+          "properties": {
+            "role": "justerare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Justerat: Jonas Åkesson, kassör"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Styrelseprotokoll 2023-05-10",
+          "properties": {
+            "role": "justerare, ordförande"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Justerat: Anna Lindqvist, ordförande"
+        }
+      ],
+      "Error": ""
+    },
+    {
+      "DocumentID": "A4",
+      "Filename": "A4-faktura-norrbygg.txt",
+      "Nodes": [
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "NorrBygg Fasad AB",
+          "properties": {
+            "address": "Hantverksvägen 8, 856 34 Sundsvall",
+            "aliases": [
+              "NorrBygg",
+              "entreprenör"
+            ],
+            "org_nr": "559234-1187",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB, Org.nr: 559234-1187",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Hantverksvägen 8, 856 34 Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Brf Stenbacken 3",
+          "properties": {
+            "address": "Storgatan 14, 852 30 Sundsvall",
+            "aliases": [
+              "styrelsen",
+              "föreningen",
+              "Brf Stenbacken"
+            ],
+            "role": "kund",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kund: Brf Stenbacken 3",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Storgatan 14, 852 30 Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Tommy Eriksson",
+          "properties": {
+            "employer": "NorrBygg Fasad AB",
+            "phone": "070-234 56 78",
+            "role": "kontaktperson",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kontaktperson vid frågor: Tommy Eriksson"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Per Sandberg",
+          "properties": {
+            "context": "beställde tilläggsarbeten per telefon",
+            "role": "beställare",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "person"
+          },
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "beställda av Per Sandberg per telefon"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Faktura F-2023-1847",
+          "properties": {
+            "bankgiro": "234-5678",
+            "betalningsvillkor": "30 dagar netto",
+            "document_type": "slutfaktura",
+            "faktura_del": "3 av 3",
+            "faktura_nr": "F-2023-1847",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fakturanr: F-2023-1847, Fakturadatum: 2023-11-02",
+          "claimed_time_start": "2023-11-02",
+          "claimed_time_text": "2023-11-02"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Avtal daterat 2023-05-28",
+          "properties": {
+            "document_type": "avtal",
+            "parter": [
+              "NorrBygg Fasad AB",
+              "Brf Stenbacken 3"
+            ],
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Enligt avtal daterat 2023-05-28",
+          "claimed_time_start": "2023-05-28",
+          "claimed_time_text": "2023-05-28"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Faktura F-2023-1201",
+          "properties": {
+            "document_type": "del faktura",
+            "faktura_del": "1 av 3",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "syfte": "byggstart",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Faktura F-2023-1201 (byggstart)"
+        },
+        {
+          "id": "",
+          "node_type": "document",
+          "label": "Faktura F-2023-1544",
+          "properties": {
+            "document_type": "del faktura",
+            "faktura_del": "2 av 3",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "syfte": "halvtid",
+            "type": "document"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Faktura F-2023-1544 (halvtid)"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Fasadrenovering",
+          "properties": {
+            "beskrivning": "Fasadrenovering inkluderande puts, fogning och fönsterbänkar",
+            "event_type": "byggprojekt",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "status": "slutförd"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fasadrenovering — SLUTFAKTURA",
+          "claimed_time_text": "enligt avtal 2023-05-28, slutfaktura 2023-11-02"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beställning av tilläggsarbeten",
+          "properties": {
+            "beskrivning": "Per Sandberg beställde byte av 2 ytterligare fönsterbänkar per telefon",
+            "event_type": "beställning",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "beställda av Per Sandberg per telefon 2023-09-14",
+          "claimed_time_start": "2023-09-14",
+          "claimed_time_text": "2023-09-14"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Förfallodatum faktura F-2023-1847",
+          "properties": {
+            "beskrivning": "Sista betalningsdag för slutfaktura",
+            "event_type": "deadline",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Förfallodatum: 2023-12-02",
+          "claimed_time_start": "2023-12-02",
+          "claimed_time_text": "2023-12-02"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Betalningsslutfaktura",
+          "properties": {
+            "belopp_exkl_moms": 190800,
+            "belopp_inkl_moms": 238500,
+            "forfallodatum": "2023-12-02",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "obligation",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Summa inkl. moms: 238 500 kr, Förfallodatum: 2023-12-02",
+          "claimed_time_end": "2023-12-02",
+          "claimed_time_text": "2023-12-02"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Avtalad slutlikvid 30%",
+          "properties": {
+            "andel_av_total": "30%",
+            "belopp": 157500,
+            "skatt": "exkl. moms",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "value",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Avtalad slutlikvid (30%) 157 500 kr"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Extra fogning gatufasad",
+          "properties": {
+            "belopp": 18500,
+            "kategori": "tilläggsarbete",
+            "skatt": "exkl. moms",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "value",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Extra fogning gatufasad 18 500 kr"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Byte av 2 ytterligare fönsterbänkar",
+          "properties": {
+            "antal": 2,
+            "belopp": 14800,
+            "kategori": "tilläggsarbete",
+            "skatt": "exkl. moms",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "value",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Byte av 2 st ytterligare fönsterbänkar... 14 800 kr"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Totalt fakturerat exkl. moms",
+          "properties": {
+            "belopp": 558300,
+            "period": "hela projektet",
+            "skatt": "exkl. moms",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "value",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Totalt fakturerat exkl. moms: 558 300 kr"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Summa tidigare fakturerat exkl. moms",
+          "properties": {
+            "belopp": 367500,
+            "skatt": "exkl. moms",
+            "source_doc": "A4",
+            "source_file": "A4-faktura-norrbygg.txt",
+            "type": "value",
+            "valuta": "SEK"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Summa tidigare fakturerat 367 500 kr exkl. moms"
+        }
+      ],
+      "Edges": [
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Fasadrenovering",
+          "properties": {
+            "roll": "entreprenör",
+            "utförande": "levererat arbete"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Fasadrenovering — SLUTFAKTURA"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Fasadrenovering",
+          "properties": {
+            "beställare": "true",
+            "roll": "kund"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kund: Brf Stenbacken 3, Avser: Fasadrenovering"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Beställning av tilläggsarbeten",
+          "properties": {
+            "handling": "beställde per telefon",
+            "roll": "beställare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "beställda av Per Sandberg per telefon 2023-09-14"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Beställning av tilläggsarbeten",
+          "target_node": "Byte av 2 ytterligare fönsterbänkar",
+          "properties": {
+            "relation": "orsakade kostnad"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "beställda av Per Sandberg... 14 800 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "has_value",
+          "source_node": "Faktura F-2023-1847",
+          "target_node": "Totalt fakturerat exkl. moms",
+          "properties": {
+            "relation": "summerar"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Totalt fakturerat exkl. moms: 558 300 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Faktura F-2023-1847",
+          "target_node": "Avtal daterat 2023-05-28",
+          "properties": {
+            "relation": "grundar sig på"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Enligt avtal daterat 2023-05-28"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Tommy Eriksson",
+          "target_node": "Faktura F-2023-1847",
+          "properties": {
+            "roll": "kontaktperson"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kontaktperson vid frågor: Tommy Eriksson"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Betalningsslutfaktura",
+          "properties": {
+            "belopp_inkl_moms": 238500,
+            "roll": "betalningsskyldig"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Kund: Brf Stenbacken 3, Summa inkl. moms: 238 500 kr"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Faktura F-2023-1201",
+          "target_node": "Fasadrenovering",
+          "properties": {
+            "faktura_del": "byggstart",
+            "relation": "faktura för"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Faktura F-2023-1201 (byggstart)"
+        },
+        {
+          "id": "",
+          "edge_type": "related_to",
+          "source_node": "Faktura F-2023-1544",
+          "target_node": "Fasadrenovering",
+          "properties": {
+            "faktura_del": "halvtid",
+            "relation": "faktura för"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Faktura F-2023-1544 (halvtid)"
+        }
+      ],
+      "Error": ""
+    },
+    {
+      "DocumentID": "A5",
+      "Filename": "A5-protocol-2023-12-07.txt",
+      "Nodes": [
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "Brf Stenbacken 3",
+          "properties": {
+            "aliases": [
+              "föreningen",
+              "styrelsen"
+            ],
+            "org_nr": "769612-4455",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3, org.nr 769612-4455"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Anna Lindqvist",
+          "properties": {
+            "aliases": [
+              "ordföranden",
+              "Anna"
+            ],
+            "role": "ordförande",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Erik Johansson",
+          "properties": {
+            "role": "ledamot",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Jonas Åkesson",
+          "properties": {
+            "aliases": [
+              "kassören"
+            ],
+            "role": "kassör",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson, kassör"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Maria Bergström",
+          "properties": {
+            "additional_roles": [
+              "justerare"
+            ],
+            "aliases": [
+              "sekreteraren"
+            ],
+            "role": "sekreterare",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "node_type": "person",
+          "label": "Per Sandberg",
+          "properties": {
+            "role": "suppleant",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "status": "adjungerad",
+            "type": "person"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant (adjungerad)"
+        },
+        {
+          "id": "",
+          "node_type": "organization",
+          "label": "NorrBygg Fasad AB",
+          "properties": {
+            "role": "entreprenör",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "organization"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "node_type": "place",
+          "label": "Föreningslokalen",
+          "properties": {
+            "address": "Storgatan 14",
+            "city": "Sundsvall",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "place"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Föreningslokalen, Storgatan 14, Sundsvall",
+          "claimed_geo_region": "Sundsvall",
+          "claimed_geo_text": "Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "description": "Ordinarie styrelsemöte i Brf Stenbacken 3",
+            "event_type": "meeting",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Datum: 2023-12-07",
+          "claimed_time_start": "2023-12-07T18:00:00",
+          "claimed_time_end": "2023-12-07T20:15:00",
+          "claimed_time_text": "2023-12-07"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets öppnande",
+          "properties": {
+            "description": "Styrelsemötet öppnades",
+            "event_type": "procedural",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Mötet öppnades kl. 18:00",
+          "claimed_time_start": "2023-12-07T18:00:00",
+          "claimed_time_text": "kl. 18:00"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Val av justerare",
+          "properties": {
+            "description": "Maria Bergström valdes till justerare",
+            "event_type": "decision",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström valdes till justerare",
+          "claimed_time_text": "2023-12-07"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Slutbesiktning fasadrenovering",
+          "properties": {
+            "description": "Fasadrenoveringen slutbesiktigades utan anmärkningar",
+            "event_type": "inspection",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "slutbesiktigades den 22 november 2023",
+          "claimed_time_start": "2023-11-22",
+          "claimed_time_text": "22 november 2023"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Garantitid 5 år",
+          "properties": {
+            "description": "Garantitid från besiktningsdatum",
+            "duration": "5 år",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Garantitiden om 5 år löper från besiktningsdatum",
+          "claimed_time_start": "2023-11-22",
+          "claimed_time_text": "från besiktningsdatum"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Avtalat pris NorrBygg",
+          "properties": {
+            "amount": 525000,
+            "currency": "SEK",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Avtalat pris NorrBygg Fasad AB 525 000 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Tilläggsarbeten",
+          "properties": {
+            "amount": 33300,
+            "currency": "SEK",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Tilläggsarbeten 33 300 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Total projektkostnad",
+          "properties": {
+            "amount": 558300,
+            "currency": "SEK",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "tax_excluded": true,
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Total projektkostnad 558 300 kr exkl. moms"
+        },
+        {
+          "id": "",
+          "node_type": "value",
+          "label": "Likvida medel 2023-11-30",
+          "properties": {
+            "amount": 294000,
+            "currency": "SEK",
+            "description": "Likvida medel per 2023-11-30",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "value"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Likvida medel: 294 000 kr per 2023-11-30",
+          "claimed_time_start": "2023-11-30",
+          "claimed_time_text": "per 2023-11-30"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Observation om budgetöverskridande",
+          "properties": {
+            "description": "Kassören noterade att projektet översteg budgeten men ryms i underhållsfonden",
+            "event_type": "observation",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson noterade att projektet översteg den ursprungliga budgeten"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Notering om obehöriga beställningar",
+          "properties": {
+            "description": "Styrelsen noterade att Per Sandberg beställt tilläggsarbeten utan formellt beslut",
+            "event_type": "observation",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "tilläggsarbeten beställdes av Per Sandberg utan formellt styrelsebeslut"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Beslut om godkännande av tilläggsarbeten",
+          "properties": {
+            "description": "Styrelsen beslutade godkänna tilläggsarbetena i efterhand",
+            "event_type": "decision",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "att godkänna tilläggsarbetena i efterhand"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Krav på förhandsgodkännande av beställningar",
+          "properties": {
+            "description": "Alla beställningar utöver avtalat pris ska godkännas av styrelsen i förväg",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "framöver ska alla beställningar utöver avtalat pris godkännas av styrelsen i förväg"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Varning om sjunkande likviditet",
+          "properties": {
+            "description": "Kassören påpekade att likviditeten sjunkit kraftigt",
+            "event_type": "observation",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Likviditeten sjunkit kraftigt"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Rekommendation om avgiftshöjning",
+          "properties": {
+            "description": "Kassören rekommenderade 10% avgiftshöjning från 2024-01-01",
+            "event_type": "recommendation",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "rekommenderade en avgiftshöjning om 10% från 2024-01-01",
+          "claimed_time_start": "2024-01-01",
+          "claimed_time_text": "från 2024-01-01"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Planering av Årsstämma 2024",
+          "properties": {
+            "description": "Årsstämman planeras till 2024-04-25",
+            "event_type": "planning",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Stämman planeras till 2024-04-25 kl. 19:00",
+          "claimed_time_start": "2024-04-25T19:00:00",
+          "claimed_time_text": "2024-04-25 kl. 19:00"
+        },
+        {
+          "id": "",
+          "node_type": "obligation",
+          "label": "Bokning av lokal till årsstämma",
+          "properties": {
+            "description": "Maria Bergström ska boka lokalen till årsstämman",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt",
+            "type": "obligation"
+          },
+          "confidence": 1,
+          "modality": "obligatory",
+          "excerpt": "Maria Bergström bokar lokalen"
+        },
+        {
+          "id": "",
+          "node_type": "event",
+          "label": "Mötets avslutande",
+          "properties": {
+            "description": "Styrelsemötet avslutades",
+            "event_type": "procedural",
+            "source_doc": "A5",
+            "source_file": "A5-protocol-2023-12-07.txt"
+          },
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Mötet avslutades kl. 20:15",
+          "claimed_time_start": "2023-12-07T20:15:00",
+          "claimed_time_text": "kl. 20:15"
+        }
+      ],
+      "Edges": [
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "ordförande"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Anna Lindqvist, ordförande"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Erik Johansson",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "ledamot"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Erik Johansson, ledamot"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "kassör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson, kassör"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "attendance": "närvarande",
+            "role": "sekreterare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström, sekreterare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "attendance": "adjungerad",
+            "role": "suppleant"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Per Sandberg, suppleant (adjungerad)"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Brf Stenbacken 3",
+          "target_node": "Styrelsemöte 2023-12-07",
+          "properties": {
+            "role": "organisatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Brf Stenbacken 3"
+        },
+        {
+          "id": "",
+          "edge_type": "located_at",
+          "source_node": "Styrelsemöte 2023-12-07",
+          "target_node": "Föreningslokalen",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Plats: Föreningslokalen, Storgatan 14, Sundsvall"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Val av justerare",
+          "properties": {
+            "role": "vald"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström valdes till justerare"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Anna Lindqvist",
+          "target_node": "Slutbesiktning fasadrenovering",
+          "properties": {
+            "role": "meddelare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Ordföranden meddelade att fasadrenoveringen slutbesiktigades"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "NorrBygg Fasad AB",
+          "target_node": "Slutbesiktning fasadrenovering",
+          "properties": {
+            "role": "entreprenör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "NorrBygg Fasad AB"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Observation om budgetöverskridande",
+          "properties": {
+            "role": "observatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Jonas Åkesson noterade att projektet översteg"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Per Sandberg",
+          "target_node": "Notering om obehöriga beställningar",
+          "properties": {
+            "role": "beställare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "tilläggsarbeten beställdes av Per Sandberg"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Notering om obehöriga beställningar",
+          "target_node": "Beslut om godkännande av tilläggsarbeten",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "Styrelsen beslutade: att godkänna tilläggsarbetena i efterhand"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Notering om obehöriga beställningar",
+          "target_node": "Krav på förhandsgodkännande av beställningar",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 0.95,
+          "modality": "asserted",
+          "excerpt": "framöver ska alla beställningar utöver avtalat pris godkännas"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Varning om sjunkande likviditet",
+          "properties": {
+            "role": "meddelare"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kassören påpekade att likviditeten sjunkit kraftigt"
+        },
+        {
+          "id": "",
+          "edge_type": "causes",
+          "source_node": "Varning om sjunkande likviditet",
+          "target_node": "Rekommendation om avgiftshöjning",
+          "properties": {},
+          "is_negated": false,
+          "confidence": 0.9,
+          "modality": "inferred",
+          "excerpt": "rekommenderade en avgiftshöjning om 10%"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Jonas Åkesson",
+          "target_node": "Rekommendation om avgiftshöjning",
+          "properties": {
+            "role": "rekommendatör"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Kassören...rekommenderade en avgiftshöjning"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Bokning av lokal till årsstämma",
+          "properties": {
+            "role": "ansvarig"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström bokar lokalen"
+        },
+        {
+          "id": "",
+          "edge_type": "involved_in",
+          "source_node": "Maria Bergström",
+          "target_node": "Planering av Årsstämma 2024",
+          "properties": {
+            "role": "bokningsansvarig"
+          },
+          "is_negated": false,
+          "confidence": 1,
+          "modality": "asserted",
+          "excerpt": "Maria Bergström bokar lokalen"
+        }
+      ],
+      "Error": ""
+    }
+  ],
+  "Metadata": {
+    "Model": "glm-5",
+    "Timestamp": "2026-02-22T23:58:16+01:00",
+    "TotalDocs": 5,
+    "TotalNodes": 114,
+    "TotalEdges": 91,
+    "FailedDocs": 0
+  }
+}

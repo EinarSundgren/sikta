@@ -2,25 +2,24 @@ package extraction
 
 import (
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 // ExtractedNode represents a node extracted from text by the LLM
 type ExtractedNode struct {
-	ID                string                 `json:"id"`
-	NodeType          string                 `json:"node_type"`
-	Label             string                 `json:"label"`
-	Properties        map[string]interface{} `json:"properties"`
-	Confidence        float32                `json:"confidence"`
-	Modality          string                 `json:"modality,omitempty"`           // asserted, hypothetical, etc.
-	Excerpt           string                 `json:"excerpt,omitempty"`            // source text excerpt
-	ClaimedTimeStart  *time.Time             `json:"claimed_time_start,omitempty"`
-	ClaimedTimeEnd    *time.Time             `json:"claimed_time_end,omitempty"`
-	ClaimedTimeText   string                 `json:"claimed_time_text,omitempty"`
-	ClaimedGeoRegion  string                 `json:"claimed_geo_region,omitempty"`
-	ClaimedGeoText    string                 `json:"claimed_geo_text,omitempty"`
+	ID               string                 `json:"id"`
+	NodeType         string                 `json:"node_type"`
+	Label            string                 `json:"label"`
+	Properties       map[string]interface{} `json:"properties"`
+	Confidence       float32                `json:"confidence"`
+	Modality         string                 `json:"modality,omitempty"`     // asserted, hypothetical, etc.
+	Excerpt          string                 `json:"excerpt,omitempty"`      // source text excerpt
+	ClaimedTimeStart string                 `json:"claimed_time_start,omitempty"` // Flexible date format (YYYY-MM-DD or RFC3339)
+	ClaimedTimeEnd   string                 `json:"claimed_time_end,omitempty"`   // Flexible date format (YYYY-MM-DD or RFC3339)
+	ClaimedTimeText  string                 `json:"claimed_time_text,omitempty"`
+	ClaimedGeoRegion string                 `json:"claimed_geo_region,omitempty"`
+	ClaimedGeoText   string                 `json:"claimed_geo_text,omitempty"`
 }
 
 // ExtractedEdge represents an edge extracted from text by the LLM

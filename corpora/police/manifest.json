@@ -1,0 +1,517 @@
+{
+  "corpus": "police",
+  "description": "Criminal investigation — The Lindholmen Incident. Man found dead in parking garage, reclassified from accident to suspected homicide. 7 documents, 10 planted inconsistencies.",
+  "language": "sv",
+  "domain": "police_investigation",
+  "source_trust": {
+    "C7": 0.98,
+    "C6": 0.95,
+    "C2": 0.95,
+    "C1": 0.90,
+    "C5": 0.70,
+    "C3": 0.65,
+    "C4": 0.30
+  },
+  "source_trust_rationale": {
+    "C7": "Machine-generated phone records, court-ordered, tamper-resistant",
+    "C6": "Machine-generated camera footage, but gap exists and one camera broken",
+    "C2": "Scientific forensic report, death time is an estimate (range, not exact)",
+    "C1": "Official police report, but summarizes rather than contains primary evidence",
+    "C5": "First-hand observation of dispute, but partially hearsay (Reza told her)",
+    "C3": "First-hand for evening events, but emotional, approximate times",
+    "C4": "Multiple provably false statements — trust collapses once contradictions detected"
+  },
+  "documents": [
+    { "id": "C1", "filename": "C1-polisrapport.txt", "type": "police_report", "trust": 0.90, "date": "2024-09-14" },
+    { "id": "C2", "filename": "C2-rattsmedicinskt.txt", "type": "forensic_report", "trust": 0.95, "date": "2024-09-15" },
+    { "id": "C3", "filename": "C3-forhor-samira.txt", "type": "witness_interview", "trust": 0.65, "date": "2024-09-14" },
+    { "id": "C4", "filename": "C4-forhor-viktor.txt", "type": "witness_interview", "trust": 0.30, "date": "2024-09-16" },
+    { "id": "C5", "filename": "C5-forhor-nadia.txt", "type": "witness_interview", "trust": 0.70, "date": "2024-09-16" },
+    { "id": "C6", "filename": "C6-kameraovervakning.txt", "type": "technical_report", "trust": 0.95, "date": "2024-09-17" },
+    { "id": "C7", "filename": "C7-telefonlistor.txt", "type": "technical_report", "trust": 0.98, "date": "2024-09-18" }
+  ],
+  "entities": [
+    {
+      "id": "E1",
+      "label": "Reza Mohammadi",
+      "type": "person",
+      "aliases": ["Reza", "Mohammadi", "den avlidne", "mannen", "offret"],
+      "properties": { "born": "1985-04-12", "occupation": "mjukvaruutvecklare", "role": "victim", "phone": "070-555 1234" },
+      "mentioned_in": ["C1", "C2", "C3", "C4", "C5", "C6", "C7"]
+    },
+    {
+      "id": "E2",
+      "label": "Samira Mohammadi",
+      "type": "person",
+      "aliases": ["Samira", "hustrun", "S.M."],
+      "properties": { "born": "1989-06-23", "role": "wife, victim's spouse" },
+      "mentioned_in": ["C1", "C3"]
+    },
+    {
+      "id": "E3",
+      "label": "Viktor Lindgren",
+      "type": "person",
+      "aliases": ["Viktor", "Wiktor", "V.L.", "Lindgren", "teamledaren"],
+      "properties": { "born": "1994-08-12", "role": "team lead, TechNova", "phone": "070-555 9876" },
+      "mentioned_in": ["C3", "C4", "C5", "C6", "C7"]
+    },
+    {
+      "id": "E4",
+      "label": "Sara Nilsson",
+      "type": "person",
+      "aliases": ["Sara", "Nilsson", "sambon"],
+      "properties": { "role": "Viktor's sambo, alibi witness", "phone": "070-555 4567" },
+      "mentioned_in": ["C4", "C7"]
+    },
+    {
+      "id": "E5",
+      "label": "Nadia Kovač",
+      "type": "person",
+      "aliases": ["Nadia", "Kovač", "N.K."],
+      "properties": { "born": "1991-03-03", "role": "UX designer, TechNova" },
+      "mentioned_in": ["C5"]
+    },
+    {
+      "id": "E6",
+      "label": "Karin Ström",
+      "type": "person",
+      "aliases": ["Karin", "Ström", "K.S.", "Insp. Karin Ström", "inspektör Ström"],
+      "properties": { "role": "inspector, investigating officer" },
+      "mentioned_in": ["C1", "C3", "C4"]
+    },
+    {
+      "id": "E7",
+      "label": "Daniel Falk",
+      "type": "person",
+      "aliases": ["Daniel", "Falk", "Asp. Daniel Falk"],
+      "properties": { "role": "aspirant, interview witness" },
+      "mentioned_in": ["C3", "C4", "C5"]
+    },
+    {
+      "id": "E8",
+      "label": "Anders Moberg",
+      "type": "person",
+      "aliases": ["Anders", "Moberg", "A.M.", "Krim.insp. Anders Moberg"],
+      "properties": { "role": "criminal inspector" },
+      "mentioned_in": ["C5"]
+    },
+    {
+      "id": "E9",
+      "label": "Dr. Eva Sundström",
+      "type": "person",
+      "aliases": ["Eva Sundström", "rättsläkaren", "Dr Sundström"],
+      "properties": { "role": "forensic pathologist, Rättsmedicinalverket Göteborg" },
+      "mentioned_in": ["C1", "C2"]
+    },
+    {
+      "id": "E10",
+      "label": "Mats Eriksson",
+      "type": "person",
+      "aliases": ["Mats", "Eriksson", "projektledaren"],
+      "properties": { "role": "project manager, TechNova" },
+      "mentioned_in": ["C5"]
+    },
+    {
+      "id": "E11",
+      "label": "Marcus Öhman",
+      "type": "person",
+      "aliases": ["Marcus Öhman", "Öhman"],
+      "properties": { "role": "IT forensics technician, camera analysis" },
+      "mentioned_in": ["C6"]
+    },
+    {
+      "id": "E12",
+      "label": "Sofia Bergh",
+      "type": "person",
+      "aliases": ["Sofia Bergh", "Bergh"],
+      "properties": { "role": "IT forensics technician, phone analysis" },
+      "mentioned_in": ["C7"]
+    },
+    {
+      "id": "E13",
+      "label": "TechNova AB",
+      "type": "organization",
+      "aliases": ["TechNova"],
+      "properties": { "location": "Lindholmen, Göteborg" },
+      "mentioned_in": ["C3", "C4", "C5"]
+    },
+    {
+      "id": "E14",
+      "label": "Lindholmen Science Park",
+      "type": "place",
+      "aliases": ["Lindholmsplatsen 1", "parkeringsgaraget", "garaget"],
+      "properties": { "city": "Göteborg" },
+      "mentioned_in": ["C1", "C4", "C6"]
+    },
+    {
+      "id": "E15",
+      "label": "Björlandavägen 34",
+      "type": "place",
+      "aliases": ["Björlandavägen", "Björlanda", "offrets hem"],
+      "properties": { "city": "Göteborg", "role": "victim's home" },
+      "mentioned_in": ["C1", "C3", "C7"]
+    },
+    {
+      "id": "E16",
+      "label": "Kvillegatan 18",
+      "type": "place",
+      "aliases": ["Kvillegatan", "Hisingen"],
+      "properties": { "city": "Göteborg", "role": "Viktor's home" },
+      "mentioned_in": ["C4", "C6", "C7"]
+    },
+    {
+      "id": "E17",
+      "label": "Svart Audi A4, ABC 123",
+      "type": "vehicle",
+      "aliases": ["Audi A4", "ABC 123", "svart Audi", "fordon ABC 123"],
+      "properties": { "registered_to": "Viktor Lindgren", "color": "svart", "model": "Audi A4" },
+      "mentioned_in": ["C4", "C6"]
+    }
+  ],
+  "events": [
+    {
+      "id": "V1",
+      "label": "Reza discovers Viktor copying open source code without license attribution",
+      "type": "discovery",
+      "claimed_time_text": "ungefär en månad sedan",
+      "claimed_time_start": "2024-08-14",
+      "entities": ["E1", "E3"],
+      "source_doc": "C5",
+      "source_section": null
+    },
+    {
+      "id": "V2",
+      "label": "Viktor threatens Reza",
+      "type": "threat",
+      "claimed_time_text": "ungefär en månad sedan",
+      "claimed_time_start": "2024-08-14",
+      "entities": ["E3", "E1"],
+      "source_doc": "C5",
+      "source_section": null
+    },
+    {
+      "id": "V3",
+      "label": "Viktor calls Reza repeatedly to dissuade him",
+      "type": "communication",
+      "claimed_time_text": "veckan innan",
+      "claimed_time_start": "2024-09-06",
+      "claimed_time_end": "2024-09-12",
+      "entities": ["E3", "E1"],
+      "source_doc": "C5",
+      "source_section": null
+    },
+    {
+      "id": "V4",
+      "label": "Phone call Viktor to Reza at 17:32",
+      "type": "communication",
+      "claimed_time_text": "2024-09-13 kl. 17:32",
+      "claimed_time_start": "2024-09-13T17:32:00",
+      "entities": ["E3", "E1"],
+      "source_doc": "C7",
+      "source_section": null
+    },
+    {
+      "id": "V5",
+      "label": "Reza comes home from work",
+      "type": "movement",
+      "claimed_time_text": "fredagen den 13 september vid halvfem",
+      "claimed_time_start": "2024-09-13T16:30:00",
+      "entities": ["E1"],
+      "source_doc": "C3",
+      "source_section": null
+    },
+    {
+      "id": "V6",
+      "label": "Phone call Viktor to Reza at 21:14",
+      "type": "communication",
+      "claimed_time_text": "2024-09-13 kl. 21:14",
+      "claimed_time_start": "2024-09-13T21:14:00",
+      "entities": ["E3", "E1"],
+      "source_doc": "C7",
+      "source_section": null
+    },
+    {
+      "id": "V7",
+      "label": "Reza receives call, becomes upset",
+      "type": "communication",
+      "claimed_time_text": "vid 21-tiden den 13 september",
+      "claimed_time_start": "2024-09-13T21:00:00",
+      "entities": ["E1", "E2"],
+      "source_doc": "C3",
+      "source_section": null
+    },
+    {
+      "id": "V8",
+      "label": "Phone call Reza to Viktor at 21:28",
+      "type": "communication",
+      "claimed_time_text": "2024-09-13 kl. 21:28",
+      "claimed_time_start": "2024-09-13T21:28:00",
+      "entities": ["E1", "E3"],
+      "source_doc": "C7",
+      "source_section": null
+    },
+    {
+      "id": "V9",
+      "label": "Reza leaves home",
+      "type": "movement",
+      "claimed_time_text": "ungefär kl. 21:30 den 13 september",
+      "claimed_time_start": "2024-09-13T21:30:00",
+      "entities": ["E1"],
+      "source_doc": "C3",
+      "source_section": null
+    },
+    {
+      "id": "V10",
+      "label": "Black Audi (ABC 123) enters parking garage",
+      "type": "movement",
+      "claimed_time_text": "20:14 den 13 september",
+      "claimed_time_start": "2024-09-13T20:14:00",
+      "entities": ["E17", "E3"],
+      "source_doc": "C6",
+      "source_section": "Kamera 1"
+    },
+    {
+      "id": "V11",
+      "label": "Person 1 descends ramp toward level -2",
+      "type": "movement",
+      "claimed_time_text": "23:47 den 13 september",
+      "claimed_time_start": "2024-09-13T23:47:00",
+      "entities": [],
+      "source_doc": "C6",
+      "source_section": "Kamera 2"
+    },
+    {
+      "id": "V12",
+      "label": "Person 1 ascends ramp back to level -1",
+      "type": "movement",
+      "claimed_time_text": "00:03 den 14 september",
+      "claimed_time_start": "2024-09-14T00:03:00",
+      "entities": [],
+      "source_doc": "C6",
+      "source_section": "Kamera 2"
+    },
+    {
+      "id": "V13",
+      "label": "Person 2 (likely Mohammadi) descends ramp toward level -2",
+      "type": "movement",
+      "claimed_time_text": "00:04 den 14 september",
+      "claimed_time_start": "2024-09-14T00:04:00",
+      "entities": ["E1"],
+      "source_doc": "C6",
+      "source_section": "Kamera 2"
+    },
+    {
+      "id": "V14",
+      "label": "Person 1 returns and descends ramp again",
+      "type": "movement",
+      "claimed_time_text": "00:06 den 14 september",
+      "claimed_time_start": "2024-09-14T00:06:00",
+      "entities": [],
+      "source_doc": "C6",
+      "source_section": "Kamera 2"
+    },
+    {
+      "id": "V15",
+      "label": "Camera 2 stops recording (storage full)",
+      "type": "technical_event",
+      "claimed_time_text": "00:09 den 14 september",
+      "claimed_time_start": "2024-09-14T00:09:00",
+      "entities": [],
+      "source_doc": "C6",
+      "source_section": null
+    },
+    {
+      "id": "V16",
+      "label": "Estimated time of death",
+      "type": "death",
+      "claimed_time_text": "mellan kl. 01:00 och 03:00 den 14 september",
+      "claimed_time_start": "2024-09-14T01:00:00",
+      "claimed_time_end": "2024-09-14T03:00:00",
+      "entities": ["E1"],
+      "source_doc": "C2",
+      "source_section": null
+    },
+    {
+      "id": "V17",
+      "label": "Viktor's phone goes dark (off or airplane mode)",
+      "type": "technical_event",
+      "claimed_time_text": "23:18 den 13 september",
+      "claimed_time_start": "2024-09-13T23:18:00",
+      "entities": ["E3"],
+      "source_doc": "C7",
+      "source_section": null
+    },
+    {
+      "id": "V18",
+      "label": "Black Audi (ABC 123) exits parking garage",
+      "type": "movement",
+      "claimed_time_text": "02:38 den 14 september",
+      "claimed_time_start": "2024-09-14T02:38:00",
+      "entities": ["E17", "E3"],
+      "source_doc": "C6",
+      "source_section": "Kamera 1"
+    },
+    {
+      "id": "V19",
+      "label": "Viktor's phone reappears on Hisingen base station",
+      "type": "technical_event",
+      "claimed_time_text": "04:45 den 14 september",
+      "claimed_time_start": "2024-09-14T04:45:00",
+      "entities": ["E3"],
+      "source_doc": "C7",
+      "source_section": null
+    },
+    {
+      "id": "V20",
+      "label": "Alarm received, emergency services dispatched",
+      "type": "alarm",
+      "claimed_time_text": "kl. 07:12 den 14 september",
+      "claimed_time_start": "2024-09-14T07:12:00",
+      "entities": ["E1"],
+      "source_doc": "C1",
+      "source_section": null
+    },
+    {
+      "id": "V21",
+      "label": "Reza Mohammadi declared dead",
+      "type": "death_declaration",
+      "claimed_time_text": "kl. 07:41 den 14 september",
+      "claimed_time_start": "2024-09-14T07:41:00",
+      "entities": ["E1"],
+      "source_doc": "C1",
+      "source_section": null
+    },
+    {
+      "id": "V22",
+      "label": "Case reclassified from accident to suspected homicide",
+      "type": "reclassification",
+      "claimed_time_text": "kl. 10:30 den 14 september",
+      "claimed_time_start": "2024-09-14T10:30:00",
+      "entities": ["E1", "E6", "E9"],
+      "source_doc": "C1",
+      "source_section": null
+    }
+  ],
+  "inconsistencies": [
+    {
+      "id": "I1",
+      "type": "witness_vs_evidence",
+      "severity": "critical",
+      "description": "Viktor states 'Jag har inte haft kontakt med Reza utanför arbetstid' and 'Nej, absolut inte' when asked if he called Reza. Phone records show 3 calls between them on September 13, including evening calls at 21:14 and 21:28. Viktor is lying.",
+      "documents": ["C4", "C7"],
+      "entities_involved": ["E3", "E1"],
+      "evidence": {
+        "side_a": { "doc": "C4", "section": null, "claim": "Jag har inte haft kontakt med Reza utanför arbetstid. / Nej, absolut inte [ringde Reza]." },
+        "side_b": { "doc": "C7", "section": null, "claim": "21:14 — Utgående samtal till 070-555 1234 (Reza Mohammadi); 21:28 — Inkommande samtal från 070-555 1234" }
+      }
+    },
+    {
+      "id": "I2",
+      "type": "witness_vs_witness",
+      "severity": "high",
+      "description": "Viktor describes conflict as 'en diskussion om en arkitekturfråga.' Nadia describes it as Viktor copying code without license attribution and threatening Reza. Fundamentally different characterization of the same event.",
+      "documents": ["C4", "C5"],
+      "entities_involved": ["E3", "E5", "E1"],
+      "evidence": {
+        "side_a": { "doc": "C4", "section": null, "claim": "en diskussion om en arkitekturfråga för tre veckor sedan, men det var en sakfråga, inget personligt" },
+        "side_b": { "doc": "C5", "section": null, "claim": "Reza hade upptäckt att Viktor kopierade kod från ett open source-projekt utan attribution. Viktor hotade att 'se till att Reza fick problem'" }
+      }
+    },
+    {
+      "id": "I3",
+      "type": "temporal",
+      "severity": "high",
+      "description": "Viktor says 'Jag gick och la mig vid 23:00' and claims to have been at home. His phone's last base station registration at 23:18 is at Lindholmen (not Hisingen/home). He was not at home at 23:18.",
+      "documents": ["C4", "C7"],
+      "entities_involved": ["E3"],
+      "evidence": {
+        "side_a": { "doc": "C4", "section": null, "claim": "Jag gick och la mig vid 23:00 [hemma på Hisingen]" },
+        "side_b": { "doc": "C7", "section": null, "claim": "23:18 — Sista basstation: Lindholmen, Göteborg (automatisk nätverksregistrering)" }
+      }
+    },
+    {
+      "id": "I4",
+      "type": "temporal",
+      "severity": "critical",
+      "description": "Black Audi (registered to Viktor) enters garage at 20:14, over an hour BEFORE Reza's wife says the call came (~21:00) and Reza left home (~21:30). Viktor (or his car) was already at the scene before the victim arrived.",
+      "documents": ["C6", "C3"],
+      "entities_involved": ["E17", "E3", "E1"],
+      "evidence": {
+        "side_a": { "doc": "C6", "section": "Kamera 1", "claim": "20:14 — Svart Audi A4, regnr ABC 123, kör in" },
+        "side_b": { "doc": "C3", "section": null, "claim": "Reza fick ett telefonsamtal vid 21-tiden ... lämnade lägenheten ungefär kl. 21:30" }
+      }
+    },
+    {
+      "id": "I5",
+      "type": "witness_vs_evidence",
+      "severity": "high",
+      "description": "Viktor says his car was 'parkerad utanför min lägenhet på Hisingen, Kvillegatan 18.' Camera footage shows a black Audi ABC 123 (registered to Viktor) entering the garage at 20:14 and leaving at 02:38.",
+      "documents": ["C4", "C6"],
+      "entities_involved": ["E3", "E17"],
+      "evidence": {
+        "side_a": { "doc": "C4", "section": null, "claim": "Parkerad utanför min lägenhet på Hisingen, Kvillegatan 18" },
+        "side_b": { "doc": "C6", "section": "Kamera 1", "claim": "NOTERING: Fordon ABC 123 registrerat på Viktor Lindgren, Kvillegatan 18, Göteborg. [enters 20:14, exits 02:38]" }
+      }
+    },
+    {
+      "id": "I6",
+      "type": "temporal_approximation",
+      "severity": "medium",
+      "description": "Samira says the call came 'vid 21-tiden.' Phone records show the call was at 21:14. Consistent approximately but 14 minutes off — normal witness imprecision, not a contradiction. Confidence scores should differ: technical record (0.98) vs. witness memory (0.65).",
+      "documents": ["C3", "C7"],
+      "entities_involved": ["E2", "E1"],
+      "evidence": {
+        "side_a": { "doc": "C3", "section": null, "claim": "Reza fick ett telefonsamtal vid 21-tiden" },
+        "side_b": { "doc": "C7", "section": null, "claim": "21:14 — Inkommande samtal från 070-555 9876 (Viktor Lindgren)" }
+      }
+    },
+    {
+      "id": "I7",
+      "type": "forensic_temporal",
+      "severity": "medium",
+      "description": "Forensic report: death between 01:00–03:00. Camera shows person 2 descends at 00:04, person 1 follows at 00:06. Camera gap: 00:09–04:32. Audi leaves at 02:38. The ~51-minute gap between 00:09 (last camera activity) and 01:00 (earliest death estimate) is unexplained.",
+      "documents": ["C2", "C6"],
+      "entities_involved": ["E1"],
+      "evidence": {
+        "side_a": { "doc": "C2", "section": null, "claim": "Dödstidpunkt: Uppskattad till mellan kl. 01:00 och 03:00 den 14 september" },
+        "side_b": { "doc": "C6", "section": "Kamera 2", "claim": "00:09 — Inget mer registrerat på kamera 2 (kameran slutar spela in)" }
+      }
+    },
+    {
+      "id": "I8",
+      "type": "absence",
+      "severity": "high",
+      "description": "Camera 3 (elevator area, plan -1) has been non-functional since 2024-09-01. Work order filed 2024-09-03, not repaired. Creates a blind spot — Person 1 could have used the elevator instead of the ramp without being recorded.",
+      "documents": ["C6"],
+      "entities_involved": [],
+      "evidence": {
+        "side_a": { "doc": "C6", "section": "Kamera 3", "claim": "Ur funktion sedan 2024-09-01. Felanmälan gjord 2024-09-03, ej åtgärdad." },
+        "side_b": null
+      }
+    },
+    {
+      "id": "I9",
+      "type": "witness_uncertainty",
+      "severity": "medium",
+      "description": "Samira heard the name 'Viktor eller möjligen Wiktor.' Viktor's actual name is Viktor Lindgren. Samira's uncertainty is normal — name mentioned in passing weeks ago. Extraction should link to Viktor Lindgren with moderate confidence (not certainty).",
+      "documents": ["C3", "C4"],
+      "entities_involved": ["E2", "E3"],
+      "evidence": {
+        "side_a": { "doc": "C3", "section": null, "claim": "Jag tror han sa namnet Viktor eller möjligen Wiktor" },
+        "side_b": { "doc": "C4", "section": null, "claim": "Förhör med: Viktor Lindgren" }
+      }
+    },
+    {
+      "id": "I10",
+      "type": "absence",
+      "severity": "medium",
+      "description": "Sara Nilsson (Viktor's alibi) is never interviewed in these documents. Her phone was at Hisingen all night (C7), but phone location does not prove the person was there. Viktor claims she can confirm his alibi, but no verification exists in the file.",
+      "documents": ["C4", "C7"],
+      "entities_involved": ["E4", "E3"],
+      "evidence": {
+        "side_a": { "doc": "C4", "section": null, "claim": "Fredagskvällen var jag hemma med min sambo Sara Nilsson." },
+        "side_b": { "doc": "C7", "section": null, "claim": "Sara Nilsson: Ingen relevant aktivitet kvällen 13 september. Telefon registrerad på basstation Hisingen hela kvällen/natten. [never interviewed]" }
+      }
+    }
+  ]
+}

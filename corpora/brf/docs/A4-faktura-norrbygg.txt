@@ -1,0 +1,45 @@
+FAKTURA
+
+NorrBygg Fasad AB
+Org.nr: 559234-1187
+Hantverksvägen 8, 856 34 Sundsvall
+
+Fakturanr: F-2023-1847
+Fakturadatum: 2023-11-02
+Förfallodatum: 2023-12-02
+
+Kund: Brf Stenbacken 3
+      Storgatan 14
+      852 30 Sundsvall
+
+Avser: Fasadrenovering — SLUTFAKTURA (faktura 3 av 3)
+
+Enligt avtal daterat 2023-05-28.
+
+Specifikation slutfaktura:
+  Avtalad slutlikvid (30%)         157 500 kr
+  Tilläggsarbeten:
+    Extra fogning gatufasad          18 500 kr
+    Byte av 2 st ytterligare
+    fönsterbänkar (ej i urspr.
+    offert, beställda av Per
+    Sandberg per telefon
+    2023-09-14)                      14 800 kr
+  ─────────────────────────────────────────
+  Summa denna faktura exkl. moms   190 800 kr
+  Moms 25%                          47 700 kr
+  ─────────────────────────────────────────
+  Summa inkl. moms                 238 500 kr
+
+Tidigare fakturerat (faktura 1+2):
+  Faktura F-2023-1201 (byggstart)  157 500 kr exkl. moms
+  Faktura F-2023-1544 (halvtid)    210 000 kr exkl. moms
+  ─────────────────────────────────────────
+  Summa tidigare fakturerat        367 500 kr exkl. moms
+
+Totalt fakturerat exkl. moms:     558 300 kr
+
+Betalningsvillkor: 30 dagar netto
+Bankgiro: 234-5678
+
+Kontaktperson vid frågor: Tommy Eriksson, 070-234 56 78

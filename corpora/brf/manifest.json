@@ -1,0 +1,376 @@
+{
+  "corpus": "brf",
+  "description": "BRF Stenbacken 3 — Board protocols and invoices covering a 2023 facade renovation project. 5 documents, 8 planted inconsistencies.",
+  "language": "sv",
+  "domain": "brf_protocol",
+  "documents": [
+    { "id": "A1", "filename": "A1-protocol-2023-03-15.txt", "type": "protocol", "trust": 0.95, "date": "2023-03-15" },
+    { "id": "A2", "filename": "A2-offert-norrbygg.txt", "type": "offert", "trust": 0.90, "date": "2023-04-22" },
+    { "id": "A3", "filename": "A3-protocol-2023-05-10.txt", "type": "protocol", "trust": 0.95, "date": "2023-05-10" },
+    { "id": "A4", "filename": "A4-faktura-norrbygg.txt", "type": "faktura", "trust": 0.90, "date": "2023-11-02" },
+    { "id": "A5", "filename": "A5-protocol-2023-12-07.txt", "type": "protocol", "trust": 0.95, "date": "2023-12-07" }
+  ],
+  "entities": [
+    {
+      "id": "E1",
+      "label": "Anna Lindqvist",
+      "type": "person",
+      "aliases": ["ordföranden", "ordförande", "Anna", "Lindqvist"],
+      "properties": { "role": "ordförande" },
+      "mentioned_in": ["A1", "A2", "A3", "A5"]
+    },
+    {
+      "id": "E2",
+      "label": "Erik Johansson",
+      "type": "person",
+      "aliases": ["Erik", "Johansson"],
+      "properties": { "role": "ledamot" },
+      "mentioned_in": ["A1", "A3", "A5"]
+    },
+    {
+      "id": "E3",
+      "label": "Maria Bergström",
+      "type": "person",
+      "aliases": ["Maria", "sekreteraren", "sekreterare", "Bergström"],
+      "properties": { "role": "sekreterare" },
+      "mentioned_in": ["A1", "A3", "A5"]
+    },
+    {
+      "id": "E4",
+      "label": "Jonas Åkesson",
+      "type": "person",
+      "aliases": ["Jonas", "kassören", "kassör", "Åkesson"],
+      "properties": { "role": "kassör", "absent_in": "A1" },
+      "mentioned_in": ["A1", "A3", "A5"]
+    },
+    {
+      "id": "E5",
+      "label": "Per Sandberg",
+      "type": "person",
+      "aliases": ["Per", "Sandberg", "suppleant", "supplenten"],
+      "properties": { "role": "suppleant" },
+      "mentioned_in": ["A1", "A3", "A4", "A5"]
+    },
+    {
+      "id": "E6",
+      "label": "Tommy Eriksson",
+      "type": "person",
+      "aliases": ["Tommy", "projektledaren"],
+      "properties": { "role": "projektledare", "organization": "NorrBygg Fasad AB" },
+      "mentioned_in": ["A2", "A4"]
+    },
+    {
+      "id": "E7",
+      "label": "Niklas Holm",
+      "type": "person",
+      "aliases": ["Niklas", "VD"],
+      "properties": { "role": "VD", "organization": "NorrBygg Fasad AB" },
+      "mentioned_in": ["A2"]
+    },
+    {
+      "id": "E8",
+      "label": "Brf Stenbacken 3",
+      "type": "organization",
+      "aliases": ["föreningen", "BRF Stenbacken 3", "Stenbacken", "brf"],
+      "properties": { "org_nr": "769612-4455" },
+      "mentioned_in": ["A1", "A2", "A3", "A4", "A5"]
+    },
+    {
+      "id": "E9",
+      "label": "NorrBygg Fasad AB",
+      "type": "organization",
+      "aliases": ["NorrBygg", "entreprenören", "NorrBygg Fasad"],
+      "properties": { "org_nr": "559234-1187" },
+      "mentioned_in": ["A2", "A3", "A4", "A5"]
+    },
+    {
+      "id": "E10",
+      "label": "Sundsvalls Bygg AB",
+      "type": "organization",
+      "aliases": ["Sundsvalls Bygg"],
+      "properties": {},
+      "mentioned_in": ["A3"]
+    },
+    {
+      "id": "E11",
+      "label": "Fasadgruppen Nord",
+      "type": "organization",
+      "aliases": ["Fasadgruppen"],
+      "properties": {},
+      "mentioned_in": ["A3"]
+    },
+    {
+      "id": "E12",
+      "label": "Byggkonsult Norrland AB",
+      "type": "organization",
+      "aliases": ["Byggkonsult Norrland", "Byggkonsult"],
+      "properties": {},
+      "mentioned_in": ["A1"]
+    },
+    {
+      "id": "E13",
+      "label": "Sundsvalls Rör AB",
+      "type": "organization",
+      "aliases": ["Sundsvalls Rör"],
+      "properties": {},
+      "mentioned_in": ["A1"]
+    },
+    {
+      "id": "E14",
+      "label": "Storgatan 14",
+      "type": "place",
+      "aliases": ["Storgatan", "fastigheten", "Storgatan 14 Sundsvall"],
+      "properties": { "city": "Sundsvall" },
+      "mentioned_in": ["A1", "A2", "A4", "A5"]
+    },
+    {
+      "id": "E15",
+      "label": "Karlsson",
+      "type": "person",
+      "aliases": ["Karlsson lgh 7", "lgh 7", "lägenhet 7"],
+      "properties": { "apartment": "7" },
+      "mentioned_in": ["A1"]
+    }
+  ],
+  "events": [
+    {
+      "id": "V1",
+      "label": "Fuktsinspektion utförd",
+      "type": "inspection",
+      "claimed_time_text": "12 januari 2023",
+      "claimed_time_start": "2023-01-12",
+      "entities": ["E12"],
+      "source_doc": "A1",
+      "source_section": "§5"
+    },
+    {
+      "id": "V2",
+      "label": "Beslut om upphandling av fasadrenovering",
+      "type": "decision",
+      "claimed_time_text": "2023-03-15",
+      "claimed_time_start": "2023-03-15",
+      "entities": ["E1", "E8"],
+      "source_doc": "A1",
+      "source_section": "§5"
+    },
+    {
+      "id": "V3",
+      "label": "Budget fastställd till 650 000 kr",
+      "type": "decision",
+      "claimed_time_text": "2023-03-15",
+      "claimed_time_start": "2023-03-15",
+      "entities": ["E1", "E8"],
+      "source_doc": "A1",
+      "source_section": "§5"
+    },
+    {
+      "id": "V4",
+      "label": "Vattenläcka lägenhet 7",
+      "type": "incident",
+      "claimed_time_text": "före 2023-03-15",
+      "claimed_time_start": null,
+      "claimed_time_end": "2023-03-15",
+      "entities": ["E13", "E15"],
+      "source_doc": "A1",
+      "source_section": "§6"
+    },
+    {
+      "id": "V5",
+      "label": "Offert från NorrBygg Fasad AB",
+      "type": "document",
+      "claimed_time_text": "2023-04-22",
+      "claimed_time_start": "2023-04-22",
+      "entities": ["E9", "E8", "E1"],
+      "source_doc": "A2",
+      "source_section": null
+    },
+    {
+      "id": "V6",
+      "label": "Val av entreprenör — NorrBygg Fasad AB antagen",
+      "type": "decision",
+      "claimed_time_text": "2023-05-10",
+      "claimed_time_start": "2023-05-10",
+      "entities": ["E1", "E9", "E8"],
+      "source_doc": "A3",
+      "source_section": "§5"
+    },
+    {
+      "id": "V7",
+      "label": "Ny budgetram fastställd till 600 000 kr",
+      "type": "decision",
+      "claimed_time_text": "2023-05-10",
+      "claimed_time_start": "2023-05-10",
+      "entities": ["E1", "E8"],
+      "source_doc": "A3",
+      "source_section": "§5"
+    },
+    {
+      "id": "V8",
+      "label": "Avtal tecknat med NorrBygg Fasad AB",
+      "type": "agreement",
+      "claimed_time_text": "2023-05-28",
+      "claimed_time_start": "2023-05-28",
+      "entities": ["E1", "E9", "E8"],
+      "source_doc": "A4",
+      "source_section": null
+    },
+    {
+      "id": "V9",
+      "label": "Byggstart fasadrenovering",
+      "type": "construction",
+      "claimed_time_text": "v.32, 7 augusti 2023",
+      "claimed_time_start": "2023-08-07",
+      "entities": ["E9"],
+      "source_doc": "A2",
+      "source_section": null
+    },
+    {
+      "id": "V10",
+      "label": "Per Sandberg beställer tilläggsarbeten utan styrelsebeslut",
+      "type": "unauthorized_order",
+      "claimed_time_text": "2023-09-14",
+      "claimed_time_start": "2023-09-14",
+      "entities": ["E5", "E9"],
+      "source_doc": "A4",
+      "source_section": null
+    },
+    {
+      "id": "V11",
+      "label": "Slutbesiktning fasadrenovering",
+      "type": "inspection",
+      "claimed_time_text": "22 november 2023",
+      "claimed_time_start": "2023-11-22",
+      "entities": ["E9", "E8"],
+      "source_doc": "A5",
+      "source_section": "§3"
+    },
+    {
+      "id": "V12",
+      "label": "Slutfaktura NorrBygg Fasad AB",
+      "type": "financial",
+      "claimed_time_text": "2023-11-02",
+      "claimed_time_start": "2023-11-02",
+      "entities": ["E9", "E8"],
+      "source_doc": "A4",
+      "source_section": null
+    },
+    {
+      "id": "V13",
+      "label": "Tilläggsarbeten godkända i efterhand av styrelsen",
+      "type": "decision",
+      "claimed_time_text": "2023-12-07",
+      "claimed_time_start": "2023-12-07",
+      "entities": ["E1", "E5", "E8"],
+      "source_doc": "A5",
+      "source_section": "§3"
+    },
+    {
+      "id": "V14",
+      "label": "Ny rutin beslutad: beställningar kräver förhandsgodkännande",
+      "type": "decision",
+      "claimed_time_text": "2023-12-07",
+      "claimed_time_start": "2023-12-07",
+      "entities": ["E1", "E8"],
+      "source_doc": "A5",
+      "source_section": "§3"
+    }
+  ],
+  "inconsistencies": [
+    {
+      "id": "I1",
+      "type": "amount",
+      "severity": "high",
+      "description": "Budget set to 'inte överstiga 650 000 kr' (A1 §5), but later described as 'maximalt 600 000 kr' (A3 §5). Budget reduced by 50 000 kr between meetings without explicit explanation.",
+      "documents": ["A1", "A3"],
+      "entities_involved": ["E8"],
+      "evidence": {
+        "side_a": { "doc": "A1", "section": "§5", "claim": "att budget för projektet inte ska överstiga 650 000 kr exkl. moms" },
+        "side_b": { "doc": "A3", "section": "§5", "claim": "att budgetramarna för projektet fastställs till maximalt 600 000 kr exkl. moms" }
+      }
+    },
+    {
+      "id": "I2",
+      "type": "amount",
+      "severity": "medium",
+      "description": "Jonas (A5 §3) says project exceeded 'ursprungliga budgeten om 650 000 kr med drygt 45 000 kr inkl moms'. Actual total: 558 300 exkl. moms = 697 875 inkl. moms, exceeding 650k by ~48 000 kr. Phrasing 'drygt 45 000' is imprecise. Also references the original 650k budget (not the later 600k budget set in A3).",
+      "documents": ["A5", "A4"],
+      "entities_involved": ["E4", "E8"],
+      "evidence": {
+        "side_a": { "doc": "A5", "section": "§3", "claim": "projektet översteg den ursprungliga budgeten om 650 000 kr med drygt 45 000 kr inklusive moms" },
+        "side_b": { "doc": "A4", "section": null, "claim": "Totalt fakturerat exkl. moms: 558 300 kr (= 697 875 kr inkl. moms, överstiger 650k med ~48k)" }
+      }
+    },
+    {
+      "id": "I3",
+      "type": "authority",
+      "severity": "high",
+      "description": "Per Sandberg (suppleant, not ordinary board member) ordered additional work worth 14 800 kr by phone without board authorization. He was absent from the meeting that selected the contractor (A3).",
+      "documents": ["A4", "A3", "A5"],
+      "entities_involved": ["E5", "E8"],
+      "evidence": {
+        "side_a": { "doc": "A4", "section": null, "claim": "beställda av Per Sandberg per telefon 2023-09-14" },
+        "side_b": { "doc": "A3", "section": null, "claim": "Frånvarande: Per Sandberg, suppleant" }
+      }
+    },
+    {
+      "id": "I4",
+      "type": "temporal",
+      "severity": "medium",
+      "description": "Offert states 8 weeks completion from v.32 (~Aug 7), implying ~Oct 1. Board required completion by Oct 31 (A1 §5). Actual slutbesiktning was Nov 22. Project overran by ~7 weeks.",
+      "documents": ["A1", "A2", "A4", "A5"],
+      "entities_involved": ["E9", "E8"],
+      "evidence": {
+        "side_a": { "doc": "A1", "section": "§5", "claim": "att arbetet ska vara slutfört senast 2023-10-31" },
+        "side_b": { "doc": "A5", "section": "§3", "claim": "fasadrenoveringen slutbesiktigades den 22 november 2023" }
+      }
+    },
+    {
+      "id": "I5",
+      "type": "amount",
+      "severity": "low",
+      "description": "Invoice split verification: offert specifies 30/40/30 payment split on 525 000 kr. First invoice 157 500 (30%), second 210 000 (40%), third base 157 500 (30%) = 525 000. Consistent with offert. Tilläggsarbeten 33 300 on top. Extraction should verify this arithmetic.",
+      "documents": ["A2", "A4"],
+      "entities_involved": ["E9", "E8"],
+      "evidence": {
+        "side_a": { "doc": "A2", "section": null, "claim": "30% vid byggstart / 40% vid halvtid / 30% vid godkänd slutbesiktning" },
+        "side_b": { "doc": "A4", "section": null, "claim": "F-2023-1201: 157 500 + F-2023-1544: 210 000 + slutfaktura bas: 157 500 = 525 000" }
+      }
+    },
+    {
+      "id": "I6",
+      "type": "procedural",
+      "severity": "medium",
+      "description": "Maria Bergström is both sekreterare (wrote the protocol) AND justerare in A5. Same person in both roles — procedurally irregular. The justerare should be someone who did not write the protocol.",
+      "documents": ["A5"],
+      "entities_involved": ["E3"],
+      "evidence": {
+        "side_a": { "doc": "A5", "section": null, "claim": "Vid protokollet: Maria Bergström, sekreterare" },
+        "side_b": { "doc": "A5", "section": null, "claim": "Justerat: Maria Bergström, justerare" }
+      }
+    },
+    {
+      "id": "I7",
+      "type": "obligation",
+      "severity": "medium",
+      "description": "Offert states 5-year guarantee on completed work (A2). Protocol A5 confirms guarantee runs from inspection date (2023-11-22). Guarantee obligation must be tracked — expires 2028-11-22.",
+      "documents": ["A2", "A5"],
+      "entities_involved": ["E9", "E8"],
+      "evidence": {
+        "side_a": { "doc": "A2", "section": null, "claim": "Garanti: 5 år på utfört arbete" },
+        "side_b": { "doc": "A5", "section": "§3", "claim": "Garantitiden om 5 år löper från besiktningsdatum" }
+      }
+    },
+    {
+      "id": "I8",
+      "type": "provenance",
+      "severity": "low",
+      "description": "Jonas Åkesson was absent (sjukanmäld) from the meeting that set the original 650k budget (A1). He was present when the budget was lowered to 600k (A3). He later references 'ursprungliga budgeten om 650 000 kr' in A5 — citing a decision he was not present for.",
+      "documents": ["A1", "A3", "A5"],
+      "entities_involved": ["E4"],
+      "evidence": {
+        "side_a": { "doc": "A1", "section": null, "claim": "Frånvarande: Jonas Åkesson, kassör (sjukanmäld)" },
+        "side_b": { "doc": "A5", "section": "§3", "claim": "Jonas Åkesson noterade att projektet översteg den ursprungliga budgeten om 650 000 kr" }
+      }
+    }
+  ]
+}

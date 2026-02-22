@@ -1,0 +1,59 @@
+BOARD MINUTES
+DataSyn Nordic AB, org.nr 559187-2234
+
+Extraordinary Board Meeting
+Date: 2024-08-15
+Location: Company offices, Lindholmen, Gothenburg
+
+Present:
+  Marcus Lindgren, Chairman & CEO
+  Helena Friberg, Board member & CTO
+  Lars Wennerström, Board member (NorthCap Ventures)
+  Sofia Eriksson, Board member (Baltic Innovation Fund)
+
+1. Opening
+Marcus Lindgren opened the meeting.
+
+2. Purpose
+The purpose of this extraordinary meeting is to discuss and approve
+the engagement of Setterwalls Advokatbyrå to conduct a legal review
+in preparation for a potential transaction process.
+
+3. Transaction Readiness
+Marcus Lindgren reported that the Company has received inbound interest
+from multiple parties regarding a potential acquisition. The Board
+discussed timing and process.
+
+Lars Wennerström noted that NorthCap's fund has a 2025 exit horizon
+and recommended proceeding with preparation.
+
+4. Known Issues for Disclosure
+The Board discussed items requiring disclosure:
+
+  a) IP Dispute: Former developer Alexei Petrov (employed 2019-2021,
+     Lithuania office) has claimed co-authorship of the SynCore
+     transformation engine's parallel processing module. His lawyers
+     sent a formal letter in June 2024. Setterwalls assesses the
+     claim as "not without merit" but manageable.
+
+  b) Revenue Recognition: CFO Johan Nylund flagged that 3 multi-year
+     contracts signed in Q4 2023 include implementation services
+     bundled with SaaS licenses. These have been recognized as SaaS
+     revenue. Auditors were not specifically consulted on the
+     bundling treatment.
+
+  c) Lithuanian Employment: The Lithuania team operates as direct
+     employees of DataSyn Nordic AB. No local entity exists. Tax
+     counsel has advised this structure carries risk of permanent
+     establishment classification.
+
+5. Decisions
+The Board resolved:
+  - To engage Setterwalls for legal review (budget: 400 kSEK)
+  - To instruct management to prepare a vendor due diligence report
+  - To maintain strict confidentiality regarding the process
+
+6. Closing
+Meeting closed at 16:30.
+
+Minutes: Marcus Lindgren

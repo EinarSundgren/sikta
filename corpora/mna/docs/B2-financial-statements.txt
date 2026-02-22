@@ -1,0 +1,87 @@
+DATASYN NORDIC AB
+ANNUAL REPORT 2023
+Org.nr: 559187-2234
+
+INCOME STATEMENT (KSEK)
+                              2023        2022
+Net Revenue                  26,847      18,732
+Cost of Revenue              -4,563      -3,184
+───────────────────────────────────────────────
+Gross Profit                 22,284      15,548
+Gross Margin                   83.0%       83.0%
+
+Sales & Marketing            -8,412      -6,230
+Research & Development       -7,893      -5,811
+General & Administration     -2,340      -1,892
+───────────────────────────────────────────────
+Operating Profit (EBIT)       3,639       1,615
+EBIT Margin                   13.6%        8.6%
+
+Financial items                -312        -187
+───────────────────────────────────────────────
+Profit Before Tax             3,327       1,428
+Tax                            -685        -294
+───────────────────────────────────────────────
+Net Profit                    2,642       1,134
+
+BALANCE SHEET (KSEK)
+                              2023        2022
+ASSETS
+Intangible assets             4,230       3,150
+  Capitalized development     3,890       2,810
+  Patents                       340         340
+Property & equipment            567         423
+Right-of-use assets           2,100       2,100
+Financial assets                 45          45
+Total non-current assets      6,942       5,718
+
+Accounts receivable           3,456       2,187
+Prepaid expenses                890         654
+Cash and cash equivalents     8,234       6,412
+Total current assets         12,580       9,253
+───────────────────────────────────────────────
+TOTAL ASSETS                 19,522      14,971
+
+EQUITY AND LIABILITIES
+Share capital                   500         500
+Reserves                     11,687       9,045
+Total equity                 12,187       9,545
+
+Non-current liabilities
+  Lease liability              1,575       2,100
+  Deferred tax liability         234         187
+
+Current liabilities
+  Accounts payable             1,234         876
+  Accrued expenses             2,456       1,543
+  Deferred revenue             1,456         456
+  Current lease liability        380         264
+Total current liabilities      5,526       3,139
+───────────────────────────────────────────────
+TOTAL EQUITY & LIABILITIES   19,522      14,971
+
+NOTES
+
+Note 4 — Revenue
+Revenue is recognized over the contract period. Annual contracts
+constitute 89% of revenue, monthly contracts 11%.
+
+Note 7 — Capitalized Development
+The Company capitalizes development costs for SynCore platform
+enhancements meeting IAS 38 criteria. Amortization: 3 years straight-line.
+Total capitalized in 2023: 1,420 kSEK.
+
+Note 11 — Contingent Liabilities
+The Company is party to a dispute with former employee regarding IP
+assignment. The Company's legal counsel assesses the risk as low.
+No provision has been made.
+
+Note 12 — Related Party Transactions
+The Company leases office premises from Lindgren Fastigheter AB,
+a company owned by CEO Marcus Lindgren. Annual lease: 840 kSEK.
+Terms assessed as market-rate by the board.
+
+Note 14 — Employees
+Average number of employees: 42 (2022: 35).
+  Sweden: 36 (2022: 32)
+  Lithuania: 6 (2022: 3)

@@ -1,0 +1,330 @@
+{
+  "corpus": "mna",
+  "description": "M&A due diligence — Acquisition of DataSyn Nordic AB. 6 documents from data room, 9 planted inconsistencies.",
+  "language": "en",
+  "domain": "due_diligence",
+  "documents": [
+    { "id": "B1", "filename": "B1-management-presentation.txt", "type": "management_presentation", "trust": 0.70, "date": "2024-11" },
+    { "id": "B2", "filename": "B2-financial-statements.txt", "type": "audited_financials", "trust": 0.95, "date": "2023" },
+    { "id": "B3", "filename": "B3-employment-agreement.txt", "type": "employment_agreement", "trust": 0.95, "date": "2022-03-15" },
+    { "id": "B4", "filename": "B4-ip-assignment.txt", "type": "ip_assignment", "trust": 0.95, "date": "2020-09-01" },
+    { "id": "B5", "filename": "B5-board-minutes.txt", "type": "board_minutes", "trust": 0.90, "date": "2024-08-15" },
+    { "id": "B6", "filename": "B6-customer-contract.txt", "type": "customer_contract", "trust": 0.95, "date": "2023-10-01" }
+  ],
+  "entities": [
+    {
+      "id": "E1",
+      "label": "DataSyn Nordic AB",
+      "type": "organization",
+      "aliases": ["DataSyn", "the Company", "Provider"],
+      "properties": { "org_nr": "559187-2234", "founded": "2017", "hq": "Gothenburg" },
+      "mentioned_in": ["B1", "B2", "B3", "B4", "B5", "B6"]
+    },
+    {
+      "id": "E2",
+      "label": "Marcus Lindgren",
+      "type": "person",
+      "aliases": ["Marcus", "Lindgren", "CEO", "Chairman"],
+      "properties": { "role": "CEO, Chairman, Co-founder" },
+      "mentioned_in": ["B1", "B2", "B3", "B4", "B5"]
+    },
+    {
+      "id": "E3",
+      "label": "Helena Friberg",
+      "type": "person",
+      "aliases": ["Helena", "Friberg", "CTO", "the Employee", "the Assignor"],
+      "properties": { "role": "CTO, Co-founder, Board member" },
+      "mentioned_in": ["B1", "B3", "B4", "B5"]
+    },
+    {
+      "id": "E4",
+      "label": "Johan Nylund",
+      "type": "person",
+      "aliases": ["Johan", "Nylund", "CFO"],
+      "properties": { "role": "CFO", "joined": "2021" },
+      "mentioned_in": ["B1", "B5", "B6"]
+    },
+    {
+      "id": "E5",
+      "label": "Anders Blom",
+      "type": "person",
+      "aliases": ["Anders", "Blom", "VP Sales"],
+      "properties": { "role": "VP Sales", "joined": "2022" },
+      "mentioned_in": ["B1"]
+    },
+    {
+      "id": "E6",
+      "label": "Lars Wennerström",
+      "type": "person",
+      "aliases": ["Lars", "Wennerström"],
+      "properties": { "role": "Board member", "organization": "NorthCap Ventures" },
+      "mentioned_in": ["B5"]
+    },
+    {
+      "id": "E7",
+      "label": "Sofia Eriksson",
+      "type": "person",
+      "aliases": ["Sofia", "Eriksson"],
+      "properties": { "role": "Board member", "organization": "Baltic Innovation Fund" },
+      "mentioned_in": ["B5"]
+    },
+    {
+      "id": "E8",
+      "label": "Alexei Petrov",
+      "type": "person",
+      "aliases": ["Alexei", "Petrov"],
+      "properties": { "role": "former developer", "employed": "2019-2021", "location": "Lithuania" },
+      "mentioned_in": ["B5"]
+    },
+    {
+      "id": "E9",
+      "label": "NorthCap Ventures",
+      "type": "organization",
+      "aliases": ["NorthCap"],
+      "properties": { "role": "investor", "exit_horizon": "2025" },
+      "mentioned_in": ["B1", "B5"]
+    },
+    {
+      "id": "E10",
+      "label": "Baltic Innovation Fund",
+      "type": "organization",
+      "aliases": ["Baltic"],
+      "properties": { "role": "investor" },
+      "mentioned_in": ["B1", "B5"]
+    },
+    {
+      "id": "E11",
+      "label": "Lindgren Fastigheter AB",
+      "type": "organization",
+      "aliases": ["Lindgren Fastigheter"],
+      "properties": { "owner": "Marcus Lindgren", "role": "related party landlord" },
+      "mentioned_in": ["B2"]
+    },
+    {
+      "id": "E12",
+      "label": "Setterwalls Advokatbyrå",
+      "type": "organization",
+      "aliases": ["Setterwalls"],
+      "properties": { "role": "legal counsel" },
+      "mentioned_in": ["B5"]
+    },
+    {
+      "id": "E13",
+      "label": "Customer Alpha",
+      "type": "organization",
+      "aliases": ["REDACTED", "Customer"],
+      "properties": { "role": "top customer", "redacted": true },
+      "mentioned_in": ["B6"]
+    },
+    {
+      "id": "E14",
+      "label": "SynCore",
+      "type": "technology",
+      "aliases": ["SynCore platform", "transformation engine"],
+      "properties": { "language": "Rust", "type": "transformation engine" },
+      "mentioned_in": ["B1", "B2", "B4", "B5"]
+    }
+  ],
+  "events": [
+    {
+      "id": "V1",
+      "label": "Company founded",
+      "type": "founding",
+      "claimed_time_text": "2017",
+      "claimed_time_start": "2017-01-01",
+      "entities": ["E1", "E2", "E3"],
+      "source_doc": "B1"
+    },
+    {
+      "id": "V2",
+      "label": "Seed round — 5 MSEK from NorthCap",
+      "type": "funding",
+      "claimed_time_text": "2018",
+      "claimed_time_start": "2018-01-01",
+      "entities": ["E1", "E9"],
+      "source_doc": "B1"
+    },
+    {
+      "id": "V3",
+      "label": "Series A — 10 MSEK from NorthCap + Baltic",
+      "type": "funding",
+      "claimed_time_text": "2020",
+      "claimed_time_start": "2020-01-01",
+      "entities": ["E1", "E9", "E10"],
+      "source_doc": "B1"
+    },
+    {
+      "id": "V4",
+      "label": "IP Assignment Agreement signed",
+      "type": "agreement",
+      "claimed_time_text": "2020-09-01",
+      "claimed_time_start": "2020-09-01",
+      "entities": ["E1", "E3", "E14"],
+      "source_doc": "B4"
+    },
+    {
+      "id": "V5",
+      "label": "Alexei Petrov employed at Lithuania office",
+      "type": "employment",
+      "claimed_time_text": "2019",
+      "claimed_time_start": "2019-01-01",
+      "entities": ["E1", "E8"],
+      "source_doc": "B5"
+    },
+    {
+      "id": "V6",
+      "label": "Alexei Petrov leaves company",
+      "type": "employment_end",
+      "claimed_time_text": "2021",
+      "claimed_time_start": "2021-01-01",
+      "entities": ["E1", "E8"],
+      "source_doc": "B5"
+    },
+    {
+      "id": "V7",
+      "label": "Employment agreement amended — CTO salary updated",
+      "type": "contract_amendment",
+      "claimed_time_text": "2022-03-15",
+      "claimed_time_start": "2022-03-15",
+      "entities": ["E1", "E3"],
+      "source_doc": "B3"
+    },
+    {
+      "id": "V8",
+      "label": "Customer Alpha contract signed",
+      "type": "agreement",
+      "claimed_time_text": "2023-10-01",
+      "claimed_time_start": "2023-10-01",
+      "entities": ["E1", "E13", "E4"],
+      "source_doc": "B6"
+    },
+    {
+      "id": "V9",
+      "label": "Alexei Petrov sends formal IP dispute letter",
+      "type": "legal_dispute",
+      "claimed_time_text": "June 2024",
+      "claimed_time_start": "2024-06-01",
+      "entities": ["E8", "E1", "E14"],
+      "source_doc": "B5"
+    },
+    {
+      "id": "V10",
+      "label": "Extraordinary board meeting — transaction preparation",
+      "type": "board_meeting",
+      "claimed_time_text": "2024-08-15",
+      "claimed_time_start": "2024-08-15",
+      "entities": ["E1", "E2", "E3", "E6", "E7"],
+      "source_doc": "B5"
+    }
+  ],
+  "inconsistencies": [
+    {
+      "id": "I1",
+      "type": "financial",
+      "severity": "high",
+      "description": "Management presentation (B1) states 2023 revenue as 26.1 MSEK. Audited financials (B2) show 26 847 kSEK (26.8 MSEK). Difference of ~750 kSEK. Presentation rounds down, making growth trajectory look smoother.",
+      "documents": ["B1", "B2"],
+      "entities_involved": ["E1"],
+      "evidence": {
+        "side_a": { "doc": "B1", "section": "KEY FINANCIALS", "claim": "Revenue 2023: 26.1 MSEK" },
+        "side_b": { "doc": "B2", "section": "INCOME STATEMENT", "claim": "Net Revenue 2023: 26,847 kSEK" }
+      }
+    },
+    {
+      "id": "I2",
+      "type": "financial",
+      "severity": "high",
+      "description": "Management presentation (B1) states gross margin 84% for 2023. Audited financials (B2) show 22 284 / 26 847 = 83.0%. Presentation inflates margin by 1 percentage point.",
+      "documents": ["B1", "B2"],
+      "entities_involved": ["E1"],
+      "evidence": {
+        "side_a": { "doc": "B1", "section": "KEY FINANCIALS", "claim": "Gross Margin 2023: 84%" },
+        "side_b": { "doc": "B2", "section": "INCOME STATEMENT", "claim": "Gross Margin 2023: 83.0%" }
+      }
+    },
+    {
+      "id": "I3",
+      "type": "equity",
+      "severity": "critical",
+      "description": "Employment agreement (B3) states Helena Friberg holds 22% of shares. IP Assignment (B4) states consideration includes 'the Assignor's 25% equity stake.' 3% discrepancy — was equity diluted between 2020 (IP assignment) and 2022 (employment amendment), or is one document wrong?",
+      "documents": ["B3", "B4"],
+      "entities_involved": ["E3", "E1"],
+      "evidence": {
+        "side_a": { "doc": "B3", "section": "3. EQUITY", "claim": "The Employee holds 22% of the shares" },
+        "side_b": { "doc": "B4", "section": "2. CONSIDERATION", "claim": "the Assignor's 25% equity stake in the Company" }
+      }
+    },
+    {
+      "id": "I4",
+      "type": "headcount",
+      "severity": "medium",
+      "description": "Management presentation (B1) states 45 employees (38 Sweden, 7 Lithuania). Audited financials (B2) Note 14 states average 42 employees (36 Sweden, 6 Lithuania). Different metrics but Lithuania count differs: 7 vs 6.",
+      "documents": ["B1", "B2"],
+      "entities_involved": ["E1"],
+      "evidence": {
+        "side_a": { "doc": "B1", "section": "COMPANY OVERVIEW", "claim": "Employees: 45 (38 in Sweden, 7 in Lithuania)" },
+        "side_b": { "doc": "B2", "section": "Note 14", "claim": "Average employees: 42, Sweden: 36, Lithuania: 6" }
+      }
+    },
+    {
+      "id": "I5",
+      "type": "ip_risk",
+      "severity": "critical",
+      "description": "IP Assignment (B4): Helena represents she is 'sole creator' of assigned IP. Board minutes (B5): Alexei Petrov claims co-authorship of SynCore's parallel processing module. Setterwalls assesses claim 'not without merit.' Directly contradicts the representation in B4.",
+      "documents": ["B4", "B5"],
+      "entities_involved": ["E3", "E8", "E14"],
+      "evidence": {
+        "side_a": { "doc": "B4", "section": "3. REPRESENTATIONS", "claim": "She is the sole creator of the assigned IP" },
+        "side_b": { "doc": "B5", "section": "4a", "claim": "Alexei Petrov has claimed co-authorship of the SynCore transformation engine's parallel processing module" }
+      }
+    },
+    {
+      "id": "I6",
+      "type": "revenue_recognition",
+      "severity": "high",
+      "description": "Board minutes (B5): CFO flags that Q4 2023 multi-year contracts bundle implementation with SaaS and were recognized as SaaS revenue without auditor consultation. Customer contract (B6) shows exactly this pattern: 450k implementation fee alongside 1.25M SaaS license — booked together.",
+      "documents": ["B5", "B6"],
+      "entities_involved": ["E4", "E1", "E13"],
+      "evidence": {
+        "side_a": { "doc": "B5", "section": "4b", "claim": "3 multi-year contracts include implementation services bundled with SaaS licenses, recognized as SaaS revenue. Auditors were not specifically consulted." },
+        "side_b": { "doc": "B6", "section": "1. SERVICES", "claim": "Implementation services (one-time): 450,000 SEK alongside Annual SaaS license fee: 1,250,000 SEK" }
+      }
+    },
+    {
+      "id": "I7",
+      "type": "contingent_liability",
+      "severity": "high",
+      "description": "Audited financials (B2) Note 11: IP dispute risk 'assessed as low, no provision made.' Board minutes (B5): Setterwalls assesses same claim as 'not without merit.' Material difference in risk characterization between audit and company's own legal counsel.",
+      "documents": ["B2", "B5"],
+      "entities_involved": ["E1", "E8"],
+      "evidence": {
+        "side_a": { "doc": "B2", "section": "Note 11", "claim": "The Company's legal counsel assesses the risk as low. No provision has been made." },
+        "side_b": { "doc": "B5", "section": "4a", "claim": "Setterwalls assesses the claim as 'not without merit' but manageable" }
+      }
+    },
+    {
+      "id": "I8",
+      "type": "obligation",
+      "severity": "medium",
+      "description": "CTO non-compete (B3): 18 months for competing business, 24 months for customer solicitation. Acquirer must pay 60% of Helena's salary (~57k SEK/month) for up to 24 months if she leaves post-acquisition. This obligation survives the transaction.",
+      "documents": ["B3"],
+      "entities_involved": ["E3", "E1"],
+      "evidence": {
+        "side_a": { "doc": "B3", "section": "5. NON-COMPETE", "claim": "not to engage in competing business for 18 months; not to solicit customers for 24 months" },
+        "side_b": { "doc": "B3", "section": "5. NON-COMPETE", "claim": "Compensation during non-compete period: 60% of base salary" }
+      }
+    },
+    {
+      "id": "I9",
+      "type": "related_party",
+      "severity": "medium",
+      "description": "CEO's company Lindgren Fastigheter AB leases office to DataSyn for 840 kSEK/year (B2 Note 12). Board states 'assessed as market-rate' but no independent valuation is referenced. Related-party transaction requiring scrutiny in any acquisition.",
+      "documents": ["B2"],
+      "entities_involved": ["E2", "E11", "E1"],
+      "evidence": {
+        "side_a": { "doc": "B2", "section": "Note 12", "claim": "leases office premises from Lindgren Fastigheter AB, a company owned by CEO Marcus Lindgren. Annual lease: 840 kSEK." },
+        "side_b": { "doc": "B2", "section": "Note 12", "claim": "Terms assessed as market-rate by the board." }
+      }
+    }
+  ]
+}

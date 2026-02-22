@@ -1,0 +1,57 @@
+TELEDATA — SAMMANSTÄLLNING
+
+Ärende: 5000-K234891-24
+Utfärdad av: Tek. utr. Sofia Bergh, IT-forensik
+Datum: 2024-09-18
+
+Data inhämtad med domstolsbeslut enligt LEK 9 kap 33§.
+
+ABONNENT: Reza Mohammadi, nr 070-555 1234
+
+Utgående/inkommande samtal och SMS, 2024-09-13:
+
+  17:32 — Inkommande samtal från 070-555 9876 (Viktor Lindgren)
+           Samtalslängd: 4 min 12 sek
+           Basstation: Lindholmen, Göteborg
+
+  21:14 — Inkommande samtal från 070-555 9876 (Viktor Lindgren)
+           Samtalslängd: 2 min 48 sek
+           Basstation: Björlanda, Göteborg (hemmet)
+
+  21:28 — Utgående samtal till 070-555 9876 (Viktor Lindgren)
+           Samtalslängd: 1 min 03 sek
+           Basstation: Björlanda, Göteborg
+
+  23:31 — Sista registrerade basstation: Lindholmen, Göteborg
+           (automatisk nätverksregistrering)
+
+  Därefter: Ingen aktivitet.
+
+ABONNENT: Viktor Lindgren, nr 070-555 9876
+
+Utgående/inkommande samtal, 2024-09-13:
+
+  17:32 — Utgående samtal till 070-555 1234 (Reza Mohammadi)
+           Samtalslängd: 4 min 12 sek
+           Basstation: Lindholmen, Göteborg
+
+  21:14 — Utgående samtal till 070-555 1234 (Reza Mohammadi)
+           Samtalslängd: 2 min 48 sek
+           Basstation: Hisingen, Göteborg (hemmet)
+
+  21:28 — Inkommande samtal från 070-555 1234 (Reza Mohammadi)
+           Samtalslängd: 1 min 03 sek
+           Basstation: Hisingen, Göteborg
+
+  23:18 — Sista basstation före byte: Lindholmen, Göteborg
+           (automatisk nätverksregistrering)
+
+  23:18–04:45 — LUCKA. Telefonen inte registrerad i nätverket.
+                 Bedömning: telefon avstängd eller i flygplansläge.
+
+  04:45 — Första registrering: Hisingen, Göteborg (hemmet)
+
+ABONNENT: Sara Nilsson (V. Lindgrens sambo), nr 070-555 4567
+
+  Ingen relevant aktivitet kvällen 13 september.
+  Telefon registrerad på basstation Hisingen hela kvällen/natten.

@@ -1,0 +1,55 @@
+EMPLOYMENT AGREEMENT
+
+Between:  DataSyn Nordic AB, org.nr 559187-2234 ("the Company")
+And:      Helena Friberg, 830415-XXXX ("the Employee")
+
+Date: 2017-06-01
+Amended: 2022-03-15
+
+1. POSITION
+The Employee serves as Chief Technology Officer (CTO), reporting to the
+CEO. The Employee is a member of the executive management team.
+
+2. COMPENSATION
+Monthly salary: 95,000 SEK (as of 2022-03-15 amendment)
+Pension: ITP1 according to collective agreement
+Variable: Annual bonus of up to 3 monthly salaries based on company
+performance targets set by the Board.
+
+3. EQUITY
+The Employee holds 22% of the shares in DataSyn Nordic AB through
+direct ownership. Subject to the Shareholders' Agreement dated 2020-09-01.
+
+4. INTELLECTUAL PROPERTY
+All inventions, software, designs, and other intellectual property created
+by the Employee during the course of employment, or using Company resources,
+shall be the exclusive property of the Company.
+
+This includes work performed outside regular working hours if related to the
+Company's business area (data integration and transformation technology).
+
+5. NON-COMPETE
+Upon termination of employment, the Employee agrees not to:
+  a) Engage in competing business for a period of 18 months
+  b) Solicit Company customers for a period of 24 months
+  c) Recruit Company employees for a period of 12 months
+
+Competing business is defined as: development, sale, or distribution of
+data integration, data transformation, or ETL software products.
+
+Compensation during non-compete period: 60% of base salary.
+
+6. CONFIDENTIALITY
+The Employee shall not disclose confidential information during or after
+employment. This obligation survives termination without time limitation.
+
+7. NOTICE PERIOD
+Company: 6 months
+Employee: 6 months
+
+8. GOVERNING LAW
+Swedish law. Disputes settled by Stockholm Chamber of Commerce arbitration.
+
+Signed:
+Marcus Lindgren, CEO          Helena Friberg
+DataSyn Nordic AB

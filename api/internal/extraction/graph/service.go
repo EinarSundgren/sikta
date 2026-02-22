@@ -242,6 +242,19 @@ func (s *GraphService) storeExtractedNode(ctx context.Context, node ExtractedNod
 		modality = node.Modality
 	}
 
+	// Parse flexible date formats for database
+	var claimedStart, claimedEnd *time.Time
+	if node.ClaimedTimeStart != "" {
+		if t, err := parseFlexibleDate(node.ClaimedTimeStart); err == nil {
+			claimedStart = &t
+		}
+	}
+	if node.ClaimedTimeEnd != "" {
+		if t, err := parseFlexibleDate(node.ClaimedTimeEnd); err == nil {
+			claimedEnd = &t
+		}
+	}
+
 	// Create provenance
 	_, err = s.graph.CreateProvenance(ctx, graph.CreateProvenanceParams{
 		TargetType:       "node",
@@ -253,8 +266,8 @@ func (s *GraphService) storeExtractedNode(ctx context.Context, node ExtractedNod
 		Trust:            1.0, // Would come from source trust
 		Modality:         modality,
 		Status:           database.StatusPending,
-		ClaimedTimeStart: node.ClaimedTimeStart,
-		ClaimedTimeEnd:   node.ClaimedTimeEnd,
+		ClaimedTimeStart: claimedStart,
+		ClaimedTimeEnd:   claimedEnd,
 		ClaimedTimeText:  node.ClaimedTimeText,
 		ClaimedGeoRegion: node.ClaimedGeoRegion,
 		ClaimedGeoText:   node.ClaimedGeoText,
@@ -314,4 +327,20 @@ func (s *GraphService) storeExtractedEdge(ctx context.Context, edge ExtractedEdg
 	})
 
 	return edgeID, nil
+}
+
+// parseFlexibleDate parses dates in either YYYY-MM-DD or RFC3339 format
+func parseFlexibleDate(dateStr string) (time.Time, error) {
+	// Try RFC3339 first (full timestamp)
+	if t, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return t, nil
+	}
+
+	// Try simple date format (YYYY-MM-DD)
+	if t, err := time.Parse("2006-01-02", dateStr); err == nil {
+		return t, nil
+	}
+
+	// Return error if neither format works
+	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }

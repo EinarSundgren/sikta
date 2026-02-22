@@ -1,4 +1,4 @@
-.PONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo migrate-to-graph backup-db rollback-graph
+.PONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo migrate-to-graph backup-db rollback-graph eval-build
 
 .DEFAULT_GOAL := help
 
@@ -9,6 +9,13 @@ COMPOSE_FILE := podman-compose.yaml
 # Load .env if it exists (silently, so missing file is fine)
 -include .env
 export
+
+# Ensure .env is always loaded for shell commands
+ifneq (wildcard .env,.env)
+$(info Loading .env file...)
+include .env
+export
+endif
 
 POSTGRES_USER     ?= postgres
 POSTGRES_PASSWORD ?= postgres
@@ -149,3 +156,88 @@ rollback-graph: ## Rollback graph migration (delete graph tables)
 	else \
 		echo "Rollback cancelled."; \
 	fi
+
+eval-build: ## Build the extraction validation CLI (sikta-eval)
+	cd $(BACKEND_DIR) && go build -o ../sikta-eval ./cmd/evaluate/
+
+eval-brf: ## Run extraction + scoring on BRF corpus (requires ANTHROPIC_API_KEY)
+	@$(MAKE) eval-brf-extract
+	@$(MAKE) eval-brf-score
+
+eval-brf-extract: ## Run extraction on BRF corpus only
+	@if [ -z "$(ANTHROPIC_API_KEY)" ]; then \
+		echo "Error: ANTHROPIC_API_KEY not set. Please set it in .env or environment."; \
+		exit 1; \
+	fi
+	./sikta-eval extract \
+		--corpus corpora/brf \
+		--prompt prompts/system/v1.txt \
+		--fewshot prompts/fewshot/brf.txt \
+		--output results/brf-v1.json
+
+eval-brf-score: ## Score BRF extraction results
+	./sikta-eval score \
+		--result results/brf-v1.json \
+		--manifest corpora/brf/manifest.json
+
+eval-mna: ## Run extraction + scoring on M&A corpus (requires ANTHROPIC_API_KEY)
+	@$(MAKE) eval-mna-extract
+	@$(MAKE) eval-mna-score
+
+eval-mna-extract: ## Run extraction on M&A corpus only
+	@if [ -z "$(ANTHROPIC_API_KEY)" ]; then \
+		echo "Error: ANTHROPIC_API_KEY not set. Please set it in .env or environment."; \
+		exit 1; \
+	fi
+	./sikta-eval extract \
+		--corpus corpora/mna \
+		--prompt prompts/system/v1.txt \
+		--fewshot prompts/fewshot/mna.txt \
+		--output results/mna-v1.json
+
+eval-mna-score: ## Score M&A extraction results
+	./sikta-eval score \
+		--result results/mna-v1.json \
+		--manifest corpora/mna/manifest.json
+
+eval-police: ## Run extraction + scoring on Police corpus (requires ANTHROPIC_API_KEY)
+	@$(MAKE) eval-police-extract
+	@$(MAKE) eval-police-score
+
+eval-police-extract: ## Run extraction on Police corpus only
+	@if [ -z "$(ANTHROPIC_API_KEY)" ]; then \
+		echo "Error: ANTHROPIC_API_KEY not set. Please set it in .env or environment."; \
+		exit 1; \
+	fi
+	./sikta-eval extract \
+		--corpus corpora/police \
+		--prompt prompts/system/v1.txt \
+		--fewshot prompts/fewshot/police.txt \
+		--output results/police-v1.json
+
+eval-police-score: ## Score Police extraction results
+	./sikta-eval score \
+		--result results/police-v1.json \
+		--manifest corpora/police/manifest.json
+
+eval-all: ## Run extraction + scoring on all three corpora (requires ANTHROPIC_API_KEY)
+	@echo "Running extraction validation on all corpora..."
+	@$(MAKE) eval-brf
+	@$(MAKE) eval-mna
+	@$(MAKE) eval-police
+	@echo ""
+	@echo "All extractions and scoring complete!"
+	@echo "Check results/*.json for extraction outputs"
+
+eval-score-all: ## Score all existing extraction results (no API calls required)
+	./sikta-eval score --result results/brf-v1.json --manifest corpora/brf/manifest.json
+	./sikta-eval score --result results/mna-v1.json --manifest corpora/mna/manifest.json
+	./sikta-eval score --result results/police-v1.json --manifest corpora/police/manifest.json
+
+eval-compare: ## Compare two extraction results (usage: make eval-compare a=results/brf-v1.json b=results/brf-v2.json)
+	@if [ -z "$(a)" ] || [ -z "$(b)" ]; then \
+		echo "Usage: make eval-compare a=results/brf-v1.json b=results/brf-v2.json"; \
+		exit 1; \
+	fi
+	./sikta-eval compare --a $(a) --b $(b) --manifest corpora/brf/manifest.json
+

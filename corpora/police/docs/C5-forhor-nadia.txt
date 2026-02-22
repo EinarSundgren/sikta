@@ -1,0 +1,38 @@
+FÖRHÖRSPROTOKOLL
+
+Ärende: 5000-K234891-24
+Förhör med: Nadia Kovač, f. 910303-XXXX
+Roll: Vittne
+Datum: 2024-09-16, kl. 13:00–14:15
+Plats: Polishuset Göteborg
+Förhörsledare: Krim.insp. Anders Moberg
+Förhörsvittne: Asp. Daniel Falk
+
+N.K. uppger följande:
+
+Jag arbetar som UX-designer på TechNova AB. Jag sitter i samma
+öppna landskap som utvecklarna.
+
+Reza och Viktor hade en konflikt som var värre än Viktor medger.
+Det handlade inte om arkitektur. Reza hade upptäckt att Viktor
+kopierade kod från ett open source-projekt utan attribution,
+i strid med licensvillkoren. Reza ville rapportera det till ledningen.
+Viktor blev arg och hotade att "se till att Reza fick problem"
+om han gick vidare med det.
+
+Detta hände för ungefär en månad sedan. Jag hörde delar av
+samtalet i fikarummet. Jag frågade Reza efteråt och han bekräftade.
+
+Jag vet inget om fredagskvällen. Jag var inte på kontoret.
+
+Fråga (A.M.): Uppfattade du Viktors hot som allvarligt?
+
+N.K.: Jag tror inte Viktor menade fysiskt våld. Men han var
+väldigt upprörd. Reza sa att Viktor ringde honom upprepade
+gånger veckan innan för att försöka övertala honom att inte
+säga något.
+
+Fråga (A.M.): Var det fler som kände till konflikten?
+
+N.K.: Jag tror projektledaren Mats Eriksson hade fått höra
+något, men jag är inte säker.

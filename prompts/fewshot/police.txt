@@ -1,0 +1,127 @@
+EXAMPLE — POLICE INVESTIGATION (Swedish):
+
+Text: "Fråga (K.S.): Ringde du Reza den kvällen? V.L.: Nej, absolut inte. Fråga (K.S.): Har du nycklar eller tillgång till parkeringsgaraget i Lindholmen? V.L.: Ja, alla anställda på TechNova har passerkort som ger tillgång till garaget dygnet runt. Men jag var inte där fredagskväll."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Viktor Lindgren",
+      "properties": {
+        "type": "person",
+        "aliases": ["V.L.", "Viktor", "Lindgren"]
+      },
+      "excerpt": "V.L. uppger följande",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Reza Mohammadi",
+      "properties": {
+        "type": "person",
+        "aliases": ["Reza"]
+      },
+      "excerpt": "Ringde du Reza den kvällen?",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Viktor förnekar att ha ringt Reza",
+      "properties": {
+        "event_type": "witness_statement",
+        "description": "Viktor stated 'Nej, absolut inte' when asked if he called Reza"
+      },
+      "claimed_time_text": "2024-09-16",
+      "excerpt": "V.L.: Nej, absolut inte",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "place",
+      "label": "Parkeringsgaraget Lindholmen",
+      "properties": {
+        "type": "place",
+        "aliases": ["garaget", "parkeringsgaraget i Lindholmen"],
+        "location": "Lindholmen"
+      },
+      "excerpt": "parkeringsgaraget i Lindholmen",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "TechNova AB",
+      "properties": {
+        "type": "organization",
+        "aliases": ["TechNova"]
+      },
+      "excerpt": "alla anställda på TechNova",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "obligation",
+      "label": "Viktor har tillgång till garaget dygnet runt",
+      "properties": {
+        "type": "obligation",
+        "access": "dygnet runt",
+        "method": "passerkort"
+      },
+      "excerpt": "har passerkort som ger tillgång till garaget dygnet runt",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Viktor påstår att han inte var i garaget fredagskväll",
+      "properties": {
+        "event_type": "witness_statement",
+        "description": "Viktor claims he was not at the garage on Friday evening",
+        "claimed_time_text": "fredagskvällen den 13 september"
+      },
+      "claimed_time_text": "fredagskväll",
+      "claimed_time_start": "2024-09-13T18:00:00",
+      "excerpt": "Men jag var inte där fredagskväll",
+      "confidence": 0.7,
+      "modality": "denied"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "related_to",
+      "source_node": "Viktor Lindgren",
+      "target_node": "Reza Mohammadi",
+      "properties": {
+        "relationship_type": "colleague"
+      },
+      "excerpt": "Ringde du Reza den kvällen?",
+      "confidence": 0.8,
+      "modality": "inferred"
+    },
+    {
+      "edge_type": "located_at",
+      "source_node": "Parkeringsgaraget Lindholmen",
+      "target_node": "TechNova AB",
+      "properties": {
+        "proximity": "adjacent to"
+      },
+      "excerpt": "parkeringsgaraget i Lindholmen",
+      "confidence": 0.7,
+      "modality": "inferred"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Viktor Lindgren",
+      "target_node": "Obligation: Viktor har tillgång till garaget dygnet runt",
+      "properties": {
+        "role": "access_holder"
+      },
+      "excerpt": "har passerkort som ger tillgång",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+INTELLECTUAL PROPERTY ASSIGNMENT AGREEMENT
+
+Between:  DataSyn Nordic AB, org.nr 559187-2234 ("the Company")
+And:      Helena Friberg, 830415-XXXX ("the Assignor")
+
+Date: 2020-09-01
+
+BACKGROUND
+The Assignor co-founded the Company in 2017 and has developed core
+technology forming the basis of the Company's SynCore platform.
+
+Certain components of the SynCore platform were developed by the
+Assignor prior to the formal incorporation of the Company.
+
+1. ASSIGNMENT
+The Assignor hereby assigns to the Company all right, title, and interest
+in and to:
+  a) The SynCore transformation engine (all versions)
+  b) The data mapping algorithms (patent applications SE1800234-1 through
+     SE1800248-1)
+  c) Any derivative works created since 2016-01-01
+
+2. CONSIDERATION
+The assignment is made in consideration of:
+  a) The Assignor's 25% equity stake in the Company
+  b) A one-time payment of 150,000 SEK
+
+3. REPRESENTATIONS
+The Assignor represents that:
+  a) She is the sole creator of the assigned IP
+  b) No third party has any claim to the assigned IP
+  c) The IP has not been previously assigned or licensed
+
+4. FURTHER ASSURANCE
+The Assignor agrees to execute any further documents necessary to
+perfect the Company's ownership of the assigned IP.
+
+Signed:
+Marcus Lindgren, CEO          Helena Friberg
+DataSyn Nordic AB

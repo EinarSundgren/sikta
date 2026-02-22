@@ -1,0 +1,46 @@
+CONFIDENTIAL — PROJECT NORDIC
+
+DataSyn Nordic AB — Management Presentation
+Prepared for: Potential Acquirer
+Date: November 2024
+
+COMPANY OVERVIEW
+
+DataSyn Nordic AB ("DataSyn" or "the Company") is a Gothenburg-based SaaS
+company providing data integration and transformation tools to mid-market
+companies across the Nordics.
+
+Founded: 2017 by CEO Marcus Lindgren and CTO Helena Friberg
+Employees: 45 (38 in Sweden, 7 in Lithuania)
+Headquarters: Gothenburg, Sweden
+Legal entity: DataSyn Nordic AB, org.nr 559187-2234
+
+KEY FINANCIALS (MSEK)
+                    2021    2022    2023    2024E
+Revenue             12.4    18.7    26.1    34.5
+ARR (Dec)           14.1    21.3    28.9    36.0
+Gross Margin        82%     83%     84%     85%
+EBITDA              -1.2    1.8     4.1     7.2
+Headcount (avg)     28      34      40      45
+
+CUSTOMER BASE
+- 127 active customers (Dec 2023)
+- Average contract value: 228 kSEK/year
+- Net Revenue Retention: 118%
+- Logo churn: 8% annually
+- Top 10 customers: 34% of ARR
+
+TECHNOLOGY
+Platform built on Kubernetes, deployed on AWS (eu-north-1, Stockholm).
+Core IP: proprietary transformation engine ("SynCore") written in Rust.
+14 granted patents related to data mapping algorithms.
+
+TEAM
+Marcus Lindgren, CEO — Co-founder, previously VP Sales at Qlik
+Helena Friberg, CTO — Co-founder, previously Principal Engineer at Spotify
+Johan Nylund, CFO — Joined 2021, previously controller at PE-backed SaaS
+Anders Blom, VP Sales — Joined 2022, manages 8-person sales team
+
+The Company has received SEK 15M in venture funding:
+  Seed round (2018): 5 MSEK from NorthCap Ventures
+  Series A (2020): 10 MSEK from NorthCap Ventures + Baltic Innovation Fund

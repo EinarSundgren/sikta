@@ -1,0 +1,63 @@
+SAAS SUBSCRIPTION AGREEMENT
+
+Between: DataSyn Nordic AB ("Provider")
+And:     [REDACTED — "Customer Alpha"] ("Customer")
+
+Agreement Date: 2023-10-01
+Agreement Number: SA-2023-0891
+
+1. SERVICES
+Provider shall deliver:
+  - DataSyn Platform, Enterprise tier
+  - Up to 50 user licenses
+  - Data transformation volume: unlimited
+  - Implementation services (one-time): data migration and
+    configuration, estimated 200 hours
+
+2. TERM
+Initial term: 36 months from Go-Live Date
+Renewal: Automatic 12-month renewal unless 90 days written notice
+Go-Live Date: To be confirmed upon completion of implementation,
+estimated January 2024
+
+3. FEES
+Annual SaaS license fee: 1,250,000 SEK
+Implementation fee (one-time): 450,000 SEK
+Total Year 1: 1,700,000 SEK
+Year 2 and 3: 1,250,000 SEK per year
+
+Price escalation: CPI + 2% annually
+
+4. PAYMENT TERMS
+SaaS fee: invoiced annually in advance
+Implementation fee: 50% at signing, 50% at Go-Live
+
+5. SERVICE LEVELS
+Uptime: 99.5% measured monthly (excluding planned maintenance)
+Support response: Critical issues within 4 hours, standard within
+24 hours
+
+Penalty for SLA breach: 5% credit of monthly fee per percentage
+point below 99.5%, capped at 30% of monthly fee.
+
+6. DATA PROCESSING
+Customer data processed in AWS eu-north-1 (Stockholm).
+Provider acts as data processor under GDPR Article 28.
+Data Processing Agreement attached as Appendix B.
+
+7. TERMINATION
+Either party may terminate for material breach with 30 days notice
+to cure.
+Customer may terminate for convenience with 6 months notice,
+subject to payment of remaining fees in the initial term.
+
+8. LIMITATION OF LIABILITY
+Provider's total liability capped at 12 months of fees paid.
+
+9. GOVERNING LAW
+Swedish law. Stockholm District Court.
+
+Signed:
+Johan Nylund, CFO              [REDACTED]
+DataSyn Nordic AB               Customer Alpha
+2023-10-01                       2023-10-15

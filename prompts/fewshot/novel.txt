@@ -1,0 +1,65 @@
+EXAMPLE 1:
+
+Text: "Mr. Bingley had soon made himself acquainted with all the principal people in the room: he was lively and unreserved, danced every dance..."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Mr. Bingley",
+      "properties": {
+        "type": "person",
+        "aliases": ["Bingley", "Mr. Bingley"]
+      },
+      "excerpt": "Mr. Bingley was good-looking and gentlemanlike",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "place",
+      "label": "assembly room",
+      "properties": {
+        "type": "place",
+        "aliases": ["assembly", "the room"]
+      },
+      "excerpt": "when the party entered the assembly-room",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Mr. Bingley attends the assembly",
+      "properties": {
+        "event_type": "social_gathering",
+        "description": "Bingley socializes extensively at the ball, dancing every dance"
+      },
+      "claimed_time_text": "that evening",
+      "excerpt": "Mr. Bingley had soon made himself acquainted with all the principal people in the room",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Mr. Bingley",
+      "target_node": "Mr. Bingley attends the assembly",
+      "properties": {
+        "role": "participant"
+      },
+      "excerpt": "Mr. Bingley had soon made himself acquainted",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "located_at",
+      "source_node": "Mr. Bingley attends the assembly",
+      "target_node": "assembly room",
+      "properties": {},
+      "excerpt": "when the party entered the assembly-room",
+      "confidence": 0.9,
+      "modality": "asserted"
+    }
+  ]
+}

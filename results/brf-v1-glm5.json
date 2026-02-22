@@ -1,0 +1,49 @@
+{
+  "Corpus": "brf",
+  "PromptVersion": "v1.txt",
+  "Documents": [
+    {
+      "DocumentID": "A1",
+      "Filename": "A1-protocol-2023-03-15.txt",
+      "Nodes": [],
+      "Edges": [],
+      "Error": "no nodes or edges extracted"
+    },
+    {
+      "DocumentID": "A2",
+      "Filename": "A2-offert-norrbygg.txt",
+      "Nodes": [],
+      "Edges": [],
+      "Error": "no nodes or edges extracted"
+    },
+    {
+      "DocumentID": "A3",
+      "Filename": "A3-protocol-2023-05-10.txt",
+      "Nodes": [],
+      "Edges": [],
+      "Error": "no nodes or edges extracted"
+    },
+    {
+      "DocumentID": "A4",
+      "Filename": "A4-faktura-norrbygg.txt",
+      "Nodes": [],
+      "Edges": [],
+      "Error": "no nodes or edges extracted"
+    },
+    {
+      "DocumentID": "A5",
+      "Filename": "A5-protocol-2023-12-07.txt",
+      "Nodes": [],
+      "Edges": [],
+      "Error": "no nodes or edges extracted"
+    }
+  ],
+  "Metadata": {
+    "Model": "glm-5",
+    "Timestamp": "2026-02-22T23:20:03+01:00",
+    "TotalDocs": 5,
+    "TotalNodes": 0,
+    "TotalEdges": 0,
+    "FailedDocs": 5
+  }
+}
