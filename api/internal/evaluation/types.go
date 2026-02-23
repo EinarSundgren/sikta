@@ -152,10 +152,11 @@ type ManifestInconsistency struct {
 
 // ExtractionResult represents the raw output from sikta-eval (with Documents array)
 type ExtractionResult struct {
-	Corpus        string                // Corpus identifier
-	PromptVersion string                // Prompt version used
-	Documents     []DocumentExtraction  // Document-level extractions
-	Metadata      ExtractionMetadata    // Metadata
+	Corpus          string                   // Corpus identifier
+	PromptVersion   string                   // Prompt version used
+	Documents       []DocumentExtraction     // Document-level extractions
+	Inconsistencies []ExtractedInconsistency // Cross-document inconsistencies (optional)
+	Metadata        ExtractionMetadata       // Metadata
 }
 
 // DocumentExtraction represents nodes/edges extracted from a single document
@@ -256,10 +257,11 @@ func (er *ExtractionResult) Flatten() *Extraction {
 	}
 
 	return &Extraction{
-		Corpus:        er.Corpus,
-		PromptVersion: er.PromptVersion,
-		Nodes:         nodes,
-		Edges:         edges,
-		Timestamp:     timestamp,
+		Corpus:         er.Corpus,
+		PromptVersion:  er.PromptVersion,
+		Nodes:          nodes,
+		Edges:          edges,
+		Inconsistencies: er.Inconsistencies,
+		Timestamp:      timestamp,
 	}
 }
