@@ -312,10 +312,11 @@ func runScore(logger *slog.Logger) {
 		}
 
 		client := claude.NewClient(cfg, logger)
-		judge := evaluation.NewEventJudge(client, logger, *judgeModel)
-		scorer = evaluation.NewScorerWithJudge(&manifest, extraction, judge, logger)
+		eventJudge := evaluation.NewEventJudge(client, logger, *judgeModel)
+		inconsistencyJudge := evaluation.NewInconsistencyJudge(client, logger, *judgeModel)
+		scorer = evaluation.NewScorerWithJudges(&manifest, extraction, eventJudge, inconsistencyJudge, logger)
 
-		logger.Info("LLM judge enabled", "model", *judgeModel)
+		logger.Info("LLM judges enabled", "model", *judgeModel)
 	} else {
 		scorer = evaluation.NewScorer(&manifest, extraction)
 	}

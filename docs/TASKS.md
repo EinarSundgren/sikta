@@ -276,18 +276,18 @@ Build LLM-as-judge for inconsistency matching (pattern: follow `EventJudge`):
 
 ---
 
-#### EV9.5: Scorer Integration
+#### EV9.5: Scorer Integration ✅ COMPLETE
 **Model: Sonnet** | **Size:** S (1 hour)
 
 Wire inconsistency scoring into the scorer:
 
-- [ ] Modify `api/internal/evaluation/scorer.go`
-- [ ] Add `inconsistencyJudge` to Scorer (optional, like event judge)
-- [ ] Run inconsistency judge in `ScoreWithContext` when `--full` flag is set
-- [ ] Calculate recall/precision/F1 for inconsistencies
-- [ ] Add to score output
+- [x] Modify `api/internal/evaluation/scorer.go`
+- [x] Add `inconsistencyJudge` to Scorer (optional, like event judge)
+- [x] Run inconsistency judge in `ScoreWithContext` when `--full` flag is set
+- [x] Calculate recall/precision/F1 for inconsistencies
+- [x] Add to score output
 
-**Acceptance:** `./sikta-eval score --full` shows inconsistency metrics in output.
+**Acceptance:** `./sikta-eval score --full` shows inconsistency metrics in output. ✓
 
 ---
 
