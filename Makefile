@@ -1,4 +1,4 @@
-.PONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo migrate-to-graph backup-db rollback-graph eval-build
+.PONY: dev infra backend frontend migrate migration generate test build down logs setup extract dump-demo seed-demo migrate-to-graph backup-db rollback-graph eval-build eval-compare-events
 
 .DEFAULT_GOAL := help
 
@@ -240,4 +240,13 @@ eval-compare: ## Compare two extraction results (usage: make eval-compare a=resu
 		exit 1; \
 	fi
 	./sikta-eval compare --a $(a) --b $(b) --manifest corpora/brf/manifest.json
+
+eval-compare-events: ## Build and run event comparison tool (usage: make eval-compare-events result=results/brf-v1.json)
+	cd $(BACKEND_DIR) && go build -o ../compare-events ./cmd/compare-events/
+	@if [ -z "$(result)" ]; then \
+		echo "Usage: make eval-compare-events result=results/brf-v1.json"; \
+		echo "This will auto-detect the manifest based on the corpus in the result file."; \
+		exit 1; \
+	fi
+	./compare-events $(result) corpora/brf/manifest.json
 

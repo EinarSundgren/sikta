@@ -6,17 +6,21 @@
 
 ## Status
 
-**Overall:** Graph Model Alignment Complete — Phases G1–G6 done. Graph model is the only path.
+**Overall:** Course correction — Extraction Validation Phase is now the priority. All MVP UI phases complete. No further UI work until extraction quality is validated against real-world documents.
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-23
 
 ---
 
 ## Current Phase
 
-**Phase:** 7 — Demo Polish & Landing
+**Phase:** EV — Extraction Validation
 
-**Goal:** Landing page with hero + demo CTA + upload flow, favicon, back button, seed SQL, Makefile targets.
+**Goal:** CLI-driven extraction testing pipeline against three realistic document corpora (BRF board protocols, M&A due diligence, criminal investigation). Measure entity recall, event recall, inconsistency detection, false positive rate. Iterate on prompts until go/kill thresholds are met.
+
+**Go/Kill thresholds:** ≥85% entity recall, ≥70% event recall, ≥50% inconsistency detection, <20% false positive rate.
+
+See `docs/EXTRACTION_VALIDATION.md` for full rationale and spec.
 
 ---
 
@@ -93,6 +97,16 @@
   - Optimistic UI updates for all review status changes
   - Backend: PATCH /api/claims/{id}/review, PATCH /api/claims/{id}, GET /api/documents/{id}/review-progress
   - Four-tab layout: Timeline, Graph, Review, Inconsistencies
+- [x] **Phase DS: Design System Implementation & Bug Fixes — Complete**
+  - Bug fixes: API_BASE_URL fallback to '' (Vite proxy fix), LandingPage demo stats use /review-progress
+  - Design tokens: Google Fonts (DM Sans, JetBrains Mono), CSS custom properties
+  - LandingPage redesign: hero, stats cards, "other novels available" section, "works with" section
+  - Timeline component: card-based D3 timeline with connectors, confidence badges, entity chips, animations
+  - TimelineView redesign: underline tabs (not boxes), filter bar with entity chips + conflict count, SourcePanel wired in
+  - EntityPanel redesign: colored shape indicators (●◆■▲), mono counts, collapsible groups
+  - SourcePanel component: 420px slide-in from right, source text with excerpt, review actions
+  - RelationshipGraph: dot grid background per design spec
+  - "Inconsistencies" tab renamed to "Conflicts"
 
 ---
 
@@ -100,16 +114,18 @@
 
 | Task | Status | Assigned Model | Notes |
 |------|--------|----------------|-------|
-| Phase 2.5: Data Model Migration | **Complete** | Sonnet | Migration done. DB + all Go files + frontend types updated. Build passes. |
-| Phase 5: Entity Panel & Relationship Graph | **Complete** | Sonnet | EntityPanel sidebar + D3 RelationshipGraph + tab switching. claim_entities table empty (extraction didn't link events↔entities), entity filter uses text matching fallback. |
-| Phase 7: Demo Polish & Landing | **Complete** | Sonnet | Landing page, upload flow with extraction progress, favicon, back button, seed SQL, Makefile targets. Build passes. |
-| Phase 6: Review Workflow & Inconsistency Panel | **Complete** | Sonnet | Keyboard-driven review (J/K/A/R/E), EditModal, ReviewPanel, InconsistencyPanel. Backend review routes added. npm run build passes. |
-| **Graph Alignment G1: Open the Type System** | **Complete** | Sonnet | Removed typed Go enums for NodeType, EdgeType, Modality. Plain untyped string constants. All function signatures accept string. ReviewStatus stays typed. `go build ./...` passes. |
-| **Graph Alignment G2: Drop Modality CHECK** | **Complete** | Sonnet | Created migration 000014_open_modality. Drops `provenance_modality_check` constraint. Run `make migrate` when DB is up. |
-| **Graph Alignment G3: Move Ordering Data to Provenance** | **Complete** | Sonnet | Extended Location struct with PositionType/Position. MigrateClaimToNode now creates two ordering provenance records instead of storing positions as node properties. MigrateChunkToNode/MigrateEntityToNode: removed resolved position values. GetEventsForTimeline: reads positions from provenance via extractOrderingFromProvenance(). `go build ./...` passes. |
-| **Graph Alignment G4: Fix Runtime Bugs in Views** | **Complete** | Sonnet | Added findDocumentNode helper (uses GetDocumentNodeByLegacySourceID with $1::text fix). Nil guards on all selectProvenance calls. Fixed aliases type assertion ([]interface{} not []string). Implemented GetRelationshipsForGraph with ListEdgesBySourceDocument query. sqlc generate passes. `go build ./...` passes. |
-| **Graph Alignment G5: Graph-Based Review Handlers** | **Complete** | Sonnet | Added 3 provenance SQL queries (CountClaimProvenance/CountEntityProvenance/UpdateProvenanceStatusByTarget). Created handlers/graph/review.go with UpdateNodeReview, UpdateEdgeReview, UpdateNodeData, GetReviewProgress. Wired inside UseGraphModel block; legacy review handlers moved to else branch. `go build ./...` passes. |
-| **Graph Alignment G6: Remove Feature Flag, Clean Up Legacy** | **Complete** | Sonnet | Removed UseGraphModel from Config. Removed if/else in main.go — graph handlers now unconditional. Deleted handlers/timeline.go and handlers/review.go. Removed GetEvents, GetEntities, GetRelationships, GetExtractionStatus from extraction.go. `go build ./...` and `go vet ./...` pass. Zero references to USE_GRAPH_MODEL in Go code. |
+| **EV1: Corpus Preparation** | **Complete** | Haiku | Three corpora extracted into `corpora/` directory structure. manifest.json files created for all three. |
+| **EV2: Prompt File Extraction** | Pending | Sonnet | Extract prompts from prompts.go into prompts/system/v1.txt + domain-specific few-shot examples |
+| **EV3: Database-Free Extraction Runner** | Pending | Sonnet | api/internal/extraction/graph/runner.go — no PostgreSQL dependency |
+| **EV4: Scoring Engine** | Pending | Sonnet | api/internal/evaluation/ package — entity/event/inconsistency matching + F1 scores |
+| **EV5: CLI Entry Point** | Pending | Sonnet | api/cmd/evaluate/main.go — extract/score/compare subcommands |
+| **EV6: LLM-as-Judge** | Pending | Sonnet | api/internal/evaluation/judge.go — for inconsistency scoring |
+| **EV7: Post-Processing Prompts** | Pending | Sonnet | dedup.txt + inconsistency.txt prompts, integrated as optional pipeline stages |
+| **EV8: Prompt Iteration** | Pending | Collaboration | Run → score → analyze → revise → repeat until thresholds met |
+
+### Previously Completed (archived)
+| **Phase DS: Design System Implementation** | **Complete** | Sonnet/Haiku | |
+| **Phase G1-G6: Graph Model Alignment** | **Complete** | Sonnet | |
 
 ---
 
@@ -125,6 +141,9 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-22 | **Course correction:** Extraction Validation Phase introduced. Three test corpora prepared (BRF, M&A, Police) with ground truth manifests. TASKS.md restructured. STATE.md updated to reflect new current phase. | docs/TASKS.md, docs/STATE.md, docs/EXTRACTION_VALIDATION.md, corpora/brf/*, corpora/mna/*, corpora/police/* |
+| 2026-02-23 | **EV8.3 complete:** Targeted prompt revision. Created v2 prompt with 4 improvements: (1) Event node classification - all time-bound events as `event` nodes not value/document, (2) Budget labels must include exact amounts, (3) Decision labels must include key actors, (4) Preserve source terminology (exact words from text). Created event comparison CLI tool for verbose analysis. Expected event recall improvement: 21.4% → 85.7%. | prompts/system/v2.txt, docs/EV8.3-Targeted-Prompt-Revision.md, api/cmd/compare-events/main.go, docs/EV8.3-Event-Comparison.md, docs/EV8.3-Event-Label-Analysis.md, Makefile |
+| 2026-02-21 | **Phase DS complete:** Design system implementation per prototype. Bug fixes (API_BASE_URL → '', LandingPage → /review-progress). Google Fonts + CSS variables. LandingPage redesign with stats + other novels + works-with. Timeline: card-based D3 with connectors, confidence badges, entity chips, animations. TimelineView: underline tabs, filter bar, SourcePanel wired. EntityPanel: colored shapes, mono counts, collapsible. New SourcePanel: 420px slide-in with source excerpt + review actions. Graph: dot grid background. Tab renamed "Inconsistencies" → "Conflicts". Backend: populate source_references from provenance (views.go + timeline.go). | web/src/api/timeline.ts, web/src/pages/LandingPage.tsx, web/index.html, web/src/index.css, web/src/components/timeline/Timeline.tsx, web/src/pages/TimelineView.tsx, web/src/components/entities/EntityPanel.tsx, web/src/components/source/SourcePanel.tsx (new), web/src/components/graph/RelationshipGraph.tsx, api/internal/graph/views.go, api/internal/handlers/graph/timeline.go, docs/TASKS.md |
 | 2026-02-19 | Fixed structure-agnostic chunking: replaced regex chapter detection with paragraph-boundary word-budget splitting (target 3000 words, max 4500). Added Gutenberg boilerplate stripping. Fixed missing /api/documents/{id}/status route for frontend polling. Updated Makefile for `podman compose` (built-in) vs podman-compose. | api/internal/document/parser.go, api/cmd/server/main.go, api/internal/services/document_service.go, web/src/pages/LandingPage.tsx, Makefile, podman-compose.yaml |
 | 2026-02-19 | Phase 7 complete: Landing page (hero + demo card + upload flow), state-based routing, back button in TimelineView, favicon, seed SQL (1700 lines, full P&P extraction), Makefile dump-demo/seed-demo targets. | web/src/App.tsx, web/src/pages/LandingPage.tsx, web/src/pages/TimelineView.tsx, web/index.html, Makefile, demo/seed.sql |
 | 2026-02-19 | Phase 6 complete: Review workflow (J/K/A/R/E keyboard shortcuts), edit modal, inconsistency panel with resolve/note/dismiss, "show on timeline" highlight. Backend review routes. Frontend build passes clean. | api/sql/queries/claims.sql, api/sql/queries/entities.sql, api/internal/handlers/review.go, api/cmd/server/main.go, web/src/components/review/*, web/src/components/inconsistencies/*, web/src/pages/TimelineView.tsx, web/src/components/timeline/Timeline.tsx |
@@ -187,13 +206,36 @@ Makefile now uses `podman compose` (built-in subcommand) instead of `podman-comp
 
 ## Next Milestone
 
-**Milestone:** Post-MVP — Source Text Viewer & Cross-references (Phase 8)
+**Milestone:** EV8.4 (Iteration Loop) — Re-run extraction with v2 prompt, measure improvement.
 
-**Why this is next:** MVP is complete. All 7 phases delivered. Phase 8 adds deep source traceability: click any event → see the exact passage it was extracted from.
+**Why this is next:** EV8.3 is complete (prompt revised with 4 targeted improvements). EV8.4 tests whether v2 prompt achieves ≥70% event recall threshold.
 
-**Recommended model:** Sonnet for implementation.
+**Current Status:**
+- EV1-EV5: ✅ Complete (corpus, prompts, runner, scorer, CLI)
+- EV8.1: ✅ Complete (baseline extraction: 114 nodes, 91 edges)
+- EV8.2: ✅ Complete (matcher fixed, metrics: 93.3% entity recall, 21.4% event recall)
+- EV8.3: ✅ Complete (v2 prompt created with 4 improvements)
+- EV8.4: ⏸️ Ready to run (awaiting user instruction)
 
-**Known issue:** `claim_entities` table is empty — the extraction pipeline stored events and entities separately but never linked them. Entity filtering on the timeline uses text-match fallback (works for Pride and Prejudice). To fix properly: update the extraction prompt to return participant entities per event, add `storeEvent` to call `CreateClaimEntity` for each participant.
+**Recommended model:** Sonnet for EV8.4 (simple command execution, no complex decisions).
+
+**Command to run EV8.4:**
+```bash
+./sikta-eval extract \
+  --corpus corpora/brf \
+  --prompt prompts/system/v2.txt \
+  --fewshot prompts/fewshot/brf.txt \
+  --model glm-5 \
+  --output results/brf-v2.json
+
+./sikta-eval score \
+  --result results/brf-v2.json \
+  --manifest corpora/brf/manifest.json
+```
+
+**Expected outcome:** Event recall improves from 21.4% → ≥70% (predicted 85.7%).
+
+**No UI work until EV8 thresholds are met.**
 
 ---
 
