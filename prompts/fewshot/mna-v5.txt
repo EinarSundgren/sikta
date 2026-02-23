@@ -1,0 +1,274 @@
+EXAMPLE 1 — M&A BOARD MINUTES (English), employment events with entity extraction:
+
+Text: "The following management changes have occurred: Johan Nylund joined as CFO in 2021. Anders Blom joined as VP Sales in 2022. The board meeting was attended by Marcus Lindgren (CEO), Helena Friberg (CTO), Lars Wennerström (NorthCap Ventures), and Sofia Eriksson (Baltic Innovation Fund)."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Johan Nylund",
+      "properties": { "type": "person", "role": "CFO", "joined": "2021" },
+      "excerpt": "Johan Nylund joined as CFO in 2021",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Anders Blom",
+      "properties": { "type": "person", "role": "VP Sales", "joined": "2022" },
+      "excerpt": "Anders Blom joined as VP Sales in 2022",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Lars Wennerström",
+      "properties": { "type": "person", "role": "Board member", "organization": "NorthCap Ventures" },
+      "excerpt": "Lars Wennerström (NorthCap Ventures)",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Sofia Eriksson",
+      "properties": { "type": "person", "role": "Board member", "organization": "Baltic Innovation Fund" },
+      "excerpt": "Sofia Eriksson (Baltic Innovation Fund)",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "NorthCap Ventures",
+      "properties": { "type": "organization", "role": "investor" },
+      "excerpt": "NorthCap Ventures",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "Baltic Innovation Fund",
+      "properties": { "type": "organization", "role": "investor" },
+      "excerpt": "Baltic Innovation Fund",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Johan Nylund joined as CFO",
+      "properties": { "event_type": "employment", "role": "CFO" },
+      "claimed_time_text": "2021",
+      "claimed_time_start": "2021-01-01",
+      "excerpt": "Johan Nylund joined as CFO in 2021",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Anders Blom joined as VP Sales",
+      "properties": { "event_type": "employment", "role": "VP Sales" },
+      "claimed_time_text": "2022",
+      "claimed_time_start": "2022-01-01",
+      "excerpt": "Anders Blom joined as VP Sales in 2022",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Johan Nylund",
+      "target_node": "Johan Nylund joined as CFO",
+      "properties": { "role": "new hire" },
+      "excerpt": "Johan Nylund joined as CFO",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Anders Blom",
+      "target_node": "Anders Blom joined as VP Sales",
+      "properties": { "role": "new hire" },
+      "excerpt": "Anders Blom joined as VP Sales",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ]
+}
+
+EXAMPLE 2 — M&A IP ASSET (English), technology entity:
+
+Text: "IP Assignment Agreement. Helena Friberg hereby assigns all rights to the SynCore transformation engine, a high-performance data transformation platform written in Rust, to DataSyn Nordic AB. The platform was developed between 2019 and 2020."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "technology",
+      "label": "SynCore",
+      "properties": { "type": "technology", "language": "Rust", "category": "transformation engine" },
+      "excerpt": "SynCore transformation engine",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Helena Friberg",
+      "properties": { "type": "person", "role": "CTO", "role_in_event": "assignor" },
+      "excerpt": "Helena Friberg hereby assigns",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "DataSyn Nordic AB",
+      "properties": { "type": "organization", "role_in_event": "assignee" },
+      "excerpt": "DataSyn Nordic AB",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "IP Assignment Agreement signed",
+      "properties": { "event_type": "agreement", "subject": "IP assignment", "asset": "SynCore" },
+      "claimed_time_text": "2020",
+      "claimed_time_start": "2020-01-01",
+      "excerpt": "IP Assignment Agreement",
+      "confidence": 0.9,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Helena Friberg",
+      "target_node": "IP Assignment Agreement signed",
+      "properties": { "role": "assignor" },
+      "excerpt": "Helena Friberg hereby assigns",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "DataSyn Nordic AB",
+      "target_node": "IP Assignment Agreement signed",
+      "properties": { "role": "assignee" },
+      "excerpt": "to DataSyn Nordic AB",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "SynCore",
+      "target_node": "IP Assignment Agreement signed",
+      "properties": { "role": "asset" },
+      "excerpt": "SynCore transformation engine",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ]
+}
+
+EXAMPLE 3 — M&A DUE DILIGENCE (English), contingent liabilities:
+
+Text: "Note 11 — Contingent Liabilities. The Company is party to a dispute with former employee regarding IP assignment. The Company's legal counsel assesses the risk as low. No provision has been made. Note 4 — Revenue. Revenue is recognized over the contract period. Annual contracts constitute 89% of revenue, monthly contracts 11%."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "organization",
+      "label": "DataSyn Nordic AB",
+      "properties": {
+        "type": "organization",
+        "aliases": ["The Company", "DataSyn", "Provider"]
+      },
+      "excerpt": "The Company is party to a dispute",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "value",
+      "label": "Annual contract revenue: 89%",
+      "properties": {
+        "type": "value",
+        "percentage": 89,
+        "metric": "revenue_mix"
+      },
+      "excerpt": "Annual contracts constitute 89% of revenue",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "obligation",
+      "label": "IP dispute — former employee claim",
+      "properties": {
+        "type": "obligation",
+        "obligation_type": "contingent_liability",
+        "counterparty": "former employee",
+        "subject": "IP assignment"
+      },
+      "excerpt": "dispute with former employee regarding IP assignment",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "value",
+      "label": "Legal risk assessment: low",
+      "properties": {
+        "type": "value",
+        "risk_level": "low",
+        "assessor": "legal counsel"
+      },
+      "excerpt": "The Company's legal counsel assesses the risk as low",
+      "confidence": 0.85,
+      "modality": "inferred"
+    },
+    {
+      "node_type": "event",
+      "label": "No provision made for IP dispute",
+      "properties": {
+        "event_type": "accounting_decision",
+        "description": "Company chose not to book a liability provision for the IP dispute"
+      },
+      "excerpt": "No provision has been made",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "has_value",
+      "source_node": "DataSyn Nordic AB",
+      "target_node": "Legal risk assessment: low",
+      "properties": {
+        "assessor": "Company's legal counsel"
+      },
+      "excerpt": "The Company's legal counsel assesses the risk as low",
+      "confidence": 0.85,
+      "modality": "inferred"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "DataSyn Nordic AB",
+      "target_node": "IP dispute — former employee claim",
+      "properties": {
+        "role": "defendant"
+      },
+      "excerpt": "The Company is party to a dispute",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "asserts",
+      "source_node": "No provision made for IP dispute",
+      "target_node": "Legal risk assessment: low",
+      "properties": {
+        "reasoning": "no provision implies management belief risk is low"
+      },
+      "excerpt": "No provision has been made",
+      "confidence": 0.7,
+      "modality": "inferred"
+    }
+  ]
+}

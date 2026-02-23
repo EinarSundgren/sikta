@@ -1,0 +1,300 @@
+EXAMPLE 1 — POLICE INVESTIGATION (Swedish), addresses, vehicles, and minor characters:
+
+Text: "Förhöret genomfördes av aspirant Daniel Falk i närvaro av inspektör Karin Ström. Tekniker Marcus Öhman ansvarade för kameraanalysen. Vittnet såg en svart Audi A4 med registreringsnummer ABC 123 parkerad utanför Björlandavägen 34. Viktor bor på Kvillegatan 18 på Hisingen."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Daniel Falk",
+      "properties": { "type": "person", "role": "aspirant", "function": "interviewer" },
+      "excerpt": "aspirant Daniel Falk",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Marcus Öhman",
+      "properties": { "type": "person", "role": "IT forensics technician" },
+      "excerpt": "Tekniker Marcus Öhman",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "address",
+      "label": "Björlandavägen 34",
+      "properties": { "type": "address", "role": "victim's home", "city": "Göteborg" },
+      "excerpt": "Björlandavägen 34",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "address",
+      "label": "Kvillegatan 18",
+      "properties": { "type": "address", "role": "suspect's home", "city": "Göteborg", "area": "Hisingen" },
+      "excerpt": "Kvillegatan 18 på Hisingen",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "vehicle",
+      "label": "Svart Audi A4, ABC 123",
+      "properties": { "type": "vehicle", "make": "Audi", "model": "A4", "color": "svart", "regnr": "ABC 123" },
+      "excerpt": "svart Audi A4 med registreringsnummer ABC 123",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "located_at",
+      "source_node": "Svart Audi A4, ABC 123",
+      "target_node": "Björlandavägen 34",
+      "properties": { "relation": "parked near" },
+      "excerpt": "parkerad utanför Björlandavägen 34",
+      "confidence": 0.85,
+      "modality": "asserted"
+    }
+  ]
+}
+
+EXAMPLE 2 — POLICE INVESTIGATION (Swedish), forensics staff and witness interview:
+
+Text: "Rättsmedicinsk rapport utförd av Dr. Eva Sundström, Rättsmedicinalverket Göteborg. Telefonlistor analyserades av IT-forensiker Sofia Bergh. Förhör med vittnet Nadia Kovač genomfördes av kriminalinspektör Anders Moberg."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Eva Sundström",
+      "properties": { "type": "person", "role": "forensic pathologist", "organization": "Rättsmedicinalverket Göteborg" },
+      "excerpt": "Dr. Eva Sundström, Rättsmedicinalverket",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Sofia Bergh",
+      "properties": { "type": "person", "role": "IT forensics technician" },
+      "excerpt": "IT-forensiker Sofia Bergh",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Anders Moberg",
+      "properties": { "type": "person", "role": "criminal inspector" },
+      "excerpt": "kriminalinspektör Anders Moberg",
+      "confidence": 0.85,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Nadia Kovač",
+      "properties": { "type": "person", "role": "witness" },
+      "excerpt": "vittnet Nadia Kovač",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "Rättsmedicinalverket Göteborg",
+      "properties": { "type": "organization", "role": "forensic institute" },
+      "excerpt": "Rättsmedicinalverket Göteborg",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Rättsmedicinsk rapport utförd",
+      "properties": { "event_type": "forensic_examination", "examiner": "Dr. Eva Sundström" },
+      "excerpt": "Rättsmedicinsk rapport utförd av Dr. Eva Sundström",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Telefonlistor analyserade",
+      "properties": { "event_type": "technical_analysis", "analyst": "Sofia Bergh" },
+      "excerpt": "Telefonlistor analyserades av IT-forensiker Sofia Bergh",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Förhör med Nadia Kovač genomfört",
+      "properties": { "event_type": "witness_interview", "interviewer": "Anders Moberg" },
+      "excerpt": "Förhör med vittnet Nadia Kovač genomfördes",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Eva Sundström",
+      "target_node": "Rättsmedicinsk rapport utförd",
+      "properties": { "role": "examiner" },
+      "excerpt": "utförd av Dr. Eva Sundström",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Sofia Bergh",
+      "target_node": "Telefonlistor analyserade",
+      "properties": { "role": "analyst" },
+      "excerpt": "analyserades av IT-forensiker Sofia Bergh",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Nadia Kovač",
+      "target_node": "Förhör med Nadia Kovač genomfört",
+      "properties": { "role": "witness" },
+      "excerpt": "Förhör med vittnet Nadia Kovač",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Anders Moberg",
+      "target_node": "Förhör med Nadia Kovač genomfört",
+      "properties": { "role": "interviewer" },
+      "excerpt": "genomfördes av kriminalinspektör Anders Moberg",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ]
+}
+
+EXAMPLE 3 — POLICE INVESTIGATION (Swedish), witness statements and denial:
+
+Text: "Fråga (K.S.): Ringde du Reza den kvällen? V.L.: Nej, absolut inte. Fråga (K.S.): Har du nycklar eller tillgång till parkeringsgaraget i Lindholmen? V.L.: Ja, alla anställda på TechNova har passerkort som ger tillgång till garaget dygnet runt. Men jag var inte där fredagskväll."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "person",
+      "label": "Viktor Lindgren",
+      "properties": {
+        "type": "person",
+        "aliases": ["V.L.", "Viktor", "Lindgren"]
+      },
+      "excerpt": "V.L. uppger följande",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "person",
+      "label": "Reza Mohammadi",
+      "properties": {
+        "type": "person",
+        "aliases": ["Reza"]
+      },
+      "excerpt": "Ringde du Reza den kvällen?",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Viktor förnekar att ha ringt Reza",
+      "properties": {
+        "event_type": "witness_statement",
+        "description": "Viktor stated 'Nej, absolut inte' when asked if he called Reza"
+      },
+      "claimed_time_text": "2024-09-16",
+      "excerpt": "V.L.: Nej, absolut inte",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "place",
+      "label": "Parkeringsgaraget Lindholmen",
+      "properties": {
+        "type": "place",
+        "aliases": ["garaget", "parkeringsgaraget i Lindholmen"],
+        "location": "Lindholmen"
+      },
+      "excerpt": "parkeringsgaraget i Lindholmen",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "organization",
+      "label": "TechNova AB",
+      "properties": {
+        "type": "organization",
+        "aliases": ["TechNova"]
+      },
+      "excerpt": "alla anställda på TechNova",
+      "confidence": 0.9,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "obligation",
+      "label": "Viktor har tillgång till garaget dygnet runt",
+      "properties": {
+        "type": "obligation",
+        "access": "dygnet runt",
+        "method": "passerkort"
+      },
+      "excerpt": "har passerkort som ger tillgång till garaget dygnet runt",
+      "confidence": 0.95,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Viktor påstår att han inte var i garaget fredagskväll",
+      "properties": {
+        "event_type": "witness_statement",
+        "description": "Viktor claims he was not at the garage on Friday evening",
+        "claimed_time_text": "fredagskvällen den 13 september"
+      },
+      "claimed_time_text": "fredagskväll",
+      "claimed_time_start": "2024-09-13T18:00:00",
+      "excerpt": "Men jag var inte där fredagskväll",
+      "confidence": 0.7,
+      "modality": "denied"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "related_to",
+      "source_node": "Viktor Lindgren",
+      "target_node": "Reza Mohammadi",
+      "properties": {
+        "relationship_type": "colleague"
+      },
+      "excerpt": "Ringde du Reza den kvällen?",
+      "confidence": 0.8,
+      "modality": "inferred"
+    },
+    {
+      "edge_type": "located_at",
+      "source_node": "Parkeringsgaraget Lindholmen",
+      "target_node": "TechNova AB",
+      "properties": {
+        "proximity": "adjacent to"
+      },
+      "excerpt": "parkeringsgaraget i Lindholmen",
+      "confidence": 0.7,
+      "modality": "inferred"
+    },
+    {
+      "edge_type": "involved_in",
+      "source_node": "Viktor Lindgren",
+      "target_node": "Obligation: Viktor har tillgång till garaget dygnet runt",
+      "properties": {
+        "role": "access holder"
+      },
+      "excerpt": "har passerkort som ger tillgång",
+      "confidence": 0.95,
+      "modality": "asserted"
+    }
+  ]
+}

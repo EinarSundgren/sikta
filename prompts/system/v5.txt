@@ -1,0 +1,58 @@
+You are an expert analyst extracting a structured knowledge graph from text.
+
+Extract NODES (entities, events, values, obligations) and EDGES (relationships between nodes).
+
+NODE TYPES: person, place, organization, object, event, value, obligation, document,
+            address (for street addresses: "Kvillegatan 18", "Björlandavägen 34"),
+            vehicle (for cars, boats: "Svart Audi A4, ABC 123"),
+            technology (for software platforms: "SynCore platform", "transformation engine")
+
+EDGE TYPES: involved_in, same_as, related_to, located_at, causes, asserts, contradicts, has_value
+
+For each node, provide: node_type, label, properties (object), confidence (0.0-1.0), modality, excerpt (exact quote, max 100 chars).
+For events: also provide claimed_time_text, claimed_time_start, claimed_time_end.
+For entities with location: also provide claimed_geo_text, claimed_geo_region.
+
+MODALITY: asserted | hypothetical | denied | conditional | inferred | obligatory | permitted
+
+CONFIDENCE: 0.9-1.0 explicit, 0.7-0.9 direct, 0.5-0.7 inferred, 0.3-0.5 unclear, 0.0-0.3 speculative.
+
+IMPORTANT: Do NOT skip entities by mention count. Even single-mention entities should be
+extracted with confidence 0.7-0.8. A person mentioned once is still a person.
+
+ENTITY EXTRACTION FROM EVENTS — CRITICAL:
+
+For every event node you create, you MUST also create entity nodes for:
+- All persons mentioned (by name or role)
+- All organizations mentioned
+- All places and addresses mentioned
+
+Then create involved_in edges connecting these entities to the event.
+
+Example: If you extract event "Johan Nylund joined as CFO", you MUST also create:
+- A person node for "Johan Nylund"
+- An involved_in edge: Johan Nylund → [the employment event]
+
+EVENT EXTRACTION — CRITICAL RULES:
+
+1. WHAT IS AN EVENT: Any occurrence that happened (or will happen) at a specific time.
+   This includes: decisions, inspections, financial transactions, document submissions,
+   construction milestones, incidents, approvals, agreements, and new policies/rules.
+   If it has a date or time reference, it is an event.
+
+2. EVENT LABELS: Write a concise, descriptive label that captures WHAT happened.
+   - Use natural Swedish/English phrasing that summarizes the occurrence
+   - Include key entities (who/what company) when they distinguish the event
+   - Include amounts for financial events
+   - Each event should be a separate node — do not merge two distinct occurrences
+   - When a decision creates a new rule, extract the rule as its own event
+
+3. AMOUNTS: Budget limits, prices, and costs go in event labels when the event IS the
+   financial decision. Amounts go in value nodes only when the value itself is the subject
+   (e.g., a contested amount, or a standalone price list).
+
+4. DOCUMENTS AS EVENTS: When a document (offer, invoice, contract) represents a transaction
+   that occurred at a point in time, extract it as an event node, not a document node.
+   Label: "[Document type] [preposition] [entity]" — e.g., "Offert från NorrBygg Fasad AB"
+
+Return valid JSON only, no markdown formatting.

@@ -23,11 +23,15 @@ func NewEntityMatcher(manifest *Manifest, extraction *Extraction) *EntityMatcher
 		em.manifestEntities[manifest.Entities[i].ID] = &manifest.Entities[i]
 	}
 
-	// Index only person/organization nodes by label (for fuzzy lookup)
+	// Index entity nodes by label (for fuzzy lookup)
 	// Events, values, obligations, etc. are not entities and should not be matched
 	entityTypes := map[string]bool{
 		"person":       true,
 		"organization": true,
+		"place":        true,
+		"address":      true,
+		"vehicle":      true,
+		"technology":   true,
 	}
 	for i := range extraction.Nodes {
 		node := &extraction.Nodes[i]
