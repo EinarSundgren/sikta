@@ -23,8 +23,9 @@ type ScoreResult struct {
 	EventDetails   []EventMatch // Per-event breakdown
 
 	// Inconsistency scores (only in --full mode with LLM-as-judge)
-	InconsistencyRecall  float64               // found / expected
-	InconsistencyDetails []InconsistencyMatch // Per-inconsistency breakdown
+	InconsistencyRecall    float64               // found / expected
+	InconsistencyPrecision float64               // correct / found
+	InconsistencyDetails   []InconsistencyMatch  // Per-inconsistency breakdown
 
 	// Quality metrics
 	FalsePositiveRate     float64 // hallucinations / total extracted
@@ -178,11 +179,12 @@ type ExtractionMetadata struct {
 
 // Extraction represents a flattened extraction for scoring
 type Extraction struct {
-	Corpus        string            // Corpus identifier
-	PromptVersion string            // Prompt version used
-	Nodes         []ExtractedNode  // Extracted nodes (flattened from all documents)
-	Edges         []ExtractedEdge  // Extracted edges (flattened from all documents)
-	Timestamp     time.Time         // When extraction was run
+	Corpus         string                   `json:"corpus"`          // Corpus identifier
+	PromptVersion  string                   `json:"prompt_version"`  // Prompt version used
+	Nodes          []ExtractedNode          `json:"nodes"`           // Extracted nodes (flattened from all documents)
+	Edges          []ExtractedEdge          `json:"edges"`           // Extracted edges (flattened from all documents)
+	Inconsistencies []ExtractedInconsistency `json:"inconsistencies"` // Detected inconsistencies (cross-document)
+	Timestamp      time.Time                `json:"timestamp"`       // When extraction was run
 }
 
 // ExtractedNode represents a node from extraction output
@@ -208,6 +210,31 @@ type ExtractedEdge struct {
 	Confidence float32                // Confidence score
 	Modality   string                 // Modality
 	Excerpt    string                 // Source excerpt
+}
+
+// ExtractedInconsistency represents an inconsistency detected during extraction
+type ExtractedInconsistency struct {
+	ID               string                      `json:"id"`                // Inconsistency ID
+	Type             string                      `json:"type"`              // Type: amount, temporal, authority, procedural, obligation, provenance
+	Severity         string                      `json:"severity"`          // Severity: high, medium, low
+	Description      string                      `json:"description"`       // Human-readable description
+	Documents        []string                    `json:"documents"`         // Document IDs involved
+	EntitiesInvolved []string                    `json:"entities_involved"` // Entity IDs involved
+	Evidence         InconsistencyEvidence       `json:"evidence"`          // Evidence from both sides
+	Confidence       float32                     `json:"confidence"`        // Detection confidence (0.0-1.0)
+}
+
+// InconsistencyEvidence contains evidence from both sides of a contradiction
+type InconsistencyEvidence struct {
+	SideA InconsistencySide `json:"side_a"` // Evidence from side A
+	SideB InconsistencySide `json:"side_b"` // Evidence from side B
+}
+
+// InconsistencySide represents evidence from one side of a contradiction
+type InconsistencySide struct {
+	Doc     string `json:"doc"`     // Document ID
+	Section string `json:"section"` // Section reference (e.g., "§5")
+	Claim   string `json:"claim"`   // The specific claim made
 }
 
 // Flatten converts an ExtractionResult to a flat Extraction for scoring

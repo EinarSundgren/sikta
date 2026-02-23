@@ -205,7 +205,103 @@ Two additional LLM passes after per-chunk extraction: entity deduplication and c
 
 **EV8 Status:** Entity recall and event recall thresholds met on all corpora. False positive rate (~64%) deferred.
 
-**Go decision:** Proceed to post-validation phases.
+---
+
+### EV9: Inconsistency Detection
+**Model: Opus (prompt design), Sonnet (implementation), Haiku (judge runtime)** | **Size:** M-L (6-10 hours)
+
+**Goal:** Achieve ≥50% inconsistency detection rate across all three corpora.
+
+**Current Status:** Inconsistency recall is 0% — not implemented. The manifests contain inconsistencies (BRF: 8, MNA: ~5, Police: ~4), but the extraction pipeline has no mechanism to detect or output them.
+
+---
+
+#### EV9.1: Data Structures ✅ COMPLETE
+**Model: Sonnet** | **Size:** S (1 hour)
+
+Add inconsistency types to evaluation package:
+
+- [x] Add `ExtractedInconsistency` struct to `api/internal/evaluation/types.go`
+  - Fields: id, type (amount/temporal/authority/procedural/obligation/provenance), severity, description, documents, entities, evidence (side_a, side_b)
+- [x] Add `InconsistencyMatch` struct for scoring results
+- [x] Add `InconsistencyRecall`, `InconsistencyPrecision`, `InconsistencyDetails` to `ScoreResult`
+
+**Acceptance:** Types compile, match manifest inconsistency structure. ✓
+
+---
+
+#### EV9.2: Inconsistency Detection Prompt
+**Model: Opus** | **Size:** M (2-3 hours)
+
+Write the cross-document inconsistency detection prompt:
+
+- [ ] Create `prompts/postprocess/inconsistency.txt`
+- [ ] Input: All extracted nodes/edges merged across all corpus documents
+- [ ] Output: JSON array of `ExtractedInconsistency` objects
+- [ ] Cover types: amount discrepancy, temporal impossibility, authority violation, procedural irregularity, contradicting claims, provenance issues
+- [ ] Include few-shot examples from BRF corpus
+
+**Acceptance:** Prompt produces valid JSON with at least 3/8 BRF inconsistencies when tested manually.
+
+---
+
+#### EV9.3: Runner Integration
+**Model: Sonnet** | **Size:** S (1-2 hours)
+
+Add post-processing inconsistency detection to extraction runner:
+
+- [ ] Modify `api/internal/extraction/graph/runner.go`
+- [ ] After per-chunk extraction: merge all nodes/edges
+- [ ] Run inconsistency detection prompt with merged data
+- [ ] Parse response into `[]ExtractedInconsistency`
+- [ ] Add to `ExtractionResult.Inconsistencies`
+- [ ] Add `--detect-inconsistencies` flag to CLI
+
+**Acceptance:** `./sikta-eval extract --detect-inconsistencies` produces JSON with `inconsistencies` array.
+
+---
+
+#### EV9.4: Inconsistency Judge
+**Model: Sonnet** | **Size:** M (2-3 hours)
+
+Build LLM-as-judge for inconsistency matching (pattern: follow `EventJudge`):
+
+- [ ] Create `api/internal/evaluation/inconsistency_judge.go`
+- [ ] `InconsistencyJudge` struct with Claude client
+- [ ] `JudgeInconsistencies(ctx, manifestInconsistencies, extractedInconsistencies) []InconsistencyMatch`
+- [ ] System prompt: compare manifest inconsistency description + evidence against extracted ones
+- [ ] Determine if they refer to the same underlying issue (allow different wording)
+
+**Acceptance:** Judge correctly matches BRF I1 (budget 650k→600k) when extracted with similar description.
+
+---
+
+#### EV9.5: Scorer Integration
+**Model: Sonnet** | **Size:** S (1 hour)
+
+Wire inconsistency scoring into the scorer:
+
+- [ ] Modify `api/internal/evaluation/scorer.go`
+- [ ] Add `inconsistencyJudge` to Scorer (optional, like event judge)
+- [ ] Run inconsistency judge in `ScoreWithContext` when `--full` flag is set
+- [ ] Calculate recall/precision/F1 for inconsistencies
+- [ ] Add to score output
+
+**Acceptance:** `./sikta-eval score --full` shows inconsistency metrics in output.
+
+---
+
+#### EV9.6: Prompt Iteration
+**Model: Opus (analysis), Sonnet (implementation)** | **Size:** Open-ended
+
+Iterate on inconsistency detection prompt until ≥50% recall:
+
+- [ ] Run extraction + scoring on all 3 corpora
+- [ ] Analyze missed inconsistencies
+- [ ] Refine prompt (types, examples, context window)
+- [ ] Repeat until threshold met
+
+**Go/Kill:** If ≥50% inconsistency recall cannot be achieved in 5 iterations, document limitations and proceed.
 
 ---
 
