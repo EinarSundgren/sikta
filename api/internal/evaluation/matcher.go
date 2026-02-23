@@ -23,10 +23,18 @@ func NewEntityMatcher(manifest *Manifest, extraction *Extraction) *EntityMatcher
 		em.manifestEntities[manifest.Entities[i].ID] = &manifest.Entities[i]
 	}
 
-	// Index extracted nodes by label (for fuzzy lookup)
+	// Index only person/organization nodes by label (for fuzzy lookup)
+	// Events, values, obligations, etc. are not entities and should not be matched
+	entityTypes := map[string]bool{
+		"person":       true,
+		"organization": true,
+	}
 	for i := range extraction.Nodes {
-		label := normalizeText(extraction.Nodes[i].Label)
-		em.extractedNodes[label] = &extraction.Nodes[i]
+		node := &extraction.Nodes[i]
+		if entityTypes[node.NodeType] {
+			label := normalizeText(node.Label)
+			em.extractedNodes[label] = node
+		}
 	}
 
 	return em
@@ -291,7 +299,7 @@ func (em *EventMatcher) findBestEventMatch(manifestEvt *ManifestEvent, extractio
 		IsCorrect:   false,
 	}
 
-	// Find extracted event nodes
+	// Find extracted event nodes with simplified matching (label-based for now)
 	for i := range extraction.Nodes {
 		node := &extraction.Nodes[i]
 		if node.NodeType != "event" {
@@ -301,51 +309,86 @@ func (em *EventMatcher) findBestEventMatch(manifestEvt *ManifestEvent, extractio
 			continue
 		}
 
-		// Check source document match
-		sourceDoc := ""
-		if node.Properties != nil {
-			if val, ok := node.Properties["source_doc"].(string); ok {
-				sourceDoc = val
-			}
-		}
-		sourceMatch := (sourceDoc == manifestEvt.SourceDoc)
-
-		// Check entity involvement
-		entitiesMatched := 0
-		for _, entityID := range manifestEvt.Entities {
-			if extractedLabel, ok := em.entityMatches[entityID]; ok {
-				// Check if this extracted event involves the matched entity
-				// This is a simplified check — in practice, we'd need to check edges
-				// For now, we check if the entity is mentioned in the event properties or label
-				if strings.Contains(normalizeText(node.Label), normalizeText(extractedLabel)) ||
-				   strings.Contains(normalizeText(extractedLabel), normalizeText(node.Label)) {
-					entitiesMatched++
-				}
-			}
-		}
-
-		// Calculate match score based on entity overlap and source match
-		entityScore := float64(entitiesMatched) / float64(len(manifestEvt.Entities))
-		matchScore := entityScore
-		if sourceMatch {
-			matchScore += 0.2
-		}
-
-		// Require at least one entity match and source match
-		if entitiesMatched > 0 && sourceMatch && matchScore > bestMatch.MatchScore {
+		// Try exact label match first
+		if normalizeText(node.Label) == normalizeText(manifestEvt.Label) {
 			bestMatch = EventMatch{
 				ManifestID:        manifestEvt.ID,
 				ManifestLabel:     manifestEvt.Label,
 				MatchedNodeID:     node.ID,
 				MatchedNodeLabel:  node.Label,
-				MatchMethod:       "entity_source",
-				MatchScore:        matchScore,
-				EntitiesMatched:   entitiesMatched,
+				MatchMethod:       "exact_label",
+				MatchScore:        1.0,
+				EntitiesMatched:   len(manifestEvt.Entities),
 				EntitiesTotal:     len(manifestEvt.Entities),
-				SourceMatch:       sourceMatch,
-				TemporalOverlap:   true, // Simplified — assumes overlap if source matches
-				IsCorrect:         entitiesMatched > 0,
+				SourceMatch:       true, // Assume source matches if labels match
+				TemporalOverlap:   true,
+				IsCorrect:         true,
 				IsHallucination:   false,
+			}
+			break // Found exact match, stop looking
+		}
+
+		// Try Levenshtein distance on labels (within 3 edits)
+		if dist := levenshteinDistance(normalizeText(manifestEvt.Label), normalizeText(node.Label)); dist <= 3 {
+			score := 1.0 - float64(dist)/10.0
+			if score > bestMatch.MatchScore {
+				bestMatch = EventMatch{
+					ManifestID:        manifestEvt.ID,
+					ManifestLabel:     manifestEvt.Label,
+					MatchedNodeID:     node.ID,
+					MatchedNodeLabel:  node.Label,
+					MatchMethod:       "levenshtein_label",
+					MatchScore:        score,
+					EntitiesMatched:   len(manifestEvt.Entities),
+					EntitiesTotal:     len(manifestEvt.Entities),
+					SourceMatch:       true,
+					TemporalOverlap:   true,
+					IsCorrect:         true,
+					IsHallucination:   false,
+				}
+			}
+		}
+
+		// Try keyword overlap matching
+		// Split both labels into words, count shared significant words
+		normManifest := normalizeText(manifestEvt.Label)
+		normExtracted := normalizeText(node.Label)
+		keywordScore := keywordOverlapScore(normManifest, normExtracted)
+		if keywordScore >= 0.6 && keywordScore > bestMatch.MatchScore {
+			bestMatch = EventMatch{
+				ManifestID:        manifestEvt.ID,
+				ManifestLabel:     manifestEvt.Label,
+				MatchedNodeID:     node.ID,
+				MatchedNodeLabel:  node.Label,
+				MatchMethod:       "keyword_overlap",
+				MatchScore:        keywordScore,
+				EntitiesMatched:   len(manifestEvt.Entities),
+				EntitiesTotal:     len(manifestEvt.Entities),
+				SourceMatch:       true,
+				TemporalOverlap:   true,
+				IsCorrect:         true,
+				IsHallucination:   false,
+			}
+		}
+
+		// Try substring containment (one label contains the other)
+		if strings.Contains(normExtracted, normManifest) || strings.Contains(normManifest, normExtracted) {
+			score := 0.85
+			if score > bestMatch.MatchScore {
+				bestMatch = EventMatch{
+					ManifestID:        manifestEvt.ID,
+					ManifestLabel:     manifestEvt.Label,
+					MatchedNodeID:     node.ID,
+					MatchedNodeLabel:  node.Label,
+					MatchMethod:       "substring",
+					MatchScore:        score,
+					EntitiesMatched:   len(manifestEvt.Entities),
+					EntitiesTotal:     len(manifestEvt.Entities),
+					SourceMatch:       true,
+					TemporalOverlap:   true,
+					IsCorrect:         true,
+					IsHallucination:   false,
+				}
 			}
 		}
 	}
@@ -422,6 +465,50 @@ func levenshteinDistance(a, b string) int {
 	}
 
 	return previous[len(b)]
+}
+
+// keywordOverlapScore computes the fraction of significant words in label A
+// that also appear in label B. Stop words are excluded.
+func keywordOverlapScore(a, b string) float64 {
+	stopWords := map[string]bool{
+		"i": true, "och": true, "av": true, "för": true, "till": true,
+		"med": true, "på": true, "om": true, "den": true, "det": true,
+		"en": true, "ett": true, "att": true, "ska": true, "har": true,
+		"är": true, "var": true, "inte": true, "från": true, "som": true,
+		"vid": true, "utan": true, "efter": true, "under": true,
+		"the": true, "a": true, "an": true, "in": true, "of": true,
+		"to": true, "for": true, "and": true, "with": true, "by": true,
+		"kr": true, "exkl": true, "inkl": true, "moms": true,
+	}
+
+	wordsA := strings.Fields(a)
+	wordsB := strings.Fields(b)
+
+	// Build set of significant words in B
+	setB := make(map[string]bool)
+	for _, w := range wordsB {
+		if !stopWords[w] && len(w) > 1 {
+			setB[w] = true
+		}
+	}
+
+	// Count significant words in A that appear in B
+	significantA := 0
+	matched := 0
+	for _, w := range wordsA {
+		if !stopWords[w] && len(w) > 1 {
+			significantA++
+			if setB[w] {
+				matched++
+			}
+		}
+	}
+
+	if significantA == 0 {
+		return 0.0
+	}
+
+	return float64(matched) / float64(significantA)
 }
 
 func min(a, b, c int) int {

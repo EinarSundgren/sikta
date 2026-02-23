@@ -117,25 +117,25 @@ type ManifestDoc struct {
 
 // ManifestEntity represents an expected entity extraction
 type ManifestEntity struct {
-	ID          string            // Entity ID (e.g., "E1")
-	Label       string            // Entity label (e.g., "Anna Lindqvist")
-	Type        string            // Entity type (person, organization, etc.)
-	Aliases     []string          // Alternative names/references
-	Properties  map[string]interface{} // Additional properties
-	MentionedIn []string          // Document IDs where this entity appears
+	ID          string                 `json:"id"`          // Entity ID (e.g., "E1")
+	Label       string                 `json:"label"`       // Entity label (e.g., "Anna Lindqvist")
+	Type        string                 `json:"type"`        // Entity type (person, organization, etc.)
+	Aliases     []string               `json:"aliases"`     // Alternative names/references
+	Properties  map[string]interface{} `json:"properties"`  // Additional properties
+	MentionedIn []string               `json:"mentioned_in"` // Document IDs where this entity appears
 }
 
 // ManifestEvent represents an expected event extraction
 type ManifestEvent struct {
-	ID                string   // Event ID (e.g., "V1")
-	Label             string   // Event label (e.g., "Fuktsinspektion")
-	Type              string   // Event type (decision, inspection, etc.)
-	ClaimedTimeText   string   // Raw time text from document
-	ClaimedTimeStart  string   // ISO date if available
-	ClaimedTimeEnd    string   // ISO date if available
-	Entities          []string // Entity IDs involved in this event
-	SourceDoc         string   // Document ID where this event appears
-	SourceSection     string   // Section reference (e.g., "§5")
+	ID                string   `json:"id"`                // Event ID (e.g., "V1")
+	Label             string   `json:"label"`             // Event label (e.g., "Fuktsinspektion")
+	Type              string   `json:"type"`              // Event type (decision, inspection, etc.)
+	ClaimedTimeText   string   `json:"claimed_time_text"`   // Raw time text from document
+	ClaimedTimeStart  string   `json:"claimed_time_start"`  // ISO date if available
+	ClaimedTimeEnd    string   `json:"claimed_time_end"`    // ISO date if available
+	Entities          []string `json:"entities"`          // Entity IDs involved in this event
+	SourceDoc         string   `json:"source_doc"`         // Document ID where this event appears
+	SourceSection     string   `json:"source_section"`     // Section reference (e.g., "§5")
 }
 
 // ManifestInconsistency represents an expected inconsistency
@@ -149,26 +149,53 @@ type ManifestInconsistency struct {
 	Evidence         map[string]interface{} // Evidence from each side (flexible for nested objects)
 }
 
-// Extraction represents the output from an extraction run
+// ExtractionResult represents the raw output from sikta-eval (with Documents array)
+type ExtractionResult struct {
+	Corpus        string                // Corpus identifier
+	PromptVersion string                // Prompt version used
+	Documents     []DocumentExtraction  // Document-level extractions
+	Metadata      ExtractionMetadata    // Metadata
+}
+
+// DocumentExtraction represents nodes/edges extracted from a single document
+type DocumentExtraction struct {
+	DocumentID string          // Document ID (e.g., "A1")
+	Filename   string          // Original filename
+	Nodes      []ExtractedNode // Nodes from this document
+	Edges      []ExtractedEdge // Edges from this document
+	Error      string          // Error message if extraction failed
+}
+
+// ExtractionMetadata contains metadata about the extraction run
+type ExtractionMetadata struct {
+	Model       string // LLM model used
+	Timestamp   string // ISO timestamp
+	TotalDocs   int    // Total documents processed
+	TotalNodes  int    // Total nodes extracted
+	TotalEdges  int    // Total edges extracted
+	FailedDocs  int    // Number of failed documents
+}
+
+// Extraction represents a flattened extraction for scoring
 type Extraction struct {
 	Corpus        string            // Corpus identifier
 	PromptVersion string            // Prompt version used
-	Nodes         []ExtractedNode  // Extracted nodes
-	Edges         []ExtractedEdge  // Extracted edges
+	Nodes         []ExtractedNode  // Extracted nodes (flattened from all documents)
+	Edges         []ExtractedEdge  // Extracted edges (flattened from all documents)
 	Timestamp     time.Time         // When extraction was run
 }
 
 // ExtractedNode represents a node from extraction output
 type ExtractedNode struct {
-	ID              string                 // Node ID
-	NodeType        string                 // Node type
-	Label           string                 // Node label
-	Properties      map[string]interface{} // Node properties
-	Confidence      float32                // Confidence score
-	Modality        string                 // Modality (asserted, etc.)
-	Excerpt         string                 // Source excerpt
-	ClaimedTimeText string                 // Raw time text
-	ClaimedGeoText  string                 // Raw location text
+	ID              string                 `json:"id"`              // Node ID
+	NodeType        string                 `json:"node_type"`      // Node type
+	Label           string                 `json:"label"`           // Node label
+	Properties      map[string]interface{} `json:"properties"`    // Node properties
+	Confidence      float32                `json:"confidence"`      // Confidence score
+	Modality        string                 `json:"modality"`        // Modality (asserted, etc.)
+	Excerpt         string                 `json:"excerpt"`         // Source excerpt
+	ClaimedTimeText string                 `json:"claimed_time_text"` // Raw time text
+	ClaimedGeoText  string                 `json:"claimed_geo_text"`  // Raw location text
 }
 
 // ExtractedEdge represents an edge from extraction output
@@ -181,4 +208,31 @@ type ExtractedEdge struct {
 	Confidence float32                // Confidence score
 	Modality   string                 // Modality
 	Excerpt    string                 // Source excerpt
+}
+
+// Flatten converts an ExtractionResult to a flat Extraction for scoring
+func (er *ExtractionResult) Flatten() *Extraction {
+	nodes := make([]ExtractedNode, 0)
+	edges := make([]ExtractedEdge, 0)
+
+	for _, doc := range er.Documents {
+		nodes = append(nodes, doc.Nodes...)
+		edges = append(edges, doc.Edges...)
+	}
+
+	// Parse timestamp or use current time
+	var timestamp time.Time
+	if er.Metadata.Timestamp != "" {
+		timestamp, _ = time.Parse(time.RFC3339, er.Metadata.Timestamp)
+	} else {
+		timestamp = time.Now()
+	}
+
+	return &Extraction{
+		Corpus:        er.Corpus,
+		PromptVersion: er.PromptVersion,
+		Nodes:         nodes,
+		Edges:         edges,
+		Timestamp:     timestamp,
+	}
 }

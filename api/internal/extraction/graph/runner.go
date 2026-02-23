@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/einarsundgren/sikta/internal/extraction/claude"
@@ -213,6 +214,9 @@ func (r *Runner) extractFromChunk(ctx context.Context, chunk, systemPrompt, fews
 	// Parse JSON response
 	responseText := stripMarkdownCodeBlocks(rawResponse)
 
+	// Fix trailing commas (common LLM output issue)
+	responseText = fixTrailingCommas(responseText)
+
 	// Log stripped response
 	fmt.Fprintf(os.Stderr, "=== STRIPPED RESPONSE (markdown removed) ===\n%s\n=== END STRIPPED RESPONSE ===\n\n", responseText)
 
@@ -246,6 +250,15 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// fixTrailingCommas removes trailing commas before } and ] in JSON.
+// Common issue with LLM-generated JSON output.
+func fixTrailingCommas(s string) string {
+	// Remove trailing commas before closing braces/brackets
+	// Handles: ,} ,] , } , ] and with whitespace/newlines between
+	result := regexp.MustCompile(`,\s*([}\]])`).ReplaceAllString(s, "$1")
+	return result
 }
 
 // chunkDocument splits a document into chunks based on paragraph boundaries

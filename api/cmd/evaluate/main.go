@@ -237,11 +237,15 @@ func runScore(logger *slog.Logger) {
 		os.Exit(1)
 	}
 
-	var extraction evaluation.Extraction
-	if err := json.Unmarshal(resultData, &extraction); err != nil {
+	// Try to load as ExtractionResult (with Documents array)
+	var resultExt evaluation.ExtractionResult
+	if err := json.Unmarshal(resultData, &resultExt); err != nil {
 		logger.Error("failed to parse result JSON", "error", err)
 		os.Exit(1)
 	}
+
+	// Flatten to Extraction for scoring
+	extraction := resultExt.Flatten()
 
 	// Load manifest
 	manifestData, err := os.ReadFile(*manifestPath)
@@ -263,7 +267,7 @@ func runScore(logger *slog.Logger) {
 	}
 
 	// Run scorer
-	scorer := evaluation.NewScorer(&manifest, &extraction)
+	scorer := evaluation.NewScorer(&manifest, extraction)
 	score := scorer.Score()
 
 	// Print formatted results

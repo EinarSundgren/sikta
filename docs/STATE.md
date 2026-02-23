@@ -142,6 +142,7 @@ See `docs/EXTRACTION_VALIDATION.md` for full rationale and spec.
 | Date | Change | Files Affected |
 |------|--------|----------------|
 | 2026-02-22 | **Course correction:** Extraction Validation Phase introduced. Three test corpora prepared (BRF, M&A, Police) with ground truth manifests. TASKS.md restructured. STATE.md updated to reflect new current phase. | docs/TASKS.md, docs/STATE.md, docs/EXTRACTION_VALIDATION.md, corpora/brf/*, corpora/mna/*, corpora/police/* |
+| 2026-02-23 | **EV8.5 complete:** v3 prompt iteration and testing. Re-ran BRF extraction with v3 (label preservation focus). Event recall: 57.1% (8/14) — improved from v2's 50.0% but below 70% threshold. Fixes: V6 (no prefix), V12 (Slut- prefix), V13 (retroactive pattern) now match. Regressions: V1 (wrong phrase), V5 (lost). Still broken: V3 (budget), V8 (amount suffix), V9 (Byggstart), V14 (wrong label). Analysis: Hybrid approach needed (exact wording + standard formats). Projected v4: 92.9% (13/14) with 6 targeted fixes. Recommendation: Continue to v4. | prompts/system/v3.txt, results/brf-v3.json, docs/EV8.5-v3-Prompt-Iteration.md, docs/EV8.5-v3-Event-Comparison.md, docs/EV8.5-Final-Analysis.md, docs/STATE.md |
 | 2026-02-23 | **EV8.3 complete:** Targeted prompt revision. Created v2 prompt with 4 improvements: (1) Event node classification - all time-bound events as `event` nodes not value/document, (2) Budget labels must include exact amounts, (3) Decision labels must include key actors, (4) Preserve source terminology (exact words from text). Created event comparison CLI tool for verbose analysis. Expected event recall improvement: 21.4% → 85.7%. | prompts/system/v2.txt, docs/EV8.3-Targeted-Prompt-Revision.md, api/cmd/compare-events/main.go, docs/EV8.3-Event-Comparison.md, docs/EV8.3-Event-Label-Analysis.md, Makefile |
 | 2026-02-21 | **Phase DS complete:** Design system implementation per prototype. Bug fixes (API_BASE_URL → '', LandingPage → /review-progress). Google Fonts + CSS variables. LandingPage redesign with stats + other novels + works-with. Timeline: card-based D3 with connectors, confidence badges, entity chips, animations. TimelineView: underline tabs, filter bar, SourcePanel wired. EntityPanel: colored shapes, mono counts, collapsible. New SourcePanel: 420px slide-in with source excerpt + review actions. Graph: dot grid background. Tab renamed "Inconsistencies" → "Conflicts". Backend: populate source_references from provenance (views.go + timeline.go). | web/src/api/timeline.ts, web/src/pages/LandingPage.tsx, web/index.html, web/src/index.css, web/src/components/timeline/Timeline.tsx, web/src/pages/TimelineView.tsx, web/src/components/entities/EntityPanel.tsx, web/src/components/source/SourcePanel.tsx (new), web/src/components/graph/RelationshipGraph.tsx, api/internal/graph/views.go, api/internal/handlers/graph/timeline.go, docs/TASKS.md |
 | 2026-02-19 | Fixed structure-agnostic chunking: replaced regex chapter detection with paragraph-boundary word-budget splitting (target 3000 words, max 4500). Added Gutenberg boilerplate stripping. Fixed missing /api/documents/{id}/status route for frontend polling. Updated Makefile for `podman compose` (built-in) vs podman-compose. | api/internal/document/parser.go, api/cmd/server/main.go, api/internal/services/document_service.go, web/src/pages/LandingPage.tsx, Makefile, podman-compose.yaml |
@@ -206,34 +207,34 @@ Makefile now uses `podman compose` (built-in subcommand) instead of `podman-comp
 
 ## Next Milestone
 
-**Milestone:** EV8.4 (Iteration Loop) — Re-run extraction with v2 prompt, measure improvement.
+**Milestone:** EV8.6 (v4 Prompt Iteration) — Hybrid approach: exact wording + standard formats.
 
-**Why this is next:** EV8.3 is complete (prompt revised with 4 targeted improvements). EV8.4 tests whether v2 prompt achieves ≥70% event recall threshold.
+**Why this is next:** EV8.5 complete — v3 achieved 57.1% event recall (partial success). Need v4 to close remaining 12.9pp gap to 70% threshold.
 
 **Current Status:**
-- EV1-EV5: ✅ Complete (corpus, prompts, runner, scorer, CLI)
-- EV8.1: ✅ Complete (baseline extraction: 114 nodes, 91 edges)
-- EV8.2: ✅ Complete (matcher fixed, metrics: 93.3% entity recall, 21.4% event recall)
-- EV8.3: ✅ Complete (v2 prompt created with 4 improvements)
-- EV8.4: ⏸️ Ready to run (awaiting user instruction)
+- EV1-EV5: ✅ Complete
+- EV8.1-EV8.2: ✅ Complete (baseline + matcher fixes)
+- EV8.3: ✅ Complete (v2 prompt designed)
+- EV8.4: ✅ Complete (v2 tested: 50.0% recall)
+- EV8.5: ✅ Complete (v3 tested: 57.1% recall)
+- EV8.6: ⏸️ Next — v4 implementation (awaiting user decision)
 
-**Recommended model:** Sonnet for EV8.4 (simple command execution, no complex decisions).
+**Progress:**
+- v1 → v2: +28.6pp (21.4% → 50.0%)
+- v2 → v3: +7.1pp (50.0% → 57.1%)
+- Total: +35.7pp improvement from baseline
+- **Remaining:** 12.9pp to reach 70% threshold (need +2 events: 8/14 → 10/14)
 
-**Command to run EV8.4:**
-```bash
-./sikta-eval extract \
-  --corpus corpora/brf \
-  --prompt prompts/system/v2.txt \
-  --fewshot prompts/fewshot/brf.txt \
-  --model glm-5 \
-  --output results/brf-v2.json
+**EV8.5 Results Summary:**
+- Event Recall: 57.1% (8/14) — +7.1pp from v2, still below 70% target
+- New matches: V6, V12, V13 (3 events fixed by v3)
+- Regressions: V1, V5 (2 events broken by v3)
+- Still broken: V3, V8, V9, V14 (4 events)
+- Key learning: "Preserve exact wording" helps sometimes, hurts sometimes
 
-./sikta-eval score \
-  --result results/brf-v2.json \
-  --manifest corpora/brf/manifest.json
-```
+**Recommended path:** v4 with hybrid approach — exact wording + standard format exceptions for documents/budgets/construction
 
-**Expected outcome:** Event recall improves from 21.4% → ≥70% (predicted 85.7%).
+**Projected v4 result:** 92.9% (13/14) — exceeds ≥70% threshold ✅
 
 **No UI work until EV8 thresholds are met.**
 

@@ -4,206 +4,205 @@
 
 ---
 
-## Completed MVP Phases (0-7)
+## Completed MVP Phases (0-7 + DS + G1-G6)
 
-All MVP phases are complete. See `docs/STATE.md` for details.
+All MVP phases and the design system are complete. See `docs/STATE.md` for details.
 
 - **Phase 0:** Project Scaffolding — Go + React + PostgreSQL + Makefile
 - **Phase 1:** Document Ingestion & Chunking — Structure-agnostic paragraph chunking
 - **Phase 2:** LLM Extraction Pipeline — 178 events, 54 entities, 58 relationships from P&P
-- **Phase 2.5:** Data Model Migration — documents->sources, events->claims, two-level confidence
+- **Phase 2.5:** Data Model Migration — documents→sources, events→claims, two-level confidence
 - **Phase 3:** Inconsistency Detection — Narrative vs chronological, contradictions, temporal
 - **Phase 4:** Timeline Hero View — D3 dual-lane timeline with connectors
 - **Phase 5:** Entity Panel & Relationship Graph — D3 force-directed graph
 - **Phase 6:** Review Workflow & Inconsistency Panel — Keyboard-driven J/K/A/R/E
 - **Phase 7:** Demo Polish & Landing — Landing page, upload flow, seed SQL
+- **Phase DS:** Design System Implementation — Visual redesign per prototype, SourcePanel, bug fixes
+- **Phase G1-G6:** Graph Model Alignment — Open type system, provenance-based ordering, clean architecture
 
 ---
 
-## Current: Graph Model Alignment
+## ⚠️ Current: Extraction Validation Phase
 
-**Context:** The data model spec defines three primitives (Node, Edge, Provenance) with strict rules. The database schema is correct. The Go service layer has 6 critical violations against the spec. This is fixable — not a restart.
+> **This phase supersedes further UI/frontend work.** See `docs/EXTRACTION_VALIDATION.md` for full rationale.
+>
+> Extraction quality is the existential risk. If the LLM can't reliably extract structured claims from documents, nothing else matters. Building more UI before validating extraction is building on sand.
 
-**Verdict: Fix, don't restart.** Schema is sound. sqlc layer is sound. Violations are in ~5 Go files.
+**Goal:** CLI-driven prompt development and testing pipeline that measures extraction accuracy against known ground truth across three realistic document corpora.
 
-### What's Correct (Keep As-Is)
+**Go/Kill thresholds (all three corpora must pass):**
+- ≥85% entity recall
+- ≥70% event recall
+- ≥50% inconsistency detection rate
+- <20% false positive rate
 
-- `api/sql/schema/011_graph_primitives.sql` — schema matches spec (except modality CHECK)
-- `api/sql/schema/012_graph_indexes.sql` — good indexes
-- `api/sql/queries/nodes.sql`, `edges.sql`, `provenance.sql` — correct
-- `api/internal/database/models.go` — generated, correct
-- `api/internal/database/graph.go` — helper methods fine; only type declarations need changing
-- `api/internal/extraction/graph/types.go` — already uses `string` for node_type/edge_type
-- `api/internal/extraction/graph/service.go` — correctly stores temporal claims in provenance
-- Frontend (`web/`) — no changes needed
-
----
-
-### Phase G1: Open the Type System ✅ COMPLETE
-**Model: Sonnet** | **Size:** S (30 min)
-
-NodeType, EdgeType, Modality become untyped string constants. All function signatures accept `string`.
-
-#### Tasks
-- [ ] `api/internal/database/graph.go`: Remove `type NodeType string`, `type EdgeType string`, `type Modality string`. Keep consts as plain strings
-- [ ] `api/internal/graph/types.go`: Change CreateNodeParams.NodeType, CreateEdgeParams.EdgeType, CreateProvenanceParams.Modality/Status to `string`
-- [ ] `api/internal/graph/service.go`: Change ListNodesByType, ListEdgesByType, UpdateProvenanceStatus params to `string`. Remove `string()` casts
-- [ ] `api/internal/graph/migrator.go`: Remove all `database.NodeType(...)`, `database.EdgeType(...)` casts
-- [ ] `api/internal/extraction/graph/service.go`: Remove `database.NodeType()`, `database.Modality()`, `database.EdgeType()` casts
-- [ ] `api/internal/graph/views.go`: Remove `string()` casts on type comparisons
-
-#### Acceptance
-- `go build ./...` passes. Zero behavior change.
-- Any string value can be passed as node_type or edge_type without compile error.
+**No UI work until these thresholds are met.**
 
 ---
 
-### Phase G2: Drop Modality CHECK Constraint ✅ COMPLETE
-**Model: Haiku** | **Size:** XS (10 min)
+### EV1: Corpus Preparation ✅ COMPLETE
+**Model: Haiku** | **Size:** S (mechanical conversion)
 
-Allow arbitrary modality values in provenance.
+Extract the three test corpora from markdown documents into the proper file structure. Create machine-readable `manifest.json` ground truth files.
 
-#### Tasks
-- [ ] New migration `api/sql/schema/000014_open_modality.up.sql`: `ALTER TABLE provenance DROP CONSTRAINT IF EXISTS provenance_modality_check`
-- [ ] Corresponding `.down.sql` to restore the constraint
+**Output:**
+```
+corpora/
+├── brf/docs/{A1-A5}.txt + manifest.json
+├── mna/docs/{B1-B6}.txt + manifest.json
+└── police/docs/{C1-C7}.txt + manifest.json
+```
 
-#### Acceptance
-- `make migrate` succeeds.
-- Can insert provenance with `modality = 'narrative_ordering'`.
+**Acceptance:**
+- All document `.txt` files exist with clean content (no markdown)
+- All three `manifest.json` files are valid JSON with entities, events, inconsistencies
 
 ---
 
-### Phase G3: Move Ordering Data to Provenance ✅ COMPLETE
-**Model: Sonnet** | **Size:** M (1.5 hr)
+### EV2: Prompt File Extraction
+**Model: Sonnet** | **Size:** S (2-3 hours)
 
-`narrative_position` and `chronological_position` stop being node properties. They become provenance records with ordering in `location` JSONB.
+Extract current hardcoded prompts from `api/internal/extraction/graph/prompts.go` into versionable files. Write domain-specific few-shot examples for each corpus type.
 
-#### Design Decision
+**Tasks:**
+- [ ] Extract `GraphExtractionSystemPrompt` → `prompts/system/v1.txt`
+- [ ] Extract `GraphFewShotExample` (P&P) → `prompts/fewshot/novel.txt`
+- [ ] Write BRF few-shot example → `prompts/fewshot/brf.txt`
+- [ ] Write M&A few-shot example → `prompts/fewshot/mna.txt`
+- [ ] Write police/investigation few-shot example → `prompts/fewshot/police.txt`
 
-Extend `Location` struct with `PositionType` ("narrative"/"chronological") and `Position` (int). Narrative position = "where in the source text." Chronological position = "where in the inferred timeline." Both are claims with confidence/trust.
+**Acceptance:**
+- `prompts/system/v1.txt` is byte-identical to the current hardcoded prompt
+- Few-shot examples follow the same JSON structure as the current extraction output
 
-#### Tasks
-- [x] `api/internal/database/graph.go`: Add `PositionType string` and `Position int` to Location struct
-- [x] `api/internal/graph/migrator.go` — `MigrateClaimToNode`: Remove position from properties, create two additional provenance records (narrative + chronological ordering)
-- [x] `api/internal/graph/migrator.go` — `MigrateChunkToNode`: Remove `narrative_position` from properties
-- [x] `api/internal/graph/migrator.go` — `MigrateEntityToNode`: Remove `first_appearance_chunk` and `last_appearance_chunk` from properties
-- [x] `api/internal/graph/views.go` — `GetEventsForTimeline`: Replace property-based position reading with provenance-based. New helper: `extractOrderingFromProvenance()`
+---
 
-#### Acceptance
+### EV3: Database-Free Extraction Runner
+**Model: Sonnet** | **Size:** M (3-4 hours)
+
+New file `api/internal/extraction/graph/runner.go` that runs extraction without PostgreSQL — output is JSON, not database writes. Reuses existing Claude client and extraction logic.
+
+**Tasks:**
+- [ ] Define `Document`, `PromptConfig`, `ExtractionResult` structs in `runner.go`
+- [ ] Implement `RunExtraction(ctx, client, docs, prompt, model) (*ExtractionResult, error)`
+- [ ] Read documents from disk (plain text files from a directory)
+- [ ] Chunk documents (reuse existing chunker if suitable; simple paragraph-split fallback for structured docs)
+- [ ] Load prompt from file (not hardcoded constant)
+- [ ] Collect all extracted nodes/edges into merged `ExtractionResult` with per-doc tracking
+- [ ] Serialize result to JSON
+
+**Acceptance:**
 - `go build ./...` passes
-- After `MigrateDocument`: `SELECT count(*) FROM provenance WHERE location->>'position_type' = 'narrative'` returns ~178 rows
-- Timeline endpoint returns correct positions
+- Can run against `corpora/brf/` and produce a valid JSON output file
+- No PostgreSQL dependency in runner.go
 
 ---
 
-### Phase G4: Fix Runtime Bugs in Views ✅ COMPLETE
-**Model: Sonnet** | **Size:** M (1.5 hr)
+### EV4: Scoring Engine
+**Model: Sonnet** | **Size:** M (4-5 hours)
 
-Eliminate nil pointer panics, type assertion panics. Implement relationship retrieval.
+New package `api/internal/evaluation/` with entity matching, event matching, and score calculation.
 
-#### Tasks
-- [x] `api/internal/graph/views.go`: Add nil guard after `selectProvenance` (line 75 and line 184)
-- [x] `api/internal/graph/views.go`: Fix aliases type assertion — `[]interface{}` not `[]string` from JSON unmarshal
-- [x] `api/internal/graph/views.go`: Extract `findDocumentNode` helper (deduplicate 3 copies of lookup pattern)
-- [x] `api/sql/queries/nodes.sql`: Fix `GetDocumentNodeByLegacySourceID` param type (`$1::text`)
-- [x] `api/sql/queries/edges.sql`: Add `ListEdgesBySourceDocument` query (edges with provenance from a document)
-- [x] `api/internal/graph/views.go`: Implement `GetRelationshipsForGraph` using new query
-- [x] Run `sqlc generate`
+**Tasks:**
+- [ ] `api/internal/evaluation/types.go` — `ScoreResult`, `EntityMatch`, `EventMatch`, `InconsistencyMatch`
+- [ ] `api/internal/evaluation/matcher.go` — entity matcher (normalize → exact → Levenshtein ≤3 → substring), event matcher (entities + source + temporal overlap)
+- [ ] `api/internal/evaluation/scorer.go` — precision, recall, F1, false positive rate from match results
+- [ ] `api/internal/evaluation/compare.go` — diff two `ScoreResult` structs, format for terminal output
 
-#### Acceptance
-- No panics when nodes have empty provenance
-- `GET /api/documents/{id}/relationships` returns relationship data
-- `sqlc generate` succeeds
+**Acceptance:**
+- Entity matcher correctly links "ordföranden" to "Anna Lindqvist" via aliases
+- Event matcher correctly matches on entity involvement + source doc
+- Scorer computes F1 correctly for a sample hand-crafted case
 
 ---
 
-### Phase G5: Graph-Based Review Handlers ✅ COMPLETE
-**Model: Sonnet** | **Size:** M (1.5 hr)
+### EV5: CLI Entry Point
+**Model: Sonnet** | **Size:** S (2-3 hours)
 
-Replace legacy review handlers. Review status lives on provenance records.
+`api/cmd/evaluate/main.go` with three subcommands: `extract`, `score`, `compare`.
 
-#### Design
+**Tasks:**
+- [ ] Subcommand `extract`: `--corpus`, `--prompt`, `--fewshot`, `--model`, `--output`
+- [ ] Subcommand `score`: `--result`, `--manifest`, `--full` (enables LLM-as-judge)
+- [ ] Subcommand `compare`: `--a`, `--b`, `--manifest`
+- [ ] Add Makefile targets: `eval-build`, `eval-brf`, `eval-mna`, `eval-police`, `eval-all`
 
-When a user approves a claim, they approve the **provenance record** that supports it. For frontend compatibility, the handler receives a node/edge ID, finds its provenance records, and updates their status.
-
-#### Tasks
-- [x] `api/sql/queries/provenance.sql`: Add `CountClaimProvenanceByStatusForSource`, `CountEntityProvenanceByStatusForSource`, `UpdateProvenanceStatusByTarget` queries
-- [x] New file `api/internal/handlers/graph/review.go`: ReviewHandler with UpdateNodeReview, UpdateEdgeReview, UpdateNodeData, GetReviewProgress
-- [x] `api/cmd/server/main.go`: Wire graph review handlers inside UseGraphModel block; legacy review handlers moved inside else block
-- [x] Run `sqlc generate`
-
-#### Acceptance
-- Frontend review workflow works: approve/reject/edit claims
-- Review progress bar shows correct counts
-- `go build ./...` passes
+**Acceptance:**
+- `make eval-build` compiles `sikta-eval` binary
+- `sikta-eval extract --corpus corpora/brf --prompt prompts/system/v1.txt --output results/brf-v1.json` runs without error
+- `sikta-eval score --result results/brf-v1.json --manifest corpora/brf/manifest.json` prints a score report
 
 ---
 
-### Phase G6: Remove Feature Flag, Clean Up Legacy ✅ COMPLETE
-**Model: Sonnet** | **Size:** S (30 min)
+### EV6: LLM-as-Judge for Inconsistency Detection
+**Model: Sonnet** | **Size:** S (2-3 hours)
 
-Graph model becomes the only path.
+`api/internal/evaluation/judge.go` — uses Claude Haiku to judge whether detected inconsistencies match planted ones.
 
-#### Tasks
-- [x] `api/cmd/server/main.go`: Remove `if cfg.UseGraphModel` conditional, keep only graph handlers
-- [x] `api/internal/config/config.go`: Remove `UseGraphModel` field
-- [x] Delete `api/internal/handlers/timeline.go` (replaced by graph handler)
-- [x] Delete `api/internal/handlers/review.go` (replaced by graph handler)
-- [x] Clean up `api/internal/handlers/extraction.go` — removed `GetEvents`, `GetEntities`, `GetRelationships`, `GetExtractionStatus`
+**Tasks:**
+- [ ] Implement `JudgeInconsistencies(ctx, client, detected, manifest) ([]InconsistencyMatch, error)`
+- [ ] Prompt: "Here is a planted inconsistency. Here are the detected inconsistencies. Does any detected one match? JSON: {match, matched_id, reasoning}"
+- [ ] Integrate as optional step in scoring pipeline (only when `--full` flag is set)
 
-#### Keep
-- `api/internal/handlers/documents.go` — upload staging
-- `api/internal/handlers/inconsistencies.go` — no graph equivalent yet
-- Legacy SQL queries for sources/chunks — staging tables
-
-#### Acceptance
-- `go build ./...` passes with no feature flag
-- All four frontend tabs work: Timeline, Graph, Review, Inconsistencies
-- `USE_GRAPH_MODEL` not referenced anywhere
+**Acceptance:**
+- Judge correctly matches a clearly-worded detected inconsistency against the manifest
+- Returns structured match result with reasoning
+- Does not run without `--full` flag (Claude API calls cost money)
 
 ---
 
-### Phase G7 (Future): Full Legacy Table Removal
+### EV7: Post-Processing Prompts
+**Model: Sonnet** | **Size:** M (3-4 hours)
 
-Not in scope. Requires:
-- Graph-based inconsistency detection
-- Graph-based extraction replaces legacy extraction
-- Migration of demo seed data to graph format
-- Drop legacy tables (claims, entities, relationships, inconsistencies, etc.)
+Two additional LLM passes after per-chunk extraction: entity deduplication and cross-document inconsistency detection.
 
----
+**Tasks:**
+- [ ] Write `prompts/postprocess/dedup.txt` — takes all extracted entities, outputs `same_as` edges
+- [ ] Write `prompts/postprocess/inconsistency.txt` — takes all claims across docs, outputs detected contradictions
+- [ ] Implement post-processing pipeline stages in `runner.go`:
+  - After all chunks processed: entity dedup pass
+  - After all documents in corpus: cross-document inconsistency pass
+- [ ] Make post-processing stages optional (flags: `--dedup`, `--inconsistency-check`)
 
-## Files Modified (Graph Alignment Summary)
-
-| File | Phase | Change |
-|------|-------|--------|
-| `api/internal/database/graph.go` | G1, G3 | Remove typed enums, extend Location struct |
-| `api/internal/graph/types.go` | G1 | Open signatures to string |
-| `api/internal/graph/service.go` | G1 | Open signatures to string |
-| `api/internal/graph/migrator.go` | G1, G3 | Remove casts, move ordering to provenance |
-| `api/internal/graph/views.go` | G1, G3, G4 | Fix nil bugs, read ordering from provenance, implement relationships |
-| `api/internal/extraction/graph/service.go` | G1 | Remove type casts |
-| `api/sql/schema/000014_open_modality.up.sql` | G2 | New migration |
-| `api/sql/queries/nodes.sql` | G4 | Fix parameter type |
-| `api/sql/queries/edges.sql` | G4 | Add ListEdgesBySourceDocument |
-| `api/sql/queries/provenance.sql` | G5 | Add review queries |
-| `api/internal/handlers/graph/review.go` | G5 | New file |
-| `api/cmd/server/main.go` | G5, G6 | Wire review handlers, remove flag |
-| `api/internal/config/config.go` | G6 | Remove UseGraphModel |
-| `api/internal/handlers/timeline.go` | G6 | Delete |
-| `api/internal/handlers/review.go` | G6 | Delete |
+**Acceptance:**
+- Dedup prompt correctly identifies "ordföranden" and "Anna Lindqvist" as `same_as` with high confidence
+- Inconsistency prompt identifies the BRF budget discrepancy (650k vs 600k) when both documents are in context
 
 ---
 
-## Future Phases (Post-MVP)
+### EV8: Prompt Iteration (Ongoing)
+**Model: Collaboration (AI proposes, developer runs)** | **Size:** Open-ended
 
-> **North Star Vision:** Multi-document, multi-type projects with unified timeline and cross-document anomaly detection.
+With EV1-EV7 in place, iterate on prompts until go/kill thresholds are met.
+
+**Workflow:**
+1. Developer runs `sikta-eval extract` on all three corpora
+2. Developer runs `sikta-eval score` to get baseline numbers
+3. Developer shares score output + failure cases with AI
+4. AI analyzes failures, proposes prompt changes, writes next version
+5. Developer re-runs → re-scores → shares results
+6. Repeat until thresholds met or 10 iterations exhausted
+
+**Focus areas for prompt improvement:**
+- Missed entities: too-restrictive type list? few-shot doesn't cover this pattern?
+- Missed events: passive voice, indirect speech not captured?
+- Missed inconsistencies: cross-document context insufficient?
+- False positives: hallucinating entities or relationships?
+- Confidence calibration: do high-confidence extractions actually prove out?
+
+**Go/Kill decision:**
+- If thresholds met within 10 iterations: proceed to post-validation UI and product work
+- If thresholds not met: document failures, reassess extraction approach before building more product
+
+---
+
+## Post-Validation Phases (deferred until EV8 thresholds met)
+
+> These phases remain valid but are blocked until extraction validation passes.
 
 ### Phase 8: Extraction Progress UX
 **Size:** S (1-2 hours) | **Model:** Sonnet
 
-- [x] Backend: SSE streaming chunk-by-chunk progress
-- [x] Frontend: Real-time progress bar and live counters
 - [ ] Frontend: Estimated time remaining
 - [ ] Frontend: Error state per chunk with retry
 - [ ] **BUG:** Fix completion detection — SSE `status: "complete"` doesn't always navigate to timeline

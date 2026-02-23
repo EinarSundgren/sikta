@@ -1,0 +1,140 @@
+EXAMPLE 1 — BRF PROTOCOL (Swedish), decision paragraph:
+
+Text: "§5 Fasadrenovering — beslut om upphandling
+Styrelsen diskuterade det eftersatta underhållet av fasaden mot gården.
+Fuktskador har konstaterats vid inspektion utförd av Byggkonsult Norrland AB den 12 januari 2023.
+Styrelsen beslutade:
+  att uppdra åt ordföranden att inhämta offerter från minst tre (3) entreprenörer för fasadrenovering inkluderande puts, fogning och fönsterbänkar.
+  att budget för projektet inte ska överstiga 650 000 kr exkl. moms.
+  att arbetet ska vara slutfört senast 2023-10-31."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "organization",
+      "label": "Byggkonsult Norrland AB",
+      "properties": { "type": "organization" },
+      "excerpt": "inspektion utförd av Byggkonsult Norrland AB",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Fuktsinspektion utförd",
+      "properties": {
+        "event_type": "inspection",
+        "description": "Fuktskador konstaterade vid inspektion av fasaden mot gården"
+      },
+      "claimed_time_text": "12 januari 2023",
+      "claimed_time_start": "2023-01-12",
+      "excerpt": "Fuktskador har konstaterats vid inspektion utförd",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Beslut om upphandling av fasadrenovering",
+      "properties": {
+        "event_type": "decision",
+        "description": "Styrelsen beslutar att inhämta offerter från minst tre entreprenörer"
+      },
+      "claimed_time_text": "2023-03-15",
+      "claimed_time_start": "2023-03-15",
+      "excerpt": "§5 Fasadrenovering — beslut om upphandling",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Budget fastställd till 650 000 kr",
+      "properties": {
+        "event_type": "decision",
+        "description": "Budget för fasadrenoveringsprojektet begränsad till max 650 000 kr exkl. moms",
+        "amount": 650000,
+        "currency": "SEK"
+      },
+      "claimed_time_text": "2023-03-15",
+      "claimed_time_start": "2023-03-15",
+      "excerpt": "budget för projektet inte ska överstiga 650 000 kr",
+      "confidence": 1.0,
+      "modality": "obligatory"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "involved_in",
+      "source_node": "Byggkonsult Norrland AB",
+      "target_node": "Fuktsinspektion utförd",
+      "properties": { "role": "utförare" },
+      "excerpt": "inspektion utförd av Byggkonsult Norrland AB",
+      "confidence": 1.0,
+      "modality": "asserted"
+    }
+  ]
+}
+
+EXAMPLE 2 — BRF PROTOCOL (Swedish), discussion and decisions:
+
+Text: "§3 Fasadrenovering — slutredovisning
+Ordföranden meddelade att fasadrenoveringen slutbesiktigades den 22 november 2023. Inga anmärkningar. Garantitiden om 5 år löper från besiktningsdatum.
+Styrelsen noterade att tilläggsarbeten beställdes av Per Sandberg utan formellt styrelsebeslut. Styrelsen beslutade:
+  att godkänna tilläggsarbetena i efterhand.
+  att framöver ska alla beställningar utöver avtalat pris godkännas av styrelsen i förväg."
+
+Response:
+{
+  "nodes": [
+    {
+      "node_type": "event",
+      "label": "Slutbesiktning fasadrenovering",
+      "properties": {
+        "event_type": "inspection",
+        "description": "Fasadrenoveringen slutbesiktigades utan anmärkningar",
+        "result": "inga anmärkningar"
+      },
+      "claimed_time_text": "22 november 2023",
+      "claimed_time_start": "2023-11-22",
+      "excerpt": "fasadrenoveringen slutbesiktigades den 22 november",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Tilläggsarbeten godkända i efterhand av styrelsen",
+      "properties": {
+        "event_type": "decision",
+        "description": "Styrelsen beslutade att godkänna tilläggsarbetena i efterhand"
+      },
+      "claimed_time_text": "2023-12-07",
+      "claimed_time_start": "2023-12-07",
+      "excerpt": "att godkänna tilläggsarbetena i efterhand",
+      "confidence": 1.0,
+      "modality": "asserted"
+    },
+    {
+      "node_type": "event",
+      "label": "Ny rutin beslutad: beställningar kräver förhandsgodkännande",
+      "properties": {
+        "event_type": "decision",
+        "description": "Styrelsen beslutade att alla beställningar utöver avtalat pris ska godkännas i förväg"
+      },
+      "claimed_time_text": "2023-12-07",
+      "claimed_time_start": "2023-12-07",
+      "excerpt": "framöver ska alla beställningar utöver avtalat pris",
+      "confidence": 1.0,
+      "modality": "obligatory"
+    }
+  ],
+  "edges": [
+    {
+      "edge_type": "causes",
+      "source_node": "Tilläggsarbeten godkända i efterhand av styrelsen",
+      "target_node": "Ny rutin beslutad: beställningar kräver förhandsgodkännande",
+      "properties": {},
+      "excerpt": "att framöver ska alla beställningar",
+      "confidence": 1.0,
+      "modality": "asserted"
+    }
+  ]
+}
