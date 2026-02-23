@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -38,6 +39,8 @@ func main() {
 		runScore(logger)
 	case "compare":
 		runCompare(logger)
+	case "view":
+		runView(logger)
 	default:
 		fmt.Printf("Unknown command: %s\n\n", command)
 		printUsage()
@@ -52,18 +55,30 @@ func printUsage() {
 	fmt.Println("  sikta-eval extract [options]")
 	fmt.Println("  sikta-eval score [options]")
 	fmt.Println("  sikta-eval compare [options]")
+	fmt.Println("  sikta-eval view [options]")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  extract  Run extraction on a corpus")
 	fmt.Println("  score    Score extraction results against ground truth")
 	fmt.Println("  compare  Compare two extraction results")
+	fmt.Println("  view     View detailed score results (entities, events, false positives)")
+	fmt.Println()
+	fmt.Println("Extract Options:")
+	fmt.Println("  --corpus PATH           Path to corpus directory (required)")
+	fmt.Println("  --prompt PATH           Path to system prompt file (default: prompts/system/v1.txt)")
+	fmt.Println("  --fewshot PATH          Path to few-shot example file (required)")
+	fmt.Println("  --model MODEL           Claude model to use (default: claude-sonnet-4-20250514)")
+	fmt.Println("  --output PATH           Output JSON file path (required)")
+	fmt.Println("  --detect-inconsistencies  Run cross-document inconsistency detection")
 	fmt.Println()
 	fmt.Println("Environment:")
-	fmt.Println("  ANTHROPIC_API_KEY  Required for extract command")
+	fmt.Println("  ANTHROPIC_API_KEY  Required for extract and score --full commands")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  sikta-eval extract --corpus corpora/brf --prompt prompts/system/v1.txt --fewshot prompts/fewshot/brf.txt --output results/brf-v1.json")
-	fmt.Println("  sikta-eval score --result results/brf-v1.json --manifest corpora/brf/manifest.json")
+	fmt.Println("  sikta-eval extract --corpus corpora/brf --prompt prompts/system/v5.txt --fewshot prompts/fewshot/brf-v4.txt --output results/brf-v5.json")
+	fmt.Println("  sikta-eval extract --corpus corpora/brf --detect-inconsistencies --output results/brf-v5-inc.json")
+	fmt.Println("  sikta-eval score --result results/brf-v5.json --manifest corpora/brf/manifest.json --full")
+	fmt.Println("  sikta-eval view --score results/brf-v5-score.json")
 	fmt.Println("  sikta-eval compare --a results/brf-v1.json --b results/brf-v2.json --manifest corpora/brf/manifest.json")
 }
 
@@ -74,6 +89,7 @@ func runExtract(logger *slog.Logger) {
 	fewshotPrompt := flags.String("fewshot", "", "Path to few-shot example file (required)")
 	model := flags.String("model", "claude-sonnet-4-20250514", "Claude model to use")
 	outputPath := flags.String("output", "", "Output JSON file path (required)")
+	detectInconsistencies := flags.Bool("detect-inconsistencies", false, "Run cross-document inconsistency detection after extraction")
 
 	if err := flags.Parse(os.Args[2:]); err != nil {
 		logger.Error("failed to parse flags", "error", err)
@@ -155,10 +171,10 @@ func runExtract(logger *slog.Logger) {
 	}
 
 	// Run extraction
-	logger.Info("starting extraction", "corpus", corpusName, "model", *model)
+	logger.Info("starting extraction", "corpus", corpusName, "model", *model, "detect_inconsistencies", *detectInconsistencies)
 	startTime := time.Now()
 
-	result, err := runner.RunExtraction(context.Background(), docs, prompt, corpusName)
+	result, err := runner.RunExtractionWithOptions(context.Background(), docs, prompt, corpusName, *detectInconsistencies)
 	if err != nil {
 		logger.Error("extraction failed", "error", err)
 		os.Exit(1)
@@ -194,6 +210,9 @@ func runExtract(logger *slog.Logger) {
 	fmt.Printf("✓ Extraction complete!\n")
 	fmt.Printf("  Output: %s\n", *outputPath)
 	fmt.Printf("  Nodes: %d, Edges: %d\n", result.Metadata.TotalNodes, result.Metadata.TotalEdges)
+	if len(result.Inconsistencies) > 0 {
+		fmt.Printf("  Inconsistencies detected: %d\n", len(result.Inconsistencies))
+	}
 	if result.Metadata.FailedDocs > 0 {
 		fmt.Printf("  ⚠ Failed documents: %d\n", result.Metadata.FailedDocs)
 	}
@@ -203,7 +222,9 @@ func runScore(logger *slog.Logger) {
 	flags := flag.NewFlagSet("score", flag.ExitOnError)
 	resultPath := flags.String("result", "", "Extraction result JSON file (required)")
 	manifestPath := flags.String("manifest", "", "Ground truth manifest JSON file (required)")
-	_ = flags.Bool("full", false, "Enable LLM-as-judge for inconsistency scoring (requires API calls) -- reserved for EV6")
+	fullMode := flags.Bool("full", false, "Enable LLM-as-judge for unmatched event matching (requires API calls)")
+	judgeModel := flags.String("model", "claude-haiku-3-5-20241022", "Model to use for LLM judge when --full is set")
+	outputPath := flags.String("output", "", "Output file for detailed score results (JSON)")
 
 	if err := flags.Parse(os.Args[2:]); err != nil {
 		logger.Error("failed to parse flags", "error", err)
@@ -218,6 +239,13 @@ func runScore(logger *slog.Logger) {
 	if *manifestPath == "" {
 		fmt.Println("Error: --manifest is required")
 		os.Exit(1)
+	}
+
+	// Default output path to results directory
+	if *outputPath == "" {
+		base := filepath.Base(*resultPath)
+		base = strings.TrimSuffix(base, ".json")
+		*outputPath = filepath.Join("results", base+"-score.json")
 	}
 
 	// Verify files exist
@@ -266,12 +294,52 @@ func runScore(logger *slog.Logger) {
 		os.Exit(1)
 	}
 
-	// Run scorer
-	scorer := evaluation.NewScorer(&manifest, extraction)
-	score := scorer.Score()
+	// Create scorer with optional judge
+	var scorer *evaluation.Scorer
+	if *fullMode {
+		// Load API config for judge
+		apiKey := os.Getenv("ANTHROPIC_API_KEY")
+		apiURL := os.Getenv("ANTHROPIC_API_URL")
 
-	// Print formatted results
+		if apiKey == "" {
+			logger.Error("ANTHROPIC_API_KEY not configured (required for --full mode)")
+			os.Exit(1)
+		}
+
+		cfg := &config.Config{
+			AnthropicAPIKey: apiKey,
+			AnthropicAPIURL: apiURL,
+		}
+
+		client := claude.NewClient(cfg, logger)
+		judge := evaluation.NewEventJudge(client, logger, *judgeModel)
+		scorer = evaluation.NewScorerWithJudge(&manifest, extraction, judge, logger)
+
+		logger.Info("LLM judge enabled", "model", *judgeModel)
+	} else {
+		scorer = evaluation.NewScorer(&manifest, extraction)
+	}
+
+	// Run scorer
+	score := scorer.ScoreWithContext(context.Background())
+
+	// Save detailed JSON output
+	jsonOutput, err := json.MarshalIndent(score, "", "  ")
+	if err != nil {
+		logger.Error("failed to serialize score results", "error", err)
+		os.Exit(1)
+	}
+
+	if err := os.WriteFile(*outputPath, jsonOutput, 0644); err != nil {
+		logger.Error("failed to write score results", "error", err)
+		os.Exit(1)
+	}
+
+	logger.Info("score results saved", "path", *outputPath)
+
+	// Print summary to terminal
 	fmt.Println(evaluation.FormatTerminal(score))
+	fmt.Printf("\nDetailed results saved to: %s\n", *outputPath)
 }
 
 func runCompare(logger *slog.Logger) {
@@ -363,4 +431,126 @@ func runCompare(logger *slog.Logger) {
 
 	// Print formatted diff
 	fmt.Println(evaluation.FormatDiffTerminal(diff))
+}
+
+func runView(logger *slog.Logger) {
+	flags := flag.NewFlagSet("view", flag.ExitOnError)
+	scorePath := flags.String("score", "", "Score result JSON file (required)")
+	showMatches := flags.Bool("matches", true, "Show matched items")
+	showUnmatched := flags.Bool("unmatched", true, "Show unmatched items")
+	showFalsePositives := flags.Bool("fp", true, "Show false positives (hallucinations)")
+
+	if err := flags.Parse(os.Args[2:]); err != nil {
+		logger.Error("failed to parse flags", "error", err)
+		os.Exit(1)
+	}
+
+	if *scorePath == "" {
+		fmt.Println("Error: --score is required")
+		os.Exit(1)
+	}
+
+	// Load score result
+	scoreData, err := os.ReadFile(*scorePath)
+	if err != nil {
+		logger.Error("failed to read score file", "error", err)
+		os.Exit(1)
+	}
+
+	var score evaluation.ScoreResult
+	if err := json.Unmarshal(scoreData, &score); err != nil {
+		logger.Error("failed to parse score JSON", "error", err)
+		os.Exit(1)
+	}
+
+	// Print header
+	fmt.Printf("=== Score Results: %s (prompt %s) ===\n\n", score.Corpus, score.PromptVersion)
+	fmt.Printf("Timestamp: %s\n\n", score.Timestamp.Format("2006-01-02 15:04:05"))
+
+	// Summary metrics
+	fmt.Println("SUMMARY")
+	fmt.Println("-------")
+	fmt.Printf("Entity Recall:    %.1f%%\n", score.EntityRecall*100)
+	fmt.Printf("Event Recall:     %.1f%%\n", score.EventRecall*100)
+	fmt.Printf("False Positive:   %.1f%%\n", score.FalsePositiveRate*100)
+	fmt.Println()
+
+	if *showMatches {
+		fmt.Println("=== ENTITY MATCHES ===")
+		for _, m := range score.EntityDetails {
+			if m.ManifestID != "" {
+				if m.IsCorrect {
+					fmt.Printf("✓ %s: \"%s\" → \"%s\" [%s]\n",
+						m.ManifestID, m.ManifestLabel, m.MatchedNodeLabel, m.MatchMethod)
+				}
+			}
+		}
+		fmt.Println()
+
+		fmt.Println("=== EVENT MATCHES ===")
+		for _, m := range score.EventDetails {
+			if m.ManifestID != "" {
+				if m.IsCorrect {
+					fmt.Printf("✓ %s: \"%s\" → \"%s\" [%s]\n",
+						m.ManifestID, m.ManifestLabel, m.MatchedNodeLabel, m.MatchMethod)
+				}
+			}
+		}
+		fmt.Println()
+	}
+
+	if *showUnmatched {
+		fmt.Println("=== UNMATCHED (NOT FOUND) ===")
+		fmt.Println("Entities:")
+		hasUnmatched := false
+		for _, m := range score.EntityDetails {
+			if m.ManifestID != "" && !m.IsCorrect {
+				hasUnmatched = true
+				fmt.Printf("  ✗ %s: \"%s\"\n", m.ManifestID, m.ManifestLabel)
+			}
+		}
+		if !hasUnmatched {
+			fmt.Println("  (all matched)")
+		}
+
+		fmt.Println("\nEvents:")
+		hasUnmatched = false
+		for _, m := range score.EventDetails {
+			if m.ManifestID != "" && !m.IsCorrect {
+				hasUnmatched = true
+				fmt.Printf("  ✗ %s: \"%s\"\n", m.ManifestID, m.ManifestLabel)
+			}
+		}
+		if !hasUnmatched {
+			fmt.Println("  (all matched)")
+		}
+		fmt.Println()
+	}
+
+	if *showFalsePositives {
+		fmt.Println("=== FALSE POSITIVES (HALLUCINATIONS) ===")
+		fmt.Println("Entities:")
+		entityFP := 0
+		for _, m := range score.EntityDetails {
+			if m.IsHallucination {
+				entityFP++
+				fmt.Printf("  - \"%s\"\n", m.MatchedNodeLabel)
+			}
+		}
+		if entityFP == 0 {
+			fmt.Println("  (none)")
+		}
+
+		fmt.Println("\nEvents:")
+		eventFP := 0
+		for _, m := range score.EventDetails {
+			if m.IsHallucination {
+				eventFP++
+				fmt.Printf("  - \"%s\"\n", m.MatchedNodeLabel)
+			}
+		}
+		if eventFP == 0 {
+			fmt.Println("  (none)")
+		}
+	}
 }

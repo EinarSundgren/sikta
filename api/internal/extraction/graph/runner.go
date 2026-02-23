@@ -27,12 +27,43 @@ type PromptConfig struct {
 	FewshotPath string // Path to few-shot example file (e.g., prompts/fewshot/novel.txt)
 }
 
+// InconsistencyResponse represents the LLM response for inconsistency detection
+type InconsistencyResponse struct {
+	Inconsistencies []DetectedInconsistency `json:"inconsistencies"`
+}
+
+// DetectedInconsistency represents a single detected inconsistency
+type DetectedInconsistency struct {
+	ID               string                 `json:"id"`
+	Type             string                 `json:"type"`
+	Severity         string                 `json:"severity"`
+	Description      string                 `json:"description"`
+	Documents        []string               `json:"documents"`
+	EntitiesInvolved []string               `json:"entities_involved"`
+	Evidence         InconsistencyEvidence  `json:"evidence"`
+	Confidence       float32                `json:"confidence"`
+}
+
+// InconsistencyEvidence contains evidence from both sides of a contradiction
+type InconsistencyEvidence struct {
+	SideA InconsistencySide `json:"side_a"`
+	SideB InconsistencySide `json:"side_b"`
+}
+
+// InconsistencySide represents evidence from one side of a contradiction
+type InconsistencySide struct {
+	Doc     string `json:"doc"`
+	Section string `json:"section"`
+	Claim   string `json:"claim"`
+}
+
 // ExtractionResult is the complete extraction output for a corpus
 type ExtractionResult struct {
-	Corpus     string                  // Corpus identifier (e.g., "brf", "mna", "police")
-	PromptVersion string               // Prompt version identifier (e.g., "v1")
-	Documents  []DocumentExtraction    // Per-document extraction results
-	Metadata   ExtractionMetadata     // Metadata about the extraction run
+	Corpus          string                  // Corpus identifier (e.g., "brf", "mna", "police")
+	PromptVersion   string                  // Prompt version identifier (e.g., "v1")
+	Documents       []DocumentExtraction    // Per-document extraction results
+	Inconsistencies []DetectedInconsistency // Cross-document inconsistencies (optional)
+	Metadata        ExtractionMetadata      // Metadata about the extraction run
 }
 
 // DocumentExtraction holds extraction results for a single document
@@ -72,6 +103,11 @@ func NewRunner(claude *claude.Client, logger *slog.Logger, model string) *Runner
 
 // RunExtraction processes a corpus without database, returning structured output
 func (r *Runner) RunExtraction(ctx context.Context, docs []Document, prompt PromptConfig, corpus string) (*ExtractionResult, error) {
+	return r.RunExtractionWithOptions(ctx, docs, prompt, corpus, false)
+}
+
+// RunExtractionWithOptions processes a corpus with optional inconsistency detection
+func (r *Runner) RunExtractionWithOptions(ctx context.Context, docs []Document, prompt PromptConfig, corpus string, detectInconsistencies bool) (*ExtractionResult, error) {
 	r.logger.Info("starting database-free extraction", "corpus", corpus, "doc_count", len(docs))
 
 	// Load prompts
@@ -112,7 +148,70 @@ func (r *Runner) RunExtraction(ctx context.Context, docs []Document, prompt Prom
 	result.Metadata.TotalDocs = len(docs)
 	r.logger.Info("extraction complete", "total_nodes", result.Metadata.TotalNodes, "total_edges", result.Metadata.TotalEdges, "failed", result.Metadata.FailedDocs)
 
+	// Run cross-document inconsistency detection if requested
+	if detectInconsistencies {
+		inconsistencies, err := r.DetectInconsistencies(ctx, result)
+		if err != nil {
+			r.logger.Error("inconsistency detection failed", "error", err)
+			// Don't fail the whole extraction, just log the error
+		} else {
+			result.Inconsistencies = inconsistencies
+			r.logger.Info("inconsistency detection complete", "count", len(inconsistencies))
+		}
+	}
+
 	return result, nil
+}
+
+// DetectInconsistencies runs the post-processing inconsistency detection prompt
+func (r *Runner) DetectInconsistencies(ctx context.Context, result *ExtractionResult) ([]DetectedInconsistency, error) {
+	// Load inconsistency detection prompt
+	inconsistencyPromptPath := "prompts/postprocess/inconsistency.txt"
+	inconsistencyPrompt, err := os.ReadFile(inconsistencyPromptPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read inconsistency prompt from %s: %w", inconsistencyPromptPath, err)
+	}
+
+	// Build a summary of all extracted nodes/edges for the prompt
+	nodesJSON, err := json.MarshalIndent(r.mergeNodes(result), "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal nodes: %w", err)
+	}
+
+	userMessage := fmt.Sprintf("Here are the extracted nodes from all documents:\n\n%s", string(nodesJSON))
+
+	r.logger.Info("running inconsistency detection", "nodes_count", len(r.mergeNodes(result)))
+
+	// Call Claude API
+	apiResp, err := r.claude.SendSystemPrompt(ctx, string(inconsistencyPrompt), userMessage, r.model)
+	if err != nil {
+		return nil, fmt.Errorf("inconsistency detection API call failed: %w", err)
+	}
+
+	if len(apiResp.Content) == 0 {
+		return nil, fmt.Errorf("empty response from inconsistency detection")
+	}
+
+	rawResponse := apiResp.Content[0].Text
+	responseText := stripMarkdownCodeBlocks(rawResponse)
+	responseText = fixTrailingCommas(responseText)
+
+	var resp InconsistencyResponse
+	if err := json.Unmarshal([]byte(responseText), &resp); err != nil {
+		r.logger.Error("failed to parse inconsistency response", "error", err, "response", responseText[:min(500, len(responseText))])
+		return nil, fmt.Errorf("failed to parse inconsistency response: %w", err)
+	}
+
+	return resp.Inconsistencies, nil
+}
+
+// mergeNodes collects all nodes from all documents for inconsistency detection
+func (r *Runner) mergeNodes(result *ExtractionResult) []ExtractedNode {
+	var allNodes []ExtractedNode
+	for _, doc := range result.Documents {
+		allNodes = append(allNodes, doc.Nodes...)
+	}
+	return allNodes
 }
 
 // extractFromDocument extracts nodes and edges from a single document

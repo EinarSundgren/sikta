@@ -230,34 +230,34 @@ Add inconsistency types to evaluation package:
 
 ---
 
-#### EV9.2: Inconsistency Detection Prompt
+#### EV9.2: Inconsistency Detection Prompt ✅ COMPLETE
 **Model: Opus** | **Size:** M (2-3 hours)
 
 Write the cross-document inconsistency detection prompt:
 
-- [ ] Create `prompts/postprocess/inconsistency.txt`
-- [ ] Input: All extracted nodes/edges merged across all corpus documents
-- [ ] Output: JSON array of `ExtractedInconsistency` objects
-- [ ] Cover types: amount discrepancy, temporal impossibility, authority violation, procedural irregularity, contradicting claims, provenance issues
-- [ ] Include few-shot examples from BRF corpus
+- [x] Create `prompts/postprocess/inconsistency.txt`
+- [x] Input: All extracted nodes/edges merged across all corpus documents
+- [x] Output: JSON array of `ExtractedInconsistency` objects
+- [x] Cover types: amount, temporal, authority, procedural, obligation, provenance, contradiction
+- [x] Include few-shot examples from BRF corpus (4 worked examples: budget change, authority violation, procedural conflict, deadline missed)
 
-**Acceptance:** Prompt produces valid JSON with at least 3/8 BRF inconsistencies when tested manually.
+**Acceptance:** Prompt produces valid JSON with at least 3/8 BRF inconsistencies when tested manually. *(Pending EV9.3 for testing)*
 
 ---
 
-#### EV9.3: Runner Integration
+#### EV9.3: Runner Integration ✅ COMPLETE
 **Model: Sonnet** | **Size:** S (1-2 hours)
 
 Add post-processing inconsistency detection to extraction runner:
 
-- [ ] Modify `api/internal/extraction/graph/runner.go`
-- [ ] After per-chunk extraction: merge all nodes/edges
-- [ ] Run inconsistency detection prompt with merged data
-- [ ] Parse response into `[]ExtractedInconsistency`
-- [ ] Add to `ExtractionResult.Inconsistencies`
-- [ ] Add `--detect-inconsistencies` flag to CLI
+- [x] Modify `api/internal/extraction/graph/runner.go`
+- [x] After per-chunk extraction: merge all nodes/edges
+- [x] Run inconsistency detection prompt with merged data
+- [x] Parse response into `[]ExtractedInconsistency`
+- [x] Add to `ExtractionResult.Inconsistencies`
+- [x] Add `--detect-inconsistencies` flag to CLI
 
-**Acceptance:** `./sikta-eval extract --detect-inconsistencies` produces JSON with `inconsistencies` array.
+**Acceptance:** `./sikta-eval extract --detect-inconsistencies` produces JSON with `inconsistencies` array. ✓
 
 ---
 
