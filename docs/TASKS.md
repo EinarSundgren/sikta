@@ -261,18 +261,18 @@ Add post-processing inconsistency detection to extraction runner:
 
 ---
 
-#### EV9.4: Inconsistency Judge
+#### EV9.4: Inconsistency Judge ✅ COMPLETE
 **Model: Sonnet** | **Size:** M (2-3 hours)
 
 Build LLM-as-judge for inconsistency matching (pattern: follow `EventJudge`):
 
-- [ ] Create `api/internal/evaluation/inconsistency_judge.go`
-- [ ] `InconsistencyJudge` struct with Claude client
-- [ ] `JudgeInconsistencies(ctx, manifestInconsistencies, extractedInconsistencies) []InconsistencyMatch`
-- [ ] System prompt: compare manifest inconsistency description + evidence against extracted ones
-- [ ] Determine if they refer to the same underlying issue (allow different wording)
+- [x] Create `api/internal/evaluation/inconsistency_judge.go`
+- [x] `InconsistencyJudge` struct with Claude client
+- [x] `JudgeInconsistencies(ctx, manifestInconsistencies, extractedInconsistencies) []InconsistencyMatch`
+- [x] System prompt: compare manifest inconsistency description + evidence against extracted ones
+- [x] Determine if they refer to the same underlying issue (allow different wording)
 
-**Acceptance:** Judge correctly matches BRF I1 (budget 650k→600k) when extracted with similar description.
+**Acceptance:** Judge correctly matches BRF I1 (budget 650k→600k) when extracted with similar description. *(Pending EV9.5 for full testing)*
 
 ---
 
