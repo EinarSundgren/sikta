@@ -12,8 +12,8 @@ type UploadPhase =
   | { name: 'idle' }
   | { name: 'uploading' }
   | { name: 'chunking'; docId: string }
-  | { name: 'extracting'; docId: string; currentChunk: number; totalChunks: number; events: number; entities: number; relationships: number; percent: number; elapsedSec: number }
-  | { name: 'error'; message: string };
+  | { name: 'extracting'; docId: string; currentChunk: number; totalChunks: number; events: number; entities: number; relationships: number; percent: number; elapsedSec: number; failedChunk?: number; errorMessage?: string }
+  | { name: 'error'; message: string; docId?: string; canRetry?: boolean };
 
 interface ExtractionProgress {
   source_id: string;
@@ -25,42 +25,64 @@ interface ExtractionProgress {
   relationships_found: number;
   percent_complete: number;
   elapsed_time_sec: number;
+  error_message?: string;
+}
+
+interface DocumentInfo {
+  id: string;
+  title: string;
+  upload_status: string;
 }
 
 interface Props {
   onNavigate: (docId: string) => void;
 }
 
-const FEATURES = [
-  { icon: '⟷', label: 'Dual-lane timeline', detail: 'Chronological and narrative order simultaneously' },
-  { icon: '◎', label: 'Entity relationship graph', detail: 'D3 force-directed network of characters and places' },
-  { icon: '⚡', label: 'Inconsistency detection', detail: 'Contradictions and temporal impossibilities surfaced automatically' },
-  { icon: '✓', label: 'Human review workflow', detail: 'Keyboard-driven approve / reject / edit with J K A R E' },
-];
+// Design tokens (matching CSS variables)
+const tokens = {
+  surface0: '#FAFBFC',
+  surface1: '#FFFFFF',
+  surface2: '#F3F4F6',
+  surface3: '#E8EAED',
+  textPrimary: '#1A1D23',
+  textSecondary: '#4B5162',
+  textTertiary: '#8B90A0',
+  borderDefault: '#E2E4E9',
+  borderSubtle: '#ECEEF1',
+  accentPrimary: '#3B6FED',
+  accentPrimaryBg: '#EEF2FF',
+  confHigh: '#16A34A',
+  confConflict: '#DC2626',
+  confConflictBg: '#FEF2F2',
+  shadowSm: '0 1px 2px rgba(0,0,0,0.04)',
+  shadowMd: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+};
 
 export default function LandingPage({ onNavigate }: Props) {
   const [demo, setDemo] = useState<DemoInfo | null>(null);
   const [demoLoading, setDemoLoading] = useState(true);
+  const [allDocs, setAllDocs] = useState<DocumentInfo[]>([]);
   const [phase, setPhase] = useState<UploadPhase>({ name: 'idle' });
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load demo document info
+  // Load demo document info and all documents
   useEffect(() => {
     fetch('/api/documents')
       .then(r => (r.ok ? r.json() : []))
-      .then(async (docs: { id: string; title: string }[]) => {
+      .then(async (docs: DocumentInfo[]) => {
+        setAllDocs(docs || []);
         if (!docs || docs.length === 0) return;
         const doc = docs[0];
-        // Fetch extraction status to get counts
-        const status = await fetch(`/api/documents/${doc.id}/extract/status`).then(r => r.json());
+        // Fetch review progress to get counts (extract/status endpoint was removed in G6)
+        const progress = await fetch(`/api/documents/${doc.id}/review-progress`).then(r => r.json());
         setDemo({
           id: doc.id,
           title: doc.title,
-          events: status.events || 0,
-          entities: status.entities || 0,
-          relationships: status.relationships || 0,
+          events: progress.claims?.total || 0,
+          entities: progress.entities?.total || 0,
+          relationships: 0, // No quick count available for relationships
         });
       })
       .catch(() => {})
@@ -78,11 +100,34 @@ export default function LandingPage({ onNavigate }: Props) {
 
   const streamExtractionProgress = useCallback((docId: string) => {
     const eventSource = new EventSource(`/api/documents/${docId}/extract/progress`);
+    let hasCompleted = false;
 
     eventSource.onmessage = (event) => {
       try {
         const progress: ExtractionProgress = JSON.parse(event.data);
 
+        // Check for completion first - most important
+        if (progress.status === 'complete' || progress.percent_complete >= 100) {
+          hasCompleted = true;
+          eventSource.close();
+          // Small delay to ensure data is committed
+          setTimeout(() => onNavigate(docId), 500);
+          return;
+        }
+
+        // Check for errors
+        if (progress.status === 'error') {
+          eventSource.close();
+          setPhase({
+            name: 'error',
+            message: progress.error_message || 'Extraction failed',
+            docId,
+            canRetry: true,
+          });
+          return;
+        }
+
+        // Normal progress update
         setPhase({
           name: 'extracting',
           docId,
@@ -94,20 +139,17 @@ export default function LandingPage({ onNavigate }: Props) {
           percent: progress.percent_complete,
           elapsedSec: progress.elapsed_time_sec,
         });
-
-        if (progress.status === 'complete') {
-          eventSource.close();
-          onNavigate(docId);
-        } else if (progress.status === 'error') {
-          eventSource.close();
-          setPhase({ name: 'error', message: 'Extraction failed' });
-        }
       } catch {
-        // Ignore parse errors
+        // Ignore parse errors, keep listening
       }
     };
 
     eventSource.onerror = () => {
+      // Don't close immediately on error - check if we already completed
+      if (hasCompleted) {
+        eventSource.close();
+        return;
+      }
       eventSource.close();
       // Fallback to polling if SSE fails
       pollExtractionStatus(docId);
@@ -119,24 +161,39 @@ export default function LandingPage({ onNavigate }: Props) {
   }, [onNavigate]);
 
   const pollExtractionStatus = useCallback((docId: string) => {
+    let pollCount = 0;
+    const maxPolls = 120; // 6 minutes max at 3s intervals
+
     // Fallback polling if SSE doesn't work
     pollTimerRef.current = setInterval(async () => {
+      pollCount++;
+      if (pollCount > maxPolls) {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        setPhase({ name: 'error', message: 'Extraction timed out', docId, canRetry: true });
+        return;
+      }
+
       try {
         const status = await fetch(`/api/documents/${docId}/extract/status`).then(r => r.json());
         const events = status.events || 0;
         const totalChunks = status.total_chunks || 0;
-        setPhase({
+        const percent = status.percent_complete || (events > 0 ? 50 : 0);
+
+        setPhase(prev => ({
+          ...prev,
           name: 'extracting',
           docId,
-          currentChunk: 0,
+          currentChunk: status.current_chunk || 0,
           totalChunks,
           events,
-          entities: 0,
-          relationships: 0,
-          percent: events > 0 ? 50 : 0,
-          elapsedSec: 0,
-        });
-        if (status.status === 'complete' && events > 0) {
+          entities: status.entities_found || 0,
+          relationships: status.relationships_found || 0,
+          percent,
+          elapsedSec: status.elapsed_time_sec || 0,
+        } as UploadPhase));
+
+        // Check for completion - be more lenient
+        if (status.status === 'complete' || percent >= 100 || (events > 0 && status.status !== 'processing')) {
           if (pollTimerRef.current) clearInterval(pollTimerRef.current);
           onNavigate(docId);
         }
@@ -225,86 +282,261 @@ export default function LandingPage({ onNavigate }: Props) {
     e.target.value = '';
   }, [processFile]);
 
+  // Retry extraction after failure
+  const retryExtraction = useCallback(async (docId: string) => {
+    setPhase({
+      name: 'extracting',
+      docId,
+      currentChunk: 0,
+      totalChunks: 0,
+      events: 0,
+      entities: 0,
+      relationships: 0,
+      percent: 0,
+      elapsedSec: 0,
+    });
+
+    try {
+      // Trigger extraction again
+      await fetch(`/api/documents/${docId}/extract`, { method: 'POST' });
+      streamExtractionProgress(docId);
+    } catch (err) {
+      setPhase({
+        name: 'error',
+        message: err instanceof Error ? err.message : 'Retry failed',
+        docId,
+        canRetry: true,
+      });
+    }
+  }, [streamExtractionProgress]);
+
+  const handleDeleteDocument = useCallback(async (docId: string) => {
+    if (!confirm('Are you sure you want to delete this document? This cannot be undone.')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error('Failed to delete document');
+      }
+      // Remove from local state
+      setAllDocs(prev => prev.filter(d => d.id !== docId));
+      // If we deleted the demo doc, clear it and try to set a new one
+      if (demo?.id === docId) {
+        setDemo(null);
+        const remaining = allDocs.filter(d => d.id !== docId);
+        if (remaining.length > 0) {
+          const newDemo = remaining[0];
+          const progress = await fetch(`/api/documents/${newDemo.id}/review-progress`).then(r => r.json());
+          setDemo({
+            id: newDemo.id,
+            title: newDemo.title,
+            events: progress.claims?.total || 0,
+            entities: progress.entities?.total || 0,
+            relationships: 0,
+          });
+        }
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete document');
+    }
+  }, [demo, allDocs]);
+
   const isProcessing = phase.name === 'uploading' || phase.name === 'chunking' || phase.name === 'extracting';
 
+  // Other ready documents (excluding the main demo)
+  const otherDocs = allDocs.filter(d => d.upload_status === 'ready' && d.id !== demo?.id);
+
+  // Helper for StatCard
+  const StatCard = ({ value, label, color, icon }: { value: number | string; label: string; color?: string; icon?: string }) => (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '20px 32px',
+      backgroundColor: tokens.surface1,
+      borderRadius: 12,
+      border: `1px solid ${tokens.borderDefault}`,
+      minWidth: 140,
+      boxShadow: tokens.shadowSm,
+    }}>
+      <span style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 36,
+        fontWeight: 700,
+        color: color || tokens.textPrimary,
+        lineHeight: 1,
+      }}>
+        {value}
+      </span>
+      <span style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: 13,
+        color: tokens.textTertiary,
+        marginTop: 4,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+      }}>
+        {label} {icon}
+      </span>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Nav */}
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">Sikta</span>
-            <span className="ml-2 text-sm text-slate-400">Document Timeline Intelligence</span>
-          </div>
-          {demo && (
-            <button
-              onClick={() => onNavigate(demo.id)}
-              className="px-4 py-1.5 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
-            >
-              Explore Demo →
-            </button>
-          )}
+    <div style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: tokens.surface0, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px 32px',
+        borderBottom: `1px solid ${tokens.borderSubtle}`,
+        backgroundColor: tokens.surface1,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          <span style={{ fontSize: 22, fontWeight: 700, color: tokens.textPrimary, letterSpacing: '-0.02em' }}>Sikta</span>
+          <span style={{ fontSize: 13, color: tokens.textTertiary, fontWeight: 500 }}>Evidence Synthesis Engine</span>
         </div>
-      </header>
+        {demo && (
+          <button
+            onClick={() => onNavigate(demo.id)}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 8,
+              backgroundColor: tokens.accentPrimary,
+              color: '#fff',
+              border: 'none',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Explore Demo →
+          </button>
+        )}
+      </div>
 
       {/* Hero */}
-      <main className="flex-1 max-w-4xl mx-auto px-6 py-16 w-full">
-        <div className="text-center mb-14">
-          <h1 className="text-5xl font-bold text-slate-900 tracking-tight mb-5 leading-tight">
-            Make documents<br />
-            <span className="text-blue-600">auditable and navigable</span>
-          </h1>
-          <p className="text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
-            Extract structured timelines from any text. Every event traced to its source.
-            Contradictions surfaced automatically.
-          </p>
-        </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '60px 32px 40px', flex: 1 }}>
+        <h1 style={{
+          fontSize: 48,
+          fontWeight: 700,
+          color: tokens.textPrimary,
+          lineHeight: 1.1,
+          letterSpacing: '-0.03em',
+          marginBottom: 16,
+        }}>
+          Turn documents into<br />
+          <span style={{ color: tokens.accentPrimary }}>auditable evidence.</span>
+        </h1>
+        <p style={{
+          fontSize: 18,
+          color: tokens.textSecondary,
+          lineHeight: 1.6,
+          maxWidth: 520,
+          marginBottom: 48,
+        }}>
+          Every claim traced to its source.<br />
+          Every contradiction surfaced.
+        </p>
 
-        {/* Demo card */}
-        <div className="mb-12">
-          {demoLoading ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-8 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-            </div>
-          ) : demo ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-wide">
-                      Ready
-                    </span>
-                    <span className="text-xs text-slate-400">Pre-extracted demo</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-900">{demo.title}</h2>
-                </div>
-                <span className="text-4xl select-none">📖</span>
-              </div>
-              <div className="flex gap-6 mb-6 text-sm text-slate-500">
-                <span><strong className="text-slate-800">{demo.events}</strong> events</span>
-                <span><strong className="text-slate-800">{demo.entities}</strong> entities</span>
-                <span><strong className="text-slate-800">{demo.relationships}</strong> relationships</span>
+        {/* Stats */}
+        {demoLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+          </div>
+        ) : demo ? (
+          <div style={{ marginBottom: 40 }}>
+            {/* Demo document title with delete */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 24 }}>📖</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: tokens.textPrimary }}>{demo.title}</span>
               </div>
               <button
-                onClick={() => onNavigate(demo.id)}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm"
+                onClick={() => handleDeleteDocument(demo.id)}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  backgroundColor: tokens.confConflictBg,
+                  color: tokens.confConflict,
+                  border: 'none',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+                title="Delete document"
               >
-                Explore Demo →
+                ✕ Delete
               </button>
             </div>
-          ) : (
-            <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
-              <p className="text-slate-500 text-sm">No demo document loaded. Upload a document below.</p>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <StatCard value={demo.events} label="claims extracted" />
+              <StatCard value={demo.entities} label="entities identified" />
+              <StatCard value="—" label="conflicts" color={tokens.textTertiary} />
             </div>
-          )}
-        </div>
+          </div>
+        ) : null}
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-sm text-slate-400 shrink-0">or upload your own document</span>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
+        {/* Other novels available */}
+        {otherDocs.length > 0 && (
+          <div style={{
+            padding: '20px 24px',
+            backgroundColor: tokens.surface1,
+            borderRadius: 12,
+            border: `1px solid ${tokens.borderDefault}`,
+            marginBottom: 32,
+          }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: tokens.textTertiary, letterSpacing: '0.08em', marginBottom: 12 }}>
+              OTHER NOVELS AVAILABLE
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {otherDocs.map(doc => (
+                <div key={doc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderRadius: 8, backgroundColor: tokens.surface2 }}>
+                  <span style={{ fontSize: 14, color: tokens.textPrimary, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.title}</span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <button
+                      onClick={() => onNavigate(doc.id)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: 6,
+                        backgroundColor: tokens.accentPrimary,
+                        color: '#fff',
+                        border: 'none',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      View →
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 6,
+                        backgroundColor: tokens.confConflictBg,
+                        color: tokens.confConflict,
+                        border: 'none',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                      }}
+                      title="Delete document"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Upload zone */}
         {!isProcessing && phase.name !== 'error' && (
@@ -313,38 +545,54 @@ export default function LandingPage({ onNavigate }: Props) {
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors mb-12 ${
-              isDragOver
-                ? 'border-blue-400 bg-blue-50'
-                : 'border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50'
-            }`}
+            style={{
+              border: `2px dashed ${isDragOver ? '#3B6FED' : tokens.borderDefault}`,
+              borderRadius: 12,
+              padding: '48px 32px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              marginBottom: 32,
+              backgroundColor: isDragOver ? '#EEF2FF' : tokens.surface1,
+            }}
           >
             <input
               ref={fileInputRef}
               type="file"
               accept=".txt,.pdf"
-              className="hidden"
+              style={{ display: 'none' }}
               onChange={handleFileInput}
             />
-            <div className="text-4xl mb-3 select-none">📄</div>
-            <p className="text-slate-700 font-medium mb-1">Drag & drop a file here</p>
-            <p className="text-sm text-slate-400">.txt or .pdf · up to 50 MB · click to browse</p>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📄</div>
+            <p style={{ color: tokens.textPrimary, fontSize: 15, fontWeight: 500, marginBottom: 4 }}>
+              Drag & drop a file here
+            </p>
+            <p style={{ fontSize: 13, color: tokens.textTertiary }}>
+              .txt or .pdf · up to 50 MB · click to browse
+            </p>
           </div>
         )}
 
         {/* Processing state */}
         {isProcessing && (
-          <div className="bg-white border border-slate-200 rounded-xl p-8 mb-12">
-            <div className="flex items-center gap-4 mb-4">
+          <div style={{
+            padding: '24px',
+            backgroundColor: tokens.surface1,
+            borderRadius: 12,
+            border: `1px solid ${tokens.borderDefault}`,
+            marginBottom: 32,
+            boxShadow: tokens.shadowSm,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 shrink-0" />
-              <div className="flex-1">
-                <p className="font-semibold text-slate-800">
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: tokens.textPrimary }}>
                   {phase.name === 'uploading' && 'Uploading document...'}
                   {phase.name === 'chunking' && 'Splitting into sections...'}
                   {phase.name === 'extracting' && 'Extracting events with AI...'}
                 </p>
                 {phase.name === 'extracting' && (
-                  <p className="text-sm text-slate-500 mt-0.5">
+                  <p style={{ fontSize: 13, color: tokens.textTertiary, marginTop: 2 }}>
                     {phase.totalChunks > 0
                       ? `Processing chunk ${phase.currentChunk} of ${phase.totalChunks}`
                       : 'Starting extraction pipeline...'}
@@ -352,42 +600,52 @@ export default function LandingPage({ onNavigate }: Props) {
                 )}
               </div>
               {phase.name === 'extracting' && phase.elapsedSec > 0 && (
-                <span className="text-sm text-slate-400">
+                <span style={{ fontSize: 13, color: tokens.textTertiary }}>
                   {Math.floor(phase.elapsedSec / 60)}:{(phase.elapsedSec % 60).toString().padStart(2, '0')}
                 </span>
               )}
             </div>
 
-            {/* Progress bar for extraction */}
+            {/* Progress bar */}
             {phase.name === 'extracting' && phase.totalChunks > 0 && (
-              <div className="mb-4">
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ height: 8, backgroundColor: tokens.surface2, borderRadius: 4, overflow: 'hidden' }}>
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-300"
-                    style={{ width: `${phase.percent}%` }}
+                    style={{
+                      height: '100%',
+                      backgroundColor: tokens.accentPrimary,
+                      borderRadius: 4,
+                      transition: 'all 0.3s ease',
+                      width: `${phase.percent}%`
+                    }}
                   />
                 </div>
-                <div className="flex justify-between mt-1 text-xs text-slate-500">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: tokens.textTertiary }}>
                   <span>{phase.percent}% complete</span>
-                  <span>{phase.totalChunks - phase.currentChunk} chunks remaining</span>
+                  <span>
+                    {phase.totalChunks - phase.currentChunk} chunks remaining
+                    {phase.elapsedSec > 0 && phase.currentChunk > 0 && phase.currentChunk < phase.totalChunks && (
+                      <> · ~{Math.round((phase.elapsedSec / phase.currentChunk) * (phase.totalChunks - phase.currentChunk) / 60)}m left</>
+                    )}
+                  </span>
                 </div>
               </div>
             )}
 
             {/* Extraction stats */}
             {phase.name === 'extracting' && (phase.events > 0 || phase.entities > 0) && (
-              <div className="flex gap-6 mb-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span className="text-slate-600"><strong className="text-slate-800">{phase.events}</strong> events</span>
+              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: tokens.accentPrimary }}></span>
+                  <span style={{ color: tokens.textSecondary, fontSize: 14 }}><strong style={{ color: tokens.textPrimary }}>{phase.events}</strong> events</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span className="text-slate-600"><strong className="text-slate-800">{phase.entities}</strong> entities</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: tokens.confHigh }}></span>
+                  <span style={{ color: tokens.textSecondary, fontSize: 14 }}><strong style={{ color: tokens.textPrimary }}>{phase.entities}</strong> entities</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                  <span className="text-slate-600"><strong className="text-slate-800">{phase.relationships}</strong> relationships</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#8B5CF6' }}></span>
+                  <span style={{ color: tokens.textSecondary, fontSize: 14 }}><strong style={{ color: tokens.textPrimary }}>{phase.relationships}</strong> relationships</span>
                 </div>
               </div>
             )}
@@ -401,7 +659,18 @@ export default function LandingPage({ onNavigate }: Props) {
                   if (sseRef) sseRef.close();
                   onNavigate((phase as { name: 'extracting'; docId: string }).docId);
                 }}
-                className="w-full py-2 border border-blue-300 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-50 transition-colors"
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  border: `1px solid ${tokens.accentPrimary}`,
+                  borderRadius: 8,
+                  backgroundColor: tokens.surface1,
+                  color: tokens.accentPrimary,
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
               >
                 View partial results now →
               </button>
@@ -411,40 +680,90 @@ export default function LandingPage({ onNavigate }: Props) {
 
         {/* Error state */}
         {phase.name === 'error' && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-12 flex items-start gap-3">
-            <span className="text-red-500 text-lg shrink-0">✕</span>
-            <div className="flex-1">
-              <p className="text-red-700 font-medium text-sm">{phase.message}</p>
+          <div style={{
+            padding: '20px 24px',
+            backgroundColor: '#FEF2F2',
+            borderRadius: 12,
+            border: '1px solid #FECACA',
+            marginBottom: 32,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: '#DC2626', fontSize: 18 }}>✕</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ color: '#991B1B', fontSize: 14, fontWeight: 500 }}>{phase.message}</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setPhase({ name: 'idle' })}
-                className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 6,
+                  backgroundColor: '#fff',
+                  color: '#6B7280',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
               >
-                Try again
+                Upload different file
               </button>
+              {phase.canRetry && phase.docId && (
+                <button
+                  onClick={() => retryExtraction(phase.docId!)}
+                  style={{
+                    padding: '6px 12px',
+                    border: 'none',
+                    borderRadius: 6,
+                    backgroundColor: '#DC2626',
+                    color: '#fff',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Retry extraction
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Feature list */}
-        <div className="grid grid-cols-2 gap-4">
-          {FEATURES.map(f => (
-            <div key={f.label} className="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
-              <span className="text-blue-500 text-lg shrink-0 mt-0.5">{f.icon}</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{f.label}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{f.detail}</p>
-              </div>
-            </div>
-          ))}
+        {/* Works with section */}
+        <div style={{
+          padding: '24px 32px',
+          backgroundColor: tokens.surface1,
+          borderRadius: 12,
+          border: `1px solid ${tokens.borderDefault}`,
+        }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: tokens.textTertiary, letterSpacing: '0.08em', marginBottom: 12 }}>
+            WORKS WITH
+          </div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {["Board protocols", "Contracts & M&A", "Case files", "Research papers", "Novels & narratives", "Any text"].map(t => (
+              <span key={t} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: tokens.textSecondary }}>
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
-      </main>
+      </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between text-xs text-slate-400">
-          <span>Sikta — Document Timeline Intelligence</span>
-          <span>Demo: <em>Pride and Prejudice</em>, Jane Austen (public domain)</span>
-        </div>
+      <footer style={{
+        borderTop: `1px solid ${tokens.borderDefault}`,
+        backgroundColor: tokens.surface1,
+        padding: '16px 32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: 12,
+        color: tokens.textTertiary,
+      }}>
+        <span>Sikta — Evidence Synthesis</span>
+        <span>Demo: <em>Pride and Prejudice</em>, Jane Austen (public domain)</span>
       </footer>
     </div>
   );

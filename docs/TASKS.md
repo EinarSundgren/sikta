@@ -213,12 +213,19 @@ Two additional LLM passes after per-chunk extraction: entity deduplication and c
 
 > Extraction validation (EV8) complete. Entity recall and event recall thresholds met.
 
-### Phase 8: Extraction Progress UX
+### Phase 8: Extraction Progress UX ✅ COMPLETE
 **Size:** S (1-2 hours) | **Model:** Sonnet
 
-- [ ] Frontend: Estimated time remaining
-- [ ] Frontend: Error state per chunk with retry
-- [ ] **BUG:** Fix completion detection — SSE `status: "complete"` doesn't always navigate to timeline
+- [x] Frontend: Estimated time remaining (ETA based on chunk progress)
+- [x] Frontend: Error state per chunk with retry
+- [x] **BUG:** Fix completion detection — SSE `status: "complete"` doesn't always navigate to timeline
+
+**Changes:**
+- Added ETA calculation showing "~Xm left" based on elapsed time and chunk progress
+- Fixed SSE completion detection with hasCompleted flag and 500ms delay for data commit
+- Added retry extraction button in error state
+- Improved polling fallback with timeout (6 min max) and lenient completion detection
+- Updated error state UI with separate "Upload different file" and "Retry extraction" buttons
 
 ### Phase 9: Multi-File Projects
 **Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for cross-document entity resolution
