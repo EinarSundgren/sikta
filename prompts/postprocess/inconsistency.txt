@@ -4,62 +4,81 @@ You will receive extracted nodes (entities, events, values) from multiple docume
 Analyze all claims and identify inconsistencies: contradictions, discrepancies, authority violations,
 temporal impossibilities, and procedural irregularities.
 
-INCONSISTENCY TYPES:
+INCONSISTENCY TYPES BY DOMAIN:
 
-1. AMOUNT — Numeric discrepancies (e.g., budget 650k in doc A vs 600k in doc B without justification)
-2. TEMPORAL — Impossible timelines (e.g., deadline missed, person in two places at once)
-3. AUTHORITY — Actions taken without authorization (e.g., unauthorized orders, decisions without quorum)
-4. PROCEDURAL — Process violations (e.g., same person as writer and verifier of a document)
-5. OBLIGATION — Untracked or violated commitments (e.g., guarantee periods, payment deadlines)
-6. PROVENANCE — Citation issues (e.g., citing a decision the person wasn't present for)
-7. CONTRADICTION — Direct factual conflicts (e.g., "X is true" in doc A vs "X is false" in doc B)
+## GENERAL (all document types)
+- amount — Numeric discrepancies (e.g., budget 650k in doc A vs 600k in doc B)
+- temporal — Impossible timelines (e.g., deadline missed, person in two places at once)
+- authority — Actions taken without authorization
+- procedural — Process violations (e.g., same person as writer and verifier)
+- obligation — Untracked commitments (guarantees, deadlines, non-competes)
+- provenance — Citation issues (citing a decision the person wasn't present for)
+- contradiction — Direct factual conflicts
+
+## M&A / DUE DILIGENCE
+- financial — Revenue, margin, EBITDA discrepancies between presentation and audited financials
+- equity — Ownership percentage conflicts between documents
+- headcount — Employee count discrepancies
+- ip_risk — Intellectual property ownership disputes or conflicting representations
+- revenue_recognition — Accounting treatment concerns (bundling, timing)
+- contingent_liability — Different risk assessments for the same issue
+- related_party — Undisclosed or inadequately reviewed related-party transactions
+
+## CRIMINAL INVESTIGATION
+- witness_vs_evidence — Witness statement contradicts technical evidence (phone records, camera)
+- witness_vs_witness — Two witnesses give conflicting accounts of same event
+- temporal_approximation — Witness time estimate differs from technical record (note: minor differences may be normal)
+- forensic_temporal — Forensic findings vs timeline evidence gaps
+- absence — Missing evidence that should exist (broken camera, uninterviewed alibi witness)
+- witness_uncertainty — Witness expresses uncertainty that affects identification reliability
 
 FOR EACH INCONSISTENCY, PROVIDE:
 - id: unique identifier (e.g., "I1", "I2")
-- type: one of the types above (lowercase)
-- severity: "high" (material impact), "medium" (notable), "low" (minor discrepancy)
+- type: one of the types above (lowercase, use underscore for multi-word)
+- severity: "critical" (case-changing), "high" (material impact), "medium" (notable), "low" (minor)
 - description: clear explanation of the inconsistency in 1-2 sentences
-- documents: array of document IDs involved (e.g., ["A1", "A3"])
-- entities_involved: array of entity labels involved (people, organizations, projects)
+- documents: array of document IDs involved (e.g., ["A1", "A3"] or ["B1", "B2"] or ["C4", "C7"])
+- entities_involved: array of entity labels involved
 - evidence: object with side_a and side_b, each containing {doc, section, claim}
-- confidence: 0.0-1.0 (how certain you are this is a genuine inconsistency)
+- confidence: 0.0-1.0
 
 DETECTION RULES:
 
-1. AMOUNTS: Compare numeric values across documents for the same entity/project/account.
-   Flag if the same metric differs without explicit explanation or approval.
+1. FINANCIAL/AMOUNTS: Compare ALL numeric values across documents for the same metric.
+   - Revenue figures in presentation vs audited financials
+   - Margin percentages (recalculate from raw numbers)
+   - Budget amounts in different meetings/documents
 
-2. TEMPORAL: Check if timelines are physically possible.
-   - Can a person be in two places at the same time?
+2. EQUITY/OWNERSHIP: Compare ownership percentages across all documents mentioning same person/entity.
+   - Watch for dilution that isn't explained
+   - IP assignments referencing equity stakes
+
+3. TEMPORAL: Check if timelines are physically possible.
+   - Can a person/vehicle be in two places at the same time?
+   - Do technical records (phone, camera) match witness statements?
    - Was a deadline met or missed?
-   - Do event sequences make logical sense?
 
-3. AUTHORITY: Verify the actor had authorization.
-   - Board decisions require proper quorum
-   - Expenditures require approval authority
-   - Contracts require signing authority
+4. WITNESS CREDIBILITY: Compare witness statements against each other AND against technical evidence.
+   - Phone records are highly reliable (trust ~0.98)
+   - Camera footage is highly reliable (trust ~0.95)
+   - Witness memory is less reliable (trust ~0.30-0.70)
+   - When witness contradicts technical evidence, flag it
 
-4. PROCEDURAL: Check for role conflicts and process violations.
-   - Writer and verifier should be different people
-   - Conflicts of interest should be declared
-   - Required signatures must be present
+5. IP/LEGAL RISKS: Look for conflicting representations about ownership, creation, or liability.
+   - "Sole creator" claims vs co-authorship disputes
+   - Risk assessments that differ between documents
 
-5. OBLIGATIONS: Track commitments across documents.
-   - Warranties and guarantees
-   - Payment terms and deadlines
-   - Contractual commitments
-
-6. PROVENANCE: Verify information sources.
-   - Was the person present when the cited decision was made?
-   - Is the source document correctly referenced?
-   - Are quotes accurate?
+6. ABSENCE: Flag important missing evidence or verification.
+   - Alibi witness never interviewed
+   - Camera malfunction during critical period
+   - Required approval not documented
 
 IMPORTANT — WHAT IS NOT AN INCONSISTENCY:
 
-- Normal business evolution (e.g., budget revised after proper vote)
-- Different levels of detail (e.g., "~500k" vs "498,500 kr")
-- Estimates vs actuals (unless the variance is flagged as problematic)
-- Information that appears in one document but not another (absence is not inconsistency)
+- Normal business evolution (e.g., budget revised after proper vote with explanation)
+- Rounding differences within ~3% (e.g., "~26M" vs "26.1M")
+- Witness time approximations within ~15 minutes of technical records
+- Information that appears in one document but not another (absence alone isn't inconsistency unless the absence is itself notable)
 
 Only flag genuine inconsistencies where two claims CONFLICT or a RULE is VIOLATED.
 
@@ -67,91 +86,105 @@ OUTPUT FORMAT:
 
 Return valid JSON with an "inconsistencies" array. Return {"inconsistencies": []} if none found.
 
+EXAMPLES:
+
+## BRF Protocol Example
 {
-  "inconsistencies": [
-    {
-      "id": "I1",
-      "type": "amount",
-      "severity": "high",
-      "description": "Budget set to 650 000 kr in A1 §5, later reduced to 600 000 kr in A3 §5 without explicit justification for the reduction",
-      "documents": ["A1", "A3"],
-      "entities_involved": ["Brf Stenbacken 3"],
-      "evidence": {
-        "side_a": {
-          "doc": "A1",
-          "section": "§5",
-          "claim": "budget för projektet inte ska överstiga 650 000 kr exkl. moms"
-        },
-        "side_b": {
-          "doc": "A3",
-          "section": "§5",
-          "claim": "budgetramarna för projektet fastställs till maximalt 600 000 kr exkl. moms"
-        }
-      },
-      "confidence": 0.95
-    },
-    {
-      "id": "I2",
-      "type": "authority",
-      "severity": "high",
-      "description": "Per Sandberg (suppleant) ordered additional work worth 14 800 kr without board authorization. He was absent from the meeting that selected the contractor.",
-      "documents": ["A3", "A4"],
-      "entities_involved": ["Per Sandberg", "NorrBygg Fasad AB"],
-      "evidence": {
-        "side_a": {
-          "doc": "A4",
-          "section": "",
-          "claim": "Tilläggsarbeten beställda av Per Sandberg per telefon 2023-09-14"
-        },
-        "side_b": {
-          "doc": "A3",
-          "section": "",
-          "claim": "Frånvarande: Per Sandberg, suppleant"
-        }
-      },
-      "confidence": 0.90
-    },
-    {
-      "id": "I3",
-      "type": "procedural",
-      "severity": "medium",
-      "description": "Maria Bergström is both sekreterare (wrote the protocol) AND justerare (verified it) in A5. The verifier should be independent of the writer.",
-      "documents": ["A5"],
-      "entities_involved": ["Maria Bergström"],
-      "evidence": {
-        "side_a": {
-          "doc": "A5",
-          "section": "",
-          "claim": "Vid protokollet: Maria Bergström, sekreterare"
-        },
-        "side_b": {
-          "doc": "A5",
-          "section": "",
-          "claim": "Justerat: Maria Bergström, justerare"
-        }
-      },
-      "confidence": 0.90
-    },
-    {
-      "id": "I4",
-      "type": "temporal",
-      "severity": "medium",
-      "description": "Board required work completion by 2023-10-31, but actual completion (slutbesiktning) was 2023-11-22, a delay of 3 weeks.",
-      "documents": ["A1", "A5"],
-      "entities_involved": ["NorrBygg Fasad AB", "Brf Stenbacken 3"],
-      "evidence": {
-        "side_a": {
-          "doc": "A1",
-          "section": "§5",
-          "claim": "arbetet ska vara slutfört senast 2023-10-31"
-        },
-        "side_b": {
-          "doc": "A5",
-          "section": "§3",
-          "claim": "fasadrenoveringen slutbesiktigades den 22 november 2023"
-        }
-      },
-      "confidence": 0.95
-    }
-  ]
+  "id": "I1",
+  "type": "amount",
+  "severity": "high",
+  "description": "Budget set to 650 000 kr in A1 §5, later reduced to 600 000 kr in A3 §5 without explicit justification",
+  "documents": ["A1", "A3"],
+  "entities_involved": ["Brf Stenbacken 3"],
+  "evidence": {
+    "side_a": {"doc": "A1", "section": "§5", "claim": "budget för projektet inte ska överstiga 650 000 kr"},
+    "side_b": {"doc": "A3", "section": "§5", "claim": "budgetramarna fastställs till maximalt 600 000 kr"}
+  },
+  "confidence": 0.95
+}
+
+## M&A Due Diligence Example
+{
+  "id": "I1",
+  "type": "financial",
+  "severity": "high",
+  "description": "Management presentation states 2023 revenue as 26.1 MSEK while audited financials show 26.8 MSEK — difference of ~750 kSEK",
+  "documents": ["B1", "B2"],
+  "entities_involved": ["DataSyn Nordic AB"],
+  "evidence": {
+    "side_a": {"doc": "B1", "section": "KEY FINANCIALS", "claim": "Revenue 2023: 26.1 MSEK"},
+    "side_b": {"doc": "B2", "section": "INCOME STATEMENT", "claim": "Net Revenue 2023: 26,847 kSEK"}
+  },
+  "confidence": 0.95
+}
+
+{
+  "id": "I3",
+  "type": "equity",
+  "severity": "critical",
+  "description": "Helena Friberg's equity stake is 22% in employment agreement but 25% in IP assignment. 3% discrepancy unexplained.",
+  "documents": ["B3", "B4"],
+  "entities_involved": ["Helena Friberg", "DataSyn Nordic AB"],
+  "evidence": {
+    "side_a": {"doc": "B3", "section": "3. EQUITY", "claim": "The Employee holds 22% of the shares"},
+    "side_b": {"doc": "B4", "section": "2. CONSIDERATION", "claim": "the Assignor's 25% equity stake in the Company"}
+  },
+  "confidence": 0.90
+}
+
+{
+  "id": "I5",
+  "type": "ip_risk",
+  "severity": "critical",
+  "description": "IP Assignment states Helena is 'sole creator' but board minutes reveal Alexei Petrov claims co-authorship of SynCore module",
+  "documents": ["B4", "B5"],
+  "entities_involved": ["Helena Friberg", "Alexei Petrov", "SynCore"],
+  "evidence": {
+    "side_a": {"doc": "B4", "section": "3. REPRESENTATIONS", "claim": "She is the sole creator of the assigned IP"},
+    "side_b": {"doc": "B5", "section": "4a", "claim": "Alexei Petrov has claimed co-authorship of the SynCore transformation engine"}
+  },
+  "confidence": 0.95
+}
+
+## Criminal Investigation Example
+{
+  "id": "I1",
+  "type": "witness_vs_evidence",
+  "severity": "critical",
+  "description": "Viktor denies calling Reza outside work, but phone records show 3 calls between them on September 13 including evening calls",
+  "documents": ["C4", "C7"],
+  "entities_involved": ["Viktor Lindgren", "Reza Mohammadi"],
+  "evidence": {
+    "side_a": {"doc": "C4", "section": "", "claim": "Jag har inte haft kontakt med Reza utanför arbetstid"},
+    "side_b": {"doc": "C7", "section": "", "claim": "21:14 — Utgående samtal till 070-555 1234 (Reza Mohammadi)"}
+  },
+  "confidence": 0.98
+}
+
+{
+  "id": "I3",
+  "type": "temporal",
+  "severity": "high",
+  "description": "Viktor claims he went to bed at 23:00 at home, but phone was registered at Lindholmen base station at 23:18 — he was not at home",
+  "documents": ["C4", "C7"],
+  "entities_involved": ["Viktor Lindgren"],
+  "evidence": {
+    "side_a": {"doc": "C4", "section": "", "claim": "Jag gick och la mig vid 23:00"},
+    "side_b": {"doc": "C7", "section": "", "claim": "23:18 — Sista basstation: Lindholmen, Göteborg"}
+  },
+  "confidence": 0.95
+}
+
+{
+  "id": "I5",
+  "type": "witness_vs_evidence",
+  "severity": "high",
+  "description": "Viktor claims his car was parked at home on Hisingen. Camera footage shows the same car (ABC 123) entering garage at 20:14 and leaving at 02:38",
+  "documents": ["C4", "C6"],
+  "entities_involved": ["Viktor Lindgren", "Svart Audi A4, ABC 123"],
+  "evidence": {
+    "side_a": {"doc": "C4", "section": "", "claim": "Parkerad utanför min lägenhet på Hisingen"},
+    "side_b": {"doc": "C6", "section": "Kamera 1", "claim": "ABC 123 registrerat på Viktor Lindgren, kör in 20:14, ut 02:38"}
+  },
+  "confidence": 0.95
 }

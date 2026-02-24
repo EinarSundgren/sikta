@@ -207,12 +207,12 @@ Two additional LLM passes after per-chunk extraction: entity deduplication and c
 
 ---
 
-### EV9: Inconsistency Detection
+### EV9: Inconsistency Detection ✅ COMPLETE
 **Model: Opus (prompt design), Sonnet (implementation), Haiku (judge runtime)** | **Size:** M-L (6-10 hours)
 
 **Goal:** Achieve ≥50% inconsistency detection rate across all three corpora.
 
-**Current Status:** Inconsistency recall is 0% — not implemented. The manifests contain inconsistencies (BRF: 8, MNA: ~5, Police: ~4), but the extraction pipeline has no mechanism to detect or output them.
+**Final Status:** All sub-tasks complete. Inconsistency recall: BRF 62.5%, MNA 88.9%, Police 50%.
 
 ---
 
@@ -291,23 +291,31 @@ Wire inconsistency scoring into the scorer:
 
 ---
 
-#### EV9.6: Prompt Iteration
+#### EV9.6: Prompt Iteration ✅ COMPLETE
 **Model: Opus (analysis), Sonnet (implementation)** | **Size:** Open-ended
 
 Iterate on inconsistency detection prompt until ≥50% recall:
 
-- [ ] Run extraction + scoring on all 3 corpora
-- [ ] Analyze missed inconsistencies
-- [ ] Refine prompt (types, examples, context window)
-- [ ] Repeat until threshold met
+- [x] Run extraction + scoring on all 3 corpora
+- [x] Analyze missed inconsistencies (MNA: financial/equity types, Police: witness vs evidence)
+- [x] Refine prompt — added domain-specific types and examples for M&A and criminal investigation
+- [x] Achieved ≥50% on all corpora in 2 iterations
 
-**Go/Kill:** If ≥50% inconsistency recall cannot be achieved in 5 iterations, document limitations and proceed.
+**Final Results (2026-02-23):**
+
+| Corpus | Entity | Event | Inconsistency | FP Rate |
+|--------|--------|-------|---------------|---------|
+| BRF | 93.3% | 92.9% | 62.5% | 64.2% |
+| MNA | 100% | 70% | 88.9% | 63.1% |
+| Police | 100% | 100% | 50% | 65.5% |
+
+**Go decision:** All mandatory thresholds met. FP rate deferred (acceptable for MVP).
 
 ---
 
 ## Post-Validation Phases
 
-> Extraction validation (EV8) complete. Entity recall and event recall thresholds met.
+> Extraction validation (EV8 + EV9) complete. All go/kill thresholds met.
 
 ### Phase 8: Extraction Progress UX ✅ COMPLETE
 **Size:** S (1-2 hours) | **Model:** Sonnet
