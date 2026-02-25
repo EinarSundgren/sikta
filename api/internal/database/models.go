@@ -8,6 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Project struct {
+	ID          pgtype.UUID        `json:"id"`
+	Title       string             `json:"title"`
+	Description pgtype.Text        `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Chunk struct {
 	ID                pgtype.UUID        `json:"id"`
 	SourceID          pgtype.UUID        `json:"source_id"`
@@ -167,6 +175,7 @@ type Source struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 	SourceTrust  pgtype.Float4      `json:"source_trust"`
 	TrustReason  pgtype.Text        `json:"trust_reason"`
+	ProjectID    pgtype.UUID        `json:"project_id"`
 }
 
 type SourceReference struct {

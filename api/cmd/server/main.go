@@ -61,6 +61,17 @@ func main() {
 
 	db := database.New(pool)
 
+	// Project handlers
+	projectHandler := handlers.NewProjectHandler(db, logger)
+	mux.HandleFunc("GET /api/projects", projectHandler.ListProjects)
+	mux.HandleFunc("POST /api/projects", projectHandler.CreateProject)
+	mux.HandleFunc("GET /api/projects/{id}", projectHandler.GetProject)
+	mux.HandleFunc("PUT /api/projects/{id}", projectHandler.UpdateProject)
+	mux.HandleFunc("DELETE /api/projects/{id}", projectHandler.DeleteProject)
+	mux.HandleFunc("GET /api/projects/{id}/documents", projectHandler.GetProjectDocuments)
+	mux.HandleFunc("POST /api/projects/{id}/documents", projectHandler.AddDocumentToProject)
+	mux.HandleFunc("GET /api/projects/{id}/graph", projectHandler.GetProjectGraph)
+
 	// Progress tracker for real-time extraction updates
 	progressTracker := extraction.NewProgressTracker()
 

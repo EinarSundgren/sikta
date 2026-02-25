@@ -15,6 +15,7 @@ type Config struct {
 	AnthropicModelExtraction     string
 	AnthropicModelClassification string
 	AnthropicModelChronology     string
+	PromptDir                    string // Path to prompts directory (default: "" uses hardcoded)
 }
 
 func Load() (*Config, error) {
@@ -31,12 +32,13 @@ func Load() (*Config, error) {
 	return &Config{
 		Port:                        getEnv("PORT", "8080"),
 		DatabaseURL:                 databaseURL,
-		AllowedOrigins:               allowedOrigins,
-		AnthropicAPIKey:              getEnv("ANTHROPIC_API_KEY", ""),
-		AnthropicAPIURL:              getEnv("ANTHROPIC_API_URL", "https://api.anthropic.com"),
-		AnthropicModelExtraction:     getEnv("ANTHROPIC_MODEL_EXTRACTION", "claude-sonnet-4-20250514"),
+		AllowedOrigins:              allowedOrigins,
+		AnthropicAPIKey:             getEnv("ANTHROPIC_API_KEY", ""),
+		AnthropicAPIURL:             getEnv("ANTHROPIC_API_URL", "https://api.anthropic.com"),
+		AnthropicModelExtraction:    getEnv("ANTHROPIC_MODEL_EXTRACTION", "claude-sonnet-4-20250514"),
 		AnthropicModelClassification: getEnv("ANTHROPIC_MODEL_CLASSIFICATION", "claude-haiku-4-20250514"),
-		AnthropicModelChronology:     getEnv("ANTHROPIC_MODEL_CHRONOLOGY", "claude-sonnet-4-20250514"),
+		AnthropicModelChronology:    getEnv("ANTHROPIC_MODEL_CHRONOLOGY", "claude-sonnet-4-20250514"),
+		PromptDir:                   getEnv("SIKTA_PROMPT_DIR", ""),
 	}, nil
 }
 

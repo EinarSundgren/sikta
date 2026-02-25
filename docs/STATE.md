@@ -6,21 +6,27 @@
 
 ## Status
 
-**Overall:** Extraction validation complete. Post-validation phases unblocked. Entity recall at 100% on all three corpora.
+**Overall:** E2E (End-to-End Pipeline) phase started. Backend project support complete. Extraction validation passed all thresholds.
 
-**Last Updated:** 2026-02-23
+**Last Updated:** 2026-02-25
 
 ---
 
 ## Current Phase
 
-**Phase:** EV — Extraction Validation
+**Phase:** E2E — End-to-End Pipeline
 
-**Goal:** CLI-driven extraction testing pipeline against three realistic document corpora (BRF board protocols, M&A due diligence, criminal investigation). Measure entity recall, event recall, inconsistency detection, false positive rate. Iterate on prompts until go/kill thresholds are met.
+**Goal:** Deliver a working pipeline: Upload real municipality documents → extract to graph → see results in browser. Test corpus: `corpora/hsand2024/` (Swedish kommun meeting protocols).
 
-**Go/Kill thresholds:** ≥85% entity recall, ≥70% event recall, ≥50% inconsistency detection, <20% false positive rate.
+**Completed:**
+- [x] E2E.1: Connect validated prompts to backend (PromptLoader with fallback)
+- [x] E2E.3: Multi-document project support (projects table, API endpoints, routes)
 
-See `docs/EXTRACTION_VALIDATION.md` for full rationale and spec.
+**In Progress:**
+- [ ] E2E.2: Document-type-aware chunking
+- [ ] E2E.4: Cross-document post-processing
+- [ ] E2E.5: Minimal UI results viewer
+- [ ] E2E.6: Integration testing
 
 ---
 
@@ -138,6 +144,7 @@ See `docs/EXTRACTION_VALIDATION.md` for full rationale and spec.
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-25 | **E2E.1 + E2E.3 complete:** Added PromptLoader for file-based prompts with fallback to hardcoded. Added projects table, project API handlers, and routes. Projects support: CRUD, add documents, get merged graph. | api/internal/config/config.go, api/internal/extraction/graph/prompt_loader.go (new), api/internal/extraction/graph/service.go, api/sql/schema/000015_projects.up.sql (new), api/internal/database/projects.sql.go (new), api/internal/handlers/projects.go (new), api/cmd/server/main.go |
 | 2026-02-23 | **Phase 8 complete:** Extraction Progress UX improvements. Added ETA calculation based on chunk progress. Fixed SSE completion detection bug. Added retry extraction functionality. Improved error state UI with separate retry/upload buttons. | web/src/pages/LandingPage.tsx, docs/TASKS.md |
 | 2026-02-23 | **EV8.6 complete:** v5 prompt iteration. Entity recall reaches 100% on all three corpora. Added entity extraction from events, expanded node types (address, vehicle, technology), fixed matcher to include new entity types. EV8.7 (FP reduction) deferred to icebox. | prompts/system/v5.txt, prompts/fewshot/mna-v5.txt, prompts/fewshot/police-v5.txt, api/internal/evaluation/matcher.go, docs/TASKS.md, docs/EV8-Prompt-Iteration-Summary.md |
 | 2026-02-23 | **EV8.5 complete:** v3 prompt iteration and testing. Re-ran BRF extraction with v3 (label preservation focus). Event recall: 57.1% (8/14) — improved from v2's 50.0% but below 70% threshold. Fixes: V6 (no prefix), V12 (Slut- prefix), V13 (retroactive pattern) now match. Regressions: V1 (wrong phrase), V5 (lost). Still broken: V3 (budget), V8 (amount suffix), V9 (Byggstart), V14 (wrong label). Analysis: Hybrid approach needed (exact wording + standard formats). Projected v4: 92.9% (13/14) with 6 targeted fixes. Recommendation: Continue to v4. | prompts/system/v3.txt, results/brf-v3.json, docs/EV8.5-v3-Prompt-Iteration.md, docs/EV8.5-v3-Event-Comparison.md, docs/EV8.5-Final-Analysis.md, docs/STATE.md |

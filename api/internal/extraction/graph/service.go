@@ -15,21 +15,23 @@ import (
 
 // GraphService handles extraction to the graph model
 type GraphService struct {
-	db     *database.Queries
-	claude *claude.Client
-	graph  *graph.Service
-	logger *slog.Logger
-	model  string
+	db           *database.Queries
+	claude       *claude.Client
+	graph        *graph.Service
+	logger       *slog.Logger
+	model        string
+	promptLoader *PromptLoader
 }
 
 // NewGraphService creates a new graph extraction service
-func NewGraphService(db *database.Queries, claude *claude.Client, graph *graph.Service, logger *slog.Logger, model string) *GraphService {
+func NewGraphService(db *database.Queries, claude *claude.Client, graph *graph.Service, logger *slog.Logger, model string, promptLoader *PromptLoader) *GraphService {
 	return &GraphService{
-		db:     db,
-		claude: claude,
-		graph:  graph,
-		logger: logger,
-		model:  model,
+		db:           db,
+		claude:       claude,
+		graph:        graph,
+		logger:       logger,
+		model:        model,
+		promptLoader: promptLoader,
 	}
 }
 
@@ -183,9 +185,31 @@ func (s *GraphService) getDocumentNode(ctx context.Context, sourceID string) (uu
 
 // extractFromChunk extracts nodes and edges from a single chunk
 func (s *GraphService) extractFromChunk(ctx context.Context, chunk *database.Chunk, docNodeID uuid.UUID) ([]ExtractedNode, []ExtractedEdge, error) {
-	userMessage := fmt.Sprintf("%s\n\n%s", GraphFewShotExample, chunk.Content)
+	// Load prompts (with fallback to hardcoded)
+	systemPrompt := GraphExtractionSystemPrompt
+	fewShotPrompt := GraphFewShotExample
 
-	apiResp, err := s.claude.SendSystemPrompt(ctx, GraphExtractionSystemPrompt, userMessage, s.model)
+	if s.promptLoader != nil && s.promptLoader.IsConfigured() {
+		// Try to load latest system prompt (v5)
+		if loaded, err := s.promptLoader.LoadSystemPrompt("v5"); err == nil {
+			systemPrompt = loaded
+			s.logger.Debug("using file-based system prompt", "version", "v5")
+		} else {
+			s.logger.Warn("failed to load system prompt, using hardcoded", "error", err)
+		}
+
+		// Try to load domain-specific few-shot (default to novel for now)
+		if loaded, err := s.promptLoader.LoadFewShotPrompt("novel"); err == nil {
+			fewShotPrompt = loaded
+			s.logger.Debug("using file-based few-shot prompt", "domain", "novel")
+		} else {
+			s.logger.Warn("failed to load few-shot prompt, using hardcoded", "error", err)
+		}
+	}
+
+	userMessage := fmt.Sprintf("%s\n\n%s", fewShotPrompt, chunk.Content)
+
+	apiResp, err := s.claude.SendSystemPrompt(ctx, systemPrompt, userMessage, s.model)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Claude API call failed: %w", err)
 	}
