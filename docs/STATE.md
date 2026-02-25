@@ -23,9 +23,10 @@
 - [x] E2E.2: Document-type-aware chunking (ChunkStrategy interface, auto-detection)
 - [x] E2E.3: Multi-document project support (projects table, API endpoints, routes)
 - [x] E2E.4: Cross-document post-processing (deduplication, inconsistency detection)
+- [x] E2E.5: Minimal UI results viewer (ProjectsPage, ProjectView)
 
 **In Progress:**
-- [ ] E2E.5: Minimal UI results viewer
+- [ ] E2E.6: Integration testing with hsand2024 corpus
 - [ ] E2E.5: Minimal UI results viewer
 - [ ] E2E.6: Integration testing
 
@@ -145,6 +146,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-25 | **E2E.5 complete:** Minimal UI results viewer. ProjectsPage for listing/creating projects. ProjectView with tabs for documents, entities, events, analysis results. Upload documents, add to project, run post-processing. Added "Projects" button to LandingPage. | web/src/api/projects.ts (new), web/src/pages/ProjectsPage.tsx (new), web/src/pages/ProjectView.tsx (new), web/src/App.tsx, web/src/pages/LandingPage.tsx |
 | 2026-02-25 | **E2E.4 complete:** Cross-document post-processing. Added PostProcessor service for entity deduplication and inconsistency detection. Created dedup.txt prompt. API endpoints: POST /projects/{id}/postprocess, /deduplicate, /detect-inconsistencies. | api/internal/graph/postprocess.go (new), prompts/postprocess/dedup.txt (new), api/internal/handlers/projects.go, api/cmd/server/main.go |
 | 2026-02-25 | **E2E.2 complete:** Document-type-aware chunking. Added ChunkStrategy interface with WholeDocChunker, SectionChunker, ChapterChunker, FallbackChunker. Auto-detection based on document structure (§ markers, chapters, word count). | api/internal/document/chunker.go, api/internal/document/parser.go, api/internal/document/chunker_test.go (new) |
 | 2026-02-25 | **E2E.1 + E2E.3 complete:** Added PromptLoader for file-based prompts with fallback to hardcoded. Added projects table, project API handlers, and routes. Projects support: CRUD, add documents, get merged graph. | api/internal/config/config.go, api/internal/extraction/graph/prompt_loader.go (new), api/internal/extraction/graph/service.go, api/sql/schema/000015_projects.up.sql (new), api/internal/database/projects.sql.go (new), api/internal/handlers/projects.go (new), api/cmd/server/main.go |

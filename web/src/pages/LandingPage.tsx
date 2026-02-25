@@ -36,6 +36,7 @@ interface DocumentInfo {
 
 interface Props {
   onNavigate: (docId: string) => void;
+  onNavigateToProjects?: () => void;
 }
 
 // Design tokens (matching CSS variables)
@@ -58,7 +59,7 @@ const tokens = {
   shadowMd: '0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
 };
 
-export default function LandingPage({ onNavigate }: Props) {
+export default function LandingPage({ onNavigate, onNavigateToProjects }: Props) {
   const [demo, setDemo] = useState<DemoInfo | null>(null);
   const [demoLoading, setDemoLoading] = useState(true);
   const [allDocs, setAllDocs] = useState<DocumentInfo[]>([]);
@@ -399,22 +400,42 @@ export default function LandingPage({ onNavigate }: Props) {
           <span style={{ fontSize: 13, color: tokens.textTertiary, fontWeight: 500 }}>Evidence Synthesis Engine</span>
         </div>
         {demo && (
-          <button
-            onClick={() => onNavigate(demo.id)}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 8,
-              backgroundColor: tokens.accentPrimary,
-              color: '#fff',
-              border: 'none',
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Explore Demo →
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {onNavigateToProjects && (
+              <button
+                onClick={onNavigateToProjects}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 8,
+                  backgroundColor: tokens.surface2,
+                  color: tokens.textPrimary,
+                  border: `1px solid ${tokens.borderDefault}`,
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Projects
+              </button>
+            )}
+            <button
+              onClick={() => onNavigate(demo.id)}
+              style={{
+                padding: '8px 20px',
+                borderRadius: 8,
+                backgroundColor: tokens.accentPrimary,
+                color: '#fff',
+                border: 'none',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Explore Demo →
+            </button>
+          </div>
         )}
       </div>
 
