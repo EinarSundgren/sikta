@@ -331,33 +331,267 @@ Iterate on inconsistency detection prompt until ≥50% recall:
 - Improved polling fallback with timeout (6 min max) and lenient completion detection
 - Updated error state UI with separate "Upload different file" and "Retry extraction" buttons
 
-### Phase 9: Multi-File Projects
-**Size:** L (4-5 hours) | **Model:** Sonnet for implementation, Opus for cross-document entity resolution
+---
 
-- Projects table, multi-file upload, cross-document entity resolution
-- Unified timeline showing all project documents
-- Source document badges on events
+## ⚠️ Current: End-to-End Pipeline Phase
 
-### Phase 10: Mixed Document Types + Cross-Document Anomaly Detection
-- Document-type-specific extraction (protocols, invoices, emails, legal docs)
-- Cross-document anomaly detection (temporal contradictions, entity conflicts, missing references)
+> **Goal:** Upload real municipality documents → extract to graph → see results in browser.
+>
+> Test corpus: `corpora/hsand2024/` — Swedish kommun meeting protocols (real public data).
+>
+> This phase delivers a working pipeline, NOT the full timeline/graph visualization.
 
-### Phase 11: Multiple LLM Provider Support
-- Provider abstraction (Anthropic, OpenAI, Azure, local)
-- Model selection per task, cost optimization, fallback
+**What this phase delivers:**
+```
+Upload document(s) → text extraction → chunking → LLM extraction →
+store nodes/edges/provenance in PostgreSQL → minimal UI showing results
+```
 
-### Phase 12: Board Protocol Mode (Swedish Market Focus)
-- Swedish board protocol extraction prompts
-- Decision trail view, budget tracking
+**What this phase does NOT deliver:**
+- Full D3 dual-lane timeline visualization
+- Relationship graph
+- Review workflow with keyboard shortcuts
+- Dark/gold corporate theme
+- Authentication / deployment
 
-### Phase 13: Export & Sharing
-- PDF/PNG/JSON/CSV export, shareable links, embeddable widget
+---
 
-### Phase 14: Authentication & Multi-Tenant
-- User accounts, project management, sharing, billing
+### E2E.1: Connect Validated Prompts to Backend
+**Model: Sonnet** | **Size:** S (2-3 hours)
 
-### Phase 15: Legal / Due Diligence Mode
-- Contract obligation extraction, deadline tracking, entity mapping
+Update `api/internal/extraction/graph/service.go` to load prompts from files instead of hardcoded constants.
+
+**Tasks:**
+- [ ] Create `PromptLoader` struct that reads system prompt + few-shot from file paths
+- [ ] Update `extractFromChunk` to accept loaded prompt instead of hardcoded constant
+- [ ] Keep hardcoded prompts as fallback (don't break existing functionality)
+- [ ] Add config: `SIKTA_PROMPT_DIR` env var pointing at prompt directory
+- [ ] Add config: `SIKTA_EXTRACTION_MODEL` env var for model selection
+
+**Files to modify:**
+- `api/internal/extraction/graph/service.go`
+- `api/internal/config/config.go`
+
+**Acceptance:**
+- Backend loads prompts from `prompts/system/v5.txt` when `SIKTA_PROMPT_DIR` is set
+- Falls back to hardcoded prompts when env var not set
+- Extraction results are identical to CLI tool results
+
+---
+
+### E2E.2: Document-Type-Aware Chunking
+**Model: Sonnet** | **Size:** M (3-4 hours)
+
+Add chunking strategies for different document types. Municipality protocols use §-markers and numbered sections.
+
+**Tasks:**
+- [ ] Define `ChunkStrategy` interface in `api/internal/extraction/chunker.go`
+- [ ] Implement `WholeDocChunker` — no splitting for short docs (<3000 tokens)
+- [ ] Implement `SectionChunker` — splits on § markers, "SECTION", numbered headers
+- [ ] Implement `FallbackChunker` — paragraph boundaries at ~2000 token windows
+- [ ] Keep existing `ChapterChunker` for novels
+- [ ] Add auto-detection logic:
+  - Document < 3000 tokens → `WholeDocChunker`
+  - Document contains `§` markers → `SectionChunker`
+  - Document contains "Chapter" / "Kapitel" → `ChapterChunker`
+  - Fallback → `FallbackChunker`
+
+**Files to modify:**
+- `api/internal/extraction/chunker.go` (or create new file)
+
+**Acceptance:**
+- Municipality protocol (~3 pages) processes as single chunk or §-split chunks
+- Novel still chunks correctly on chapters
+- Token count estimation works for Swedish text
+
+---
+
+### E2E.3: Multi-Document Project Support
+**Model: Sonnet** | **Size:** M (4-5 hours)
+
+Add lightweight project/collection concept for grouping related documents.
+
+#### E2E.3a: Database Schema
+**Model: Haiku** | **Size:** XS (30 min)
+
+- [ ] Create migration `000014_projects.up.sql`:
+  ```sql
+  CREATE TABLE projects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      title TEXT NOT NULL,
+      description TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  ALTER TABLE sources ADD COLUMN project_id UUID REFERENCES projects(id);
+  ```
+- [ ] Create down migration
+
+#### E2E.3b: API Endpoints
+**Model: Sonnet** | **Size:** M (3-4 hours)
+
+- [ ] `POST /api/projects` — create a project
+- [ ] `GET /api/projects` — list all projects
+- [ ] `GET /api/projects/:id` — get project with documents and summary stats
+- [ ] `POST /api/projects/:id/documents` — upload document to project
+- [ ] `POST /api/projects/:id/extract` — run extraction on all unprocessed documents
+- [ ] `POST /api/projects/:id/analyze` — run cross-document dedup + inconsistency detection
+- [ ] `GET /api/projects/:id/graph` — get full evidence graph for project
+
+**Files to create/modify:**
+- `api/internal/handlers/projects.go` (new)
+- `api/internal/services/project_service.go` (new)
+- `api/sql/queries/projects.sql` (new)
+- `api/cmd/server/main.go` (add routes)
+
+**Acceptance:**
+- Can create project, upload multiple documents, trigger extraction
+- Project graph endpoint returns merged nodes/edges from all documents
+
+---
+
+### E2E.4: Cross-Document Post-Processing
+**Model: Sonnet (implementation), Opus (prompt refinement if needed)** | **Size:** M-L (4-5 hours)
+
+Move post-processing from CLI to backend pipeline. Run after per-document extraction.
+
+#### E2E.4a: Entity Deduplication Pass
+**Model: Sonnet** | **Size:** M (2 hours)
+
+- [ ] Create `prompts/postprocess/dedup.txt` — entity deduplication prompt
+- [ ] Collect all entity nodes across all documents in project
+- [ ] Send to Claude: identify duplicates, output `same_as` edges
+- [ ] Store `same_as` edges in graph (don't merge nodes — identity is a claim)
+- [ ] Wire into `/api/projects/:id/analyze` endpoint
+
+#### E2E.4b: Inconsistency Detection Pass
+**Model: Sonnet** | **Size:** M (2 hours)
+
+- [ ] Reuse `prompts/postprocess/inconsistency.txt` from EV9
+- [ ] Collect all claims across project documents
+- [ ] Send to Claude: find contradictions, amount discrepancies, temporal impossibilities
+- [ ] Create `contradicts` edges between conflicting claims
+- [ ] Store inconsistencies as queryable records in database
+- [ ] Wire into `/api/projects/:id/analyze` endpoint
+
+**Acceptance:**
+- Entity dedup identifies "ordföranden" = "Anna Lindqvist" across documents
+- Inconsistency detection finds budget discrepancies in municipality protocols
+- Results visible via `/api/projects/:id/graph` endpoint
+
+---
+
+### E2E.5: Minimal UI — Results Viewer
+**Model: Sonnet** | **Size:** L (8-10 hours)
+
+Stripped-down results viewer. Enough to see what the engine produces, not the full vision.
+
+#### E2E.5a: Project List / Upload View
+**Model: Sonnet** | **Size:** M (2-3 hours)
+
+- [ ] List of projects with doc count and extraction status
+- [ ] Create new project button/form
+- [ ] Upload documents to project (drag-drop or file picker)
+- [ ] "Extract" button → triggers extraction + post-processing
+- [ ] Progress indicator during extraction
+
+**Reuse:** Adapt `LandingPage.tsx` into project list + upload
+
+#### E2E.5b: Evidence Summary View
+**Model: Sonnet** | **Size:** M (2-3 hours)
+
+- [ ] Top-level stats: X documents, Y entities, Z events, N inconsistencies
+- [ ] Entity list with counts (how many documents mention each)
+- [ ] Event list ordered by time (where available)
+- [ ] Each item shows confidence badge and source document reference
+
+**Reuse:** Adapt `EntityPanel.tsx` for cross-document entity list
+
+#### E2E.5c: Inconsistency View
+**Model: Sonnet** | **Size:** M (2 hours)
+
+- [ ] List of detected inconsistencies
+- [ ] Each shows: type, severity, side A claim, side B claim, source documents
+- [ ] Click → shows relevant excerpts from both documents
+
+**Reuse:** Adapt `InconsistencyPanel.tsx` for new format
+
+#### E2E.5d: Source Viewer Panel
+**Model: Haiku** | **Size:** S (1 hour)
+
+- [ ] Click any entity/event/inconsistency → slide-out panel showing source excerpt
+- [ ] Provenance chain: document, section, confidence
+
+**Reuse:** Use existing `SourcePanel.tsx` as-is or with minor adaptations
+
+**What to skip for now:**
+- `Timeline.tsx` (D3 dual-lane) — too complex
+- `RelationshipGraph.tsx` — defer
+- `ReviewPanel.tsx` / `EditModal.tsx` — defer
+
+**Styling:** Light theme, clean functional. Use existing Tailwind setup.
+
+---
+
+### E2E.6: Integration Testing with Real Documents
+**Model: Haiku (execution), Opus (analysis if issues found)** | **Size:** S-M (2-4 hours)
+
+Validate with real Swedish municipality protocols from `corpora/hsand2024/`.
+
+**Tasks:**
+- [ ] Create project in UI
+- [ ] Upload 3 kommun protocols from `corpora/hsand2024/`
+- [ ] Run extraction
+- [ ] Visually inspect results in UI
+- [ ] Compare against manual reading of documents
+- [ ] Document: what found correctly? what missed? what hallucinated?
+
+**Test documents:**
+- `Protokoll kommunstyrelsen 2024-02-13.pdf`
+- `Protokoll kommunstyrelsen 2024-04-03 § 45.pdf`
+- `Protokoll kommunstyrelsen 2024-05-28.pdf`
+
+**Acceptance:**
+- Can upload PDFs and extract entities/events
+- Entities include: meeting participants, organizations mentioned, decisions
+- Events include: meeting dates, decisions made, deadlines set
+- Any cross-document inconsistencies are detected
+
+---
+
+### E2E Task Summary
+
+| Task | Size | Model | Dependencies |
+|------|------|-------|--------------|
+| E2E.1: Connect prompts to backend | S (2-3h) | Sonnet | None |
+| E2E.2: Document-type chunking | M (3-4h) | Sonnet | None |
+| E2E.3: Multi-document projects | M (4-5h) | Sonnet/Haiku | None |
+| E2E.4: Cross-document post-processing | M-L (4-5h) | Sonnet/Opus | E2E.3 |
+| E2E.5: Minimal UI | L (8-10h) | Sonnet/Haiku | E2E.1-4 |
+| E2E.6: Integration testing | S-M (2-4h) | Haiku/Opus | E2E.5 |
+| **Total** | **~24-31 hours** | | |
+
+Tasks E2E.1-3 can run in parallel. E2E.4 depends on E2E.3. E2E.5 depends on all backend work. E2E.6 is the payoff.
+
+---
+
+## Future Phases (Deferred)
+
+> These phases are deferred until E2E pipeline is complete and validated on real documents.
+
+### Path A — Trojan Horse (Sundla Integration)
+- Grant database (30-50 programs, manually curated)
+- Matching logic: extracted project/renovation plans → grant criteria
+- Simpler, focused UI for associations
+
+### Path B — Corporate Demo
+- Full Sikta Evidence UI (timeline, review workflow, batch mode)
+- Sample M&A documents processed through pipeline
+- Dark/gold theme, polished landing page
+
+### Path C — Extraction Quality Iteration
+- Loop back if real documents reveal problems test corpora didn't surface
+- Use CLI tool for rapid prompt iteration
 
 ---
 
