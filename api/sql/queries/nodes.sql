@@ -31,10 +31,15 @@ WHERE id = $1;
 
 -- name: ListNodesBySource :many
 -- List all nodes that have provenance from a specific source
+-- First find the document node for this source, then find all nodes with provenance from that document
 SELECT DISTINCT n.*
 FROM nodes n
 INNER JOIN provenance p ON p.target_type = 'node' AND p.target_id = n.id
-WHERE p.source_id = $1
+WHERE p.source_id IN (
+    SELECT id FROM nodes
+    WHERE node_type = 'document'
+    AND properties->>'source_id' = $1::text
+)
 ORDER BY n.created_at DESC;
 
 -- name: CountNodesByType :one

@@ -177,6 +177,7 @@ func (s *GraphService) getDocumentNode(ctx context.Context, sourceID string) (uu
 		NodeType: database.NodeTypeDocument,
 		Label:    source.Title,
 		Properties: map[string]interface{}{
+			"source_id": sourceID,
 			"filename":  source.Filename,
 			"file_type": source.FileType,
 		},

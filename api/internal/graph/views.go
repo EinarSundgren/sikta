@@ -37,13 +37,8 @@ func (v *Views) findDocumentNode(ctx context.Context, sourceID uuid.UUID) (*data
 // GetEventsForTimeline returns event nodes formatted for the timeline view
 // using the specified view strategy to resolve conflicts
 func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, strategy ViewStrategy) ([]TimelineEvent, error) {
-	docNode, err := v.findDocumentNode(ctx, sourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get all nodes that have provenance from this document node
-	nodes, err := v.db.ListNodesBySource(ctx, docNode.ID)
+	// Get all nodes that have provenance from this source
+	nodes, err := v.db.ListNodesBySource(ctx, sourceID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nodes: %w", err)
 	}
@@ -93,6 +88,18 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 		// Get position from ordering provenance records
 		narrativePos, chronoPos := extractOrderingFromProvenance(provenance)
 
+		// Build source references from assertion provenance records
+		var sourceRefs []SourceReference
+		for _, prov := range assertionOnly(provenance) {
+			if prov.Excerpt != "" {
+				sourceRefs = append(sourceRefs, SourceReference{
+					ID:       database.UUIDStr(prov.ID),
+					Excerpt:  prov.Excerpt,
+					Location: prov.GetLocation(),
+				})
+			}
+		}
+
 		event := TimelineEvent{
 			ID:                    database.UUIDStr(node.ID),
 			Title:                 node.Label,
@@ -105,6 +112,7 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 			ReviewStatus:          reviewStatus,
 			DateStart:             dateStart,
 			DateEnd:               dateEnd,
+			SourceReferences:      sourceRefs,
 		}
 
 		events = append(events, event)
@@ -115,12 +123,7 @@ func (v *Views) GetEventsForTimeline(ctx context.Context, sourceID uuid.UUID, st
 
 // GetEntitiesForGraph returns entity nodes for the graph view
 func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]GraphEntity, error) {
-	docNode, err := v.findDocumentNode(ctx, sourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes, err := v.db.ListNodesBySource(ctx, docNode.ID)
+	nodes, err := v.db.ListNodesBySource(ctx, sourceID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nodes: %w", err)
 	}
@@ -195,12 +198,7 @@ func (v *Views) GetEntitiesForGraph(ctx context.Context, sourceID uuid.UUID) ([]
 
 // GetRelationshipsForGraph returns relationship edges for the graph view
 func (v *Views) GetRelationshipsForGraph(ctx context.Context, sourceID uuid.UUID) ([]GraphRelationship, error) {
-	docNode, err := v.findDocumentNode(ctx, sourceID)
-	if err != nil {
-		return nil, err
-	}
-
-	edges, err := v.db.ListEdgesBySourceDocument(ctx, docNode.ID)
+	edges, err := v.db.ListEdgesBySourceDocument(ctx, sourceID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get edges: %w", err)
 	}

@@ -152,7 +152,10 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		desc = pgtype.Text{String: req.Description, Valid: true}
 	}
 
-	project, err := h.db.CreateProject(r.Context(), req.Title, desc)
+	project, err := h.db.CreateProject(r.Context(), database.CreateProjectParams{
+		Title:       req.Title,
+		Description: desc,
+	})
 	if err != nil {
 		h.logger.Error("failed to create project", "error", err)
 		http.Error(w, "Failed to create project", http.StatusInternalServerError)
@@ -198,7 +201,11 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		desc = pgtype.Text{String: req.Description, Valid: true}
 	}
 
-	project, err := h.db.UpdateProject(r.Context(), strToPgUUID(id.String()), req.Title, desc)
+	project, err := h.db.UpdateProject(r.Context(), database.UpdateProjectParams{
+		ID:          strToPgUUID(id.String()),
+		Title:       req.Title,
+		Description: desc,
+	})
 	if err != nil {
 		h.logger.Error("failed to update project", "error", err, "id", idStr)
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
@@ -296,7 +303,10 @@ func (h *ProjectHandler) AddDocumentToProject(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	_, err = h.db.SetSourceProject(r.Context(), strToPgUUID(docID.String()), strToPgUUID(projectID.String()))
+	_, err = h.db.SetSourceProject(r.Context(), database.SetSourceProjectParams{
+		ID:        strToPgUUID(docID.String()),
+		ProjectID: strToPgUUID(projectID.String()),
+	})
 	if err != nil {
 		h.logger.Error("failed to add document to project", "error", err, "project", projectIDStr, "document", docID)
 		http.Error(w, "Failed to add document to project", http.StatusInternalServerError)
@@ -355,7 +365,7 @@ func (h *ProjectHandler) GetProjectGraph(w http.ResponseWriter, r *http.Request)
 
 	for _, source := range sources {
 		// Get nodes for this source
-		nodes, err := h.db.ListNodesBySource(r.Context(), strToPgUUID(pgUUIDToStr(source.ID)))
+		nodes, err := h.db.ListNodesBySource(r.Context(), pgUUIDToStr(source.ID))
 		if err == nil {
 			for _, n := range nodes {
 				props := make(map[string]interface{})
@@ -372,8 +382,8 @@ func (h *ProjectHandler) GetProjectGraph(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		// Get edges for this source
-		edges, err := h.db.ListEdgesBySource(r.Context(), strToPgUUID(pgUUIDToStr(source.ID)))
+		// Get edges for this source via provenance
+		edges, err := h.db.ListEdgesBySourceDocument(r.Context(), pgUUIDToStr(source.ID))
 		if err == nil {
 			for _, e := range edges {
 				props := make(map[string]interface{})

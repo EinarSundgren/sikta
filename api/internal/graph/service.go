@@ -210,7 +210,7 @@ func (s *Service) ListEdgesByType(ctx context.Context, edgeType string, limit in
 
 // ListNodesBySource lists all nodes that have provenance from a specific source
 func (s *Service) ListNodesBySource(ctx context.Context, sourceID uuid.UUID) ([]database.Node, error) {
-	nodesPtrs, err := s.db.ListNodesBySource(ctx, database.PgUUID(sourceID))
+	nodesPtrs, err := s.db.ListNodesBySource(ctx, sourceID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list nodes by source: %w", err)
 	}

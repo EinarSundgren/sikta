@@ -38,7 +38,7 @@ func NewClient(cfg *config.Config, logger *slog.Logger) *Client {
 
 	return &Client{
 		httpClient: &http.Client{
-			Timeout: 120 * time.Second,
+			Timeout: 300 * time.Second,
 		},
 		apiKey: cfg.AnthropicAPIKey,
 		apiURL: apiURL,

@@ -213,13 +213,18 @@ const listEdgesBySourceDocument = `-- name: ListEdgesBySourceDocument :many
 SELECT DISTINCT e.id, e.edge_type, e.source_node, e.target_node, e.properties, e.is_negated, e.created_at, e.updated_at
 FROM edges e
 INNER JOIN provenance p ON p.target_type = 'edge' AND p.target_id = e.id
-WHERE p.source_id = $1
+WHERE p.source_id IN (
+    SELECT id FROM nodes
+    WHERE node_type = 'document'
+    AND properties->>'source_id' = $1::text
+)
 ORDER BY e.created_at DESC
 `
 
-// List all edges that have provenance from a specific document node
-func (q *Queries) ListEdgesBySourceDocument(ctx context.Context, sourceID pgtype.UUID) ([]*Edge, error) {
-	rows, err := q.db.Query(ctx, listEdgesBySourceDocument, sourceID)
+// List all edges that have provenance from a specific source
+// First find the document node for this source, then find all edges with provenance from that document
+func (q *Queries) ListEdgesBySourceDocument(ctx context.Context, dollar_1 string) ([]*Edge, error) {
+	rows, err := q.db.Query(ctx, listEdgesBySourceDocument, dollar_1)
 	if err != nil {
 		return nil, err
 	}

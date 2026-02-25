@@ -143,13 +143,18 @@ const listNodesBySource = `-- name: ListNodesBySource :many
 SELECT DISTINCT n.id, n.node_type, n.label, n.properties, n.created_at, n.updated_at
 FROM nodes n
 INNER JOIN provenance p ON p.target_type = 'node' AND p.target_id = n.id
-WHERE p.source_id = $1
+WHERE p.source_id IN (
+    SELECT id FROM nodes
+    WHERE node_type = 'document'
+    AND properties->>'source_id' = $1::text
+)
 ORDER BY n.created_at DESC
 `
 
 // List all nodes that have provenance from a specific source
-func (q *Queries) ListNodesBySource(ctx context.Context, sourceID pgtype.UUID) ([]*Node, error) {
-	rows, err := q.db.Query(ctx, listNodesBySource, sourceID)
+// First find the document node for this source, then find all nodes with provenance from that document
+func (q *Queries) ListNodesBySource(ctx context.Context, dollar_1 string) ([]*Node, error) {
+	rows, err := q.db.Query(ctx, listNodesBySource, dollar_1)
 	if err != nil {
 		return nil, err
 	}

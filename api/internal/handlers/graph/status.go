@@ -68,7 +68,7 @@ func (h *StatusHandler) GetExtractionStatus(w http.ResponseWriter, r *http.Reque
 
 	if docNode != nil {
 		// Get all nodes for this document and count by type
-		allNodes, err := h.db.ListNodesBySource(r.Context(), docNode.ID)
+		allNodes, err := h.db.ListNodesBySource(r.Context(), parsedUUID.String())
 		if err == nil {
 			for _, node := range allNodes {
 				switch node.NodeType {

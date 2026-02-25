@@ -54,9 +54,14 @@ GROUP BY edge_type
 ORDER BY count DESC;
 
 -- name: ListEdgesBySourceDocument :many
--- List all edges that have provenance from a specific document node
+-- List all edges that have provenance from a specific source
+-- First find the document node for this source, then find all edges with provenance from that document
 SELECT DISTINCT e.*
 FROM edges e
 INNER JOIN provenance p ON p.target_type = 'edge' AND p.target_id = e.id
-WHERE p.source_id = $1
+WHERE p.source_id IN (
+    SELECT id FROM nodes
+    WHERE node_type = 'document'
+    AND properties->>'source_id' = $1::text
+)
 ORDER BY e.created_at DESC;

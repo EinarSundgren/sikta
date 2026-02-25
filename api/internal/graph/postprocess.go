@@ -67,7 +67,7 @@ func (p *PostProcessor) RunDeduplication(ctx context.Context, projectID uuid.UUI
 	entityMap := make(map[string]uuid.UUID) // label -> node ID
 
 	for _, source := range sources {
-		nodes, err := p.db.ListNodesBySource(ctx, source.ID)
+		nodes, err := p.db.ListNodesBySource(ctx, pgUUIDToStr(source.ID))
 		if err != nil {
 			p.logger.Warn("failed to get nodes for source", "source_id", source.ID, "error", err)
 			continue
@@ -243,7 +243,7 @@ func (p *PostProcessor) RunInconsistencyDetection(ctx context.Context, projectID
 	eventMap := make(map[string]uuid.UUID) // label -> node ID
 
 	for _, source := range sources {
-		nodes, err := p.db.ListNodesBySource(ctx, source.ID)
+		nodes, err := p.db.ListNodesBySource(ctx, pgUUIDToStr(source.ID))
 		if err != nil {
 			p.logger.Warn("failed to get nodes for source", "source_id", source.ID, "error", err)
 			continue
