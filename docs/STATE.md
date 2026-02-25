@@ -20,10 +20,10 @@
 
 **Completed:**
 - [x] E2E.1: Connect validated prompts to backend (PromptLoader with fallback)
+- [x] E2E.2: Document-type-aware chunking (ChunkStrategy interface, auto-detection)
 - [x] E2E.3: Multi-document project support (projects table, API endpoints, routes)
 
 **In Progress:**
-- [ ] E2E.2: Document-type-aware chunking
 - [ ] E2E.4: Cross-document post-processing
 - [ ] E2E.5: Minimal UI results viewer
 - [ ] E2E.6: Integration testing
@@ -144,6 +144,7 @@
 
 | Date | Change | Files Affected |
 |------|--------|----------------|
+| 2026-02-25 | **E2E.2 complete:** Document-type-aware chunking. Added ChunkStrategy interface with WholeDocChunker, SectionChunker, ChapterChunker, FallbackChunker. Auto-detection based on document structure (§ markers, chapters, word count). | api/internal/document/chunker.go, api/internal/document/parser.go, api/internal/document/chunker_test.go (new) |
 | 2026-02-25 | **E2E.1 + E2E.3 complete:** Added PromptLoader for file-based prompts with fallback to hardcoded. Added projects table, project API handlers, and routes. Projects support: CRUD, add documents, get merged graph. | api/internal/config/config.go, api/internal/extraction/graph/prompt_loader.go (new), api/internal/extraction/graph/service.go, api/sql/schema/000015_projects.up.sql (new), api/internal/database/projects.sql.go (new), api/internal/handlers/projects.go (new), api/cmd/server/main.go |
 | 2026-02-23 | **Phase 8 complete:** Extraction Progress UX improvements. Added ETA calculation based on chunk progress. Fixed SSE completion detection bug. Added retry extraction functionality. Improved error state UI with separate retry/upload buttons. | web/src/pages/LandingPage.tsx, docs/TASKS.md |
 | 2026-02-23 | **EV8.6 complete:** v5 prompt iteration. Entity recall reaches 100% on all three corpora. Added entity extraction from events, expanded node types (address, vehicle, technology), fixed matcher to include new entity types. EV8.7 (FP reduction) deferred to icebox. | prompts/system/v5.txt, prompts/fewshot/mna-v5.txt, prompts/fewshot/police-v5.txt, api/internal/evaluation/matcher.go, docs/TASKS.md, docs/EV8-Prompt-Iteration-Summary.md |
