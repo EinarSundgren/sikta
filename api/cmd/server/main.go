@@ -62,7 +62,7 @@ func main() {
 	db := database.New(pool)
 
 	// Project handlers
-	projectHandler := handlers.NewProjectHandler(db, logger)
+	projectHandler := handlers.NewProjectHandler(db, cfg, logger)
 	mux.HandleFunc("GET /api/projects", projectHandler.ListProjects)
 	mux.HandleFunc("POST /api/projects", projectHandler.CreateProject)
 	mux.HandleFunc("GET /api/projects/{id}", projectHandler.GetProject)
@@ -71,6 +71,9 @@ func main() {
 	mux.HandleFunc("GET /api/projects/{id}/documents", projectHandler.GetProjectDocuments)
 	mux.HandleFunc("POST /api/projects/{id}/documents", projectHandler.AddDocumentToProject)
 	mux.HandleFunc("GET /api/projects/{id}/graph", projectHandler.GetProjectGraph)
+	mux.HandleFunc("POST /api/projects/{id}/postprocess", projectHandler.RunPostProcessing)
+	mux.HandleFunc("POST /api/projects/{id}/deduplicate", projectHandler.RunDeduplication)
+	mux.HandleFunc("POST /api/projects/{id}/detect-inconsistencies", projectHandler.RunInconsistencyDetection)
 
 	// Progress tracker for real-time extraction updates
 	progressTracker := extraction.NewProgressTracker()

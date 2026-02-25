@@ -5,22 +5,42 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/einarsundgren/sikta/internal/config"
 	"github.com/einarsundgren/sikta/internal/database"
+	"github.com/einarsundgren/sikta/internal/extraction/claude"
+	"github.com/einarsundgren/sikta/internal/graph"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // ProjectHandler handles project-related HTTP requests
 type ProjectHandler struct {
-	db     *database.Queries
-	logger *slog.Logger
+	db            *database.Queries
+	logger        *slog.Logger
+	postProcessor *graph.PostProcessor
 }
 
 // NewProjectHandler creates a new project handler
-func NewProjectHandler(db *database.Queries, logger *slog.Logger) *ProjectHandler {
+func NewProjectHandler(db *database.Queries, cfg *config.Config, logger *slog.Logger) *ProjectHandler {
+	// Create post-processor if API key is available
+	var postProcessor *graph.PostProcessor
+	if cfg.AnthropicAPIKey != "" {
+		claudeClient := claude.NewClient(cfg, logger)
+		graphService := graph.NewService(db, logger)
+		postProcessor = graph.NewPostProcessor(
+			db,
+			graphService,
+			claudeClient,
+			logger,
+			cfg.AnthropicModelExtraction,
+			cfg.PromptDir,
+		)
+	}
+
 	return &ProjectHandler{
-		db:     db,
-		logger: logger,
+		db:            db,
+		logger:        logger,
+		postProcessor: postProcessor,
 	}
 }
 
@@ -392,6 +412,129 @@ type DocumentResponse struct {
 	IsDemo       bool   `json:"is_demo"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
+}
+
+// PostProcessResponse is the response for post-processing
+type PostProcessResponse struct {
+	Deduplication   *DeduplicationResponse   `json:"deduplication,omitempty"`
+	Inconsistencies *InconsistenciesResponse `json:"inconsistencies,omitempty"`
+}
+
+// DeduplicationResponse contains deduplication results
+type DeduplicationResponse struct {
+	Matches int `json:"matches"`
+}
+
+// InconsistenciesResponse contains inconsistency detection results
+type InconsistenciesResponse struct {
+	Count int `json:"count"`
+}
+
+// RunPostProcessing handles POST /api/projects/{id}/postprocess
+// Runs deduplication and inconsistency detection
+func (h *ProjectHandler) RunPostProcessing(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	projectID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	if h.postProcessor == nil {
+		http.Error(w, "Post-processing not configured (API key required)", http.StatusServiceUnavailable)
+		return
+	}
+
+	response := PostProcessResponse{}
+
+	// Run deduplication
+	dedupResult, err := h.postProcessor.RunDeduplication(r.Context(), projectID)
+	if err != nil {
+		h.logger.Error("deduplication failed", "error", err, "project", idStr)
+	} else {
+		response.Deduplication = &DeduplicationResponse{
+			Matches: len(dedupResult.Matches),
+		}
+	}
+
+	// Run inconsistency detection
+	incResult, err := h.postProcessor.RunInconsistencyDetection(r.Context(), projectID)
+	if err != nil {
+		h.logger.Error("inconsistency detection failed", "error", err, "project", idStr)
+	} else {
+		response.Inconsistencies = &InconsistenciesResponse{
+			Count: len(incResult.Inconsistencies),
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// RunDeduplication handles POST /api/projects/{id}/deduplicate
+// Runs only entity deduplication
+func (h *ProjectHandler) RunDeduplication(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	projectID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	if h.postProcessor == nil {
+		http.Error(w, "Post-processing not configured (API key required)", http.StatusServiceUnavailable)
+		return
+	}
+
+	result, err := h.postProcessor.RunDeduplication(r.Context(), projectID)
+	if err != nil {
+		h.logger.Error("deduplication failed", "error", err, "project", idStr)
+		http.Error(w, "Deduplication failed", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Matches []interface{} `json:"matches"`
+		Count   int           `json:"count"`
+	}{
+		Count: len(result.Matches),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// RunInconsistencyDetection handles POST /api/projects/{id}/detect-inconsistencies
+// Runs only inconsistency detection
+func (h *ProjectHandler) RunInconsistencyDetection(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	projectID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	if h.postProcessor == nil {
+		http.Error(w, "Post-processing not configured (API key required)", http.StatusServiceUnavailable)
+		return
+	}
+
+	result, err := h.postProcessor.RunInconsistencyDetection(r.Context(), projectID)
+	if err != nil {
+		h.logger.Error("inconsistency detection failed", "error", err, "project", idStr)
+		http.Error(w, "Inconsistency detection failed", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Inconsistencies []interface{} `json:"inconsistencies"`
+		Count           int           `json:"count"`
+	}{
+		Count: len(result.Inconsistencies),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 // Helper functions
