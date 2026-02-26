@@ -154,11 +154,22 @@ const SwimlaneTimeline: React.FC<SwimlaneTimelineProps> = ({
   const eventEntityMap = useMemo(() => {
     const map = new Map<string, string[]>();
     edges.forEach(edge => {
-      if (edge.edge_type === 'involves' || edge.edge_type === 'has_participant') {
-        // Assume source is event, target is entity
-        const existing = map.get(edge.source_node) || [];
-        existing.push(edge.target_node);
-        map.set(edge.source_node, existing);
+      // Handle various edge types that connect entities to events
+      if (edge.edge_type === 'involves' || edge.edge_type === 'has_participant' ||
+          edge.edge_type === 'involved_in' || edge.edge_type === 'related_to') {
+        // For involved_in: source is entity, target is event
+        // For involves: source is event, target is entity
+        if (edge.edge_type === 'involved_in' || edge.edge_type === 'related_to') {
+          // Source is entity, target is event
+          const existing = map.get(edge.target_node) || [];
+          existing.push(edge.source_node);
+          map.set(edge.target_node, existing);
+        } else {
+          // Source is event, target is entity
+          const existing = map.get(edge.source_node) || [];
+          existing.push(edge.target_node);
+          map.set(edge.source_node, existing);
+        }
       }
     });
     return map;
@@ -174,27 +185,50 @@ const SwimlaneTimeline: React.FC<SwimlaneTimelineProps> = ({
     }));
   }, [events, eventEntityMap]);
 
-  // Filter to show only entities with events
+  // Filter to show only entities with events, or create a default lane
   const activeEntities = useMemo(() => {
     const entityIdsWithEvents = new Set<string>();
     enrichedEvents.forEach(event => {
       event.entityIds.forEach(id => entityIdsWithEvents.add(id));
     });
-    return entities.filter(e => entityIdsWithEvents.has(e.id));
-  }, [entities, enrichedEvents]);
+    const filtered = entities.filter(e => entityIdsWithEvents.has(e.id));
+
+    // If no entities are connected to events but we have events,
+    // create a virtual "All Events" entity to show them
+    if (filtered.length === 0 && events.length > 0) {
+      return [{
+        id: '__all_events__',
+        label: 'All Events',
+        node_type: 'event',
+        documentIds: [],
+      }];
+    }
+    return filtered;
+  }, [entities, enrichedEvents, events.length]);
+
+  // For the default lane, assign all events to it
+  const finalEvents = useMemo(() => {
+    if (activeEntities.length === 1 && activeEntities[0].id === '__all_events__') {
+      return enrichedEvents.map(event => ({
+        ...event,
+        entityIds: ['__all_events__'],
+      }));
+    }
+    return enrichedEvents;
+  }, [activeEntities, enrichedEvents]);
 
   // Sort events by date
   const sortedEvents = useMemo(() => {
-    return [...enrichedEvents].sort((a, b) => {
+    return [...finalEvents].sort((a, b) => {
       if (a.date && b.date) return a.date.localeCompare(b.date);
       if (a.date) return -1;
       if (b.date) return 1;
       return 0;
     });
-  }, [enrichedEvents]);
+  }, [finalEvents]);
 
   useEffect(() => {
-    if (!svgRef.current || activeEntities.length === 0) return;
+    if (!svgRef.current || sortedEvents.length === 0) return;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
@@ -425,7 +459,7 @@ const SwimlaneTimeline: React.FC<SwimlaneTimelineProps> = ({
 
   }, [activeEntities, sortedEvents, documents, docColorMap, hoveredEvent, width, height, onEventClick]);
 
-  if (activeEntities.length === 0) {
+  if (events.length === 0) {
     return (
       <div
         style={{
@@ -441,7 +475,7 @@ const SwimlaneTimeline: React.FC<SwimlaneTimelineProps> = ({
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
           <p style={{ color: tokens.textSecondary, fontSize: 14 }}>
-            No entities with events to display.
+            No events extracted yet.
           </p>
           <p style={{ color: tokens.textTertiary, fontSize: 12, marginTop: 4 }}>
             Add documents and run extraction to see the swimlane timeline.
