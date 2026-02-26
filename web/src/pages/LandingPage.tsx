@@ -184,8 +184,8 @@ export default function LandingPage({ onNavigateToProject }: Props) {
   }, [onNavigateToProject]);
 
   const processFile = useCallback(async (file: File, projectId: string) => {
-    if (!file.name.match(/\.(txt|pdf)$/i)) {
-      setPhase({ name: 'error', message: 'Only .txt and .pdf files are supported.' });
+    if (!file.name.match(/\.(txt|pdf|md)$/i)) {
+      setPhase({ name: 'error', message: 'Only .txt, .pdf, and .md files are supported.' });
       return;
     }
     if (file.size > 50 * 1024 * 1024) {
@@ -573,7 +573,7 @@ export default function LandingPage({ onNavigateToProject }: Props) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".txt,.pdf"
+                  accept=".txt,.pdf,.md"
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -585,7 +585,7 @@ export default function LandingPage({ onNavigateToProject }: Props) {
                 />
                 <div style={{ fontSize: 24, marginBottom: 8 }}>📄</div>
                 <p style={{ color: tokens.textPrimary, fontSize: 14, fontWeight: 500 }}>Click or drag to upload</p>
-                <p style={{ fontSize: 12, color: tokens.textTertiary }}>.txt or .pdf up to 50 MB</p>
+                <p style={{ fontSize: 12, color: tokens.textTertiary }}>.txt, .pdf, or .md up to 50 MB</p>
               </div>
 
               {/* Existing documents */}

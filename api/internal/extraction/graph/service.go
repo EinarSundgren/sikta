@@ -102,7 +102,8 @@ func (s *GraphService) ExtractDocumentToGraph(ctx context.Context, sourceID stri
 
 			// Track entity labels for edge creation
 			if node.NodeType == "person" || node.NodeType == "place" ||
-			   node.NodeType == "organization" || node.NodeType == "object" {
+			   node.NodeType == "organization" || node.NodeType == "object" ||
+			   node.NodeType == "event" {
 				entityLabelToID[node.Label] = nodeID
 			}
 		}

@@ -66,8 +66,8 @@ func (s *DocumentService) ValidateUpload(filename string, size int64, reader io.
 	}
 
 	// Validate file type by extension
-	if ext != ".txt" && ext != ".pdf" {
-		return nil, fmt.Errorf("only PDF and TXT files supported")
+	if ext != ".txt" && ext != ".pdf" && ext != ".md" {
+		return nil, fmt.Errorf("only PDF, TXT, and Markdown files supported")
 	}
 
 	fileType := strings.TrimPrefix(ext, ".")
@@ -135,7 +135,7 @@ func (s *DocumentService) ProcessDocument(filePath, fileType string) (*ProcessRe
 	var totalPages int
 
 	switch fileType {
-	case "txt":
+	case "txt", "md":
 		content, err := s.readTXTFile(filePath)
 		if err != nil {
 			return nil, err
@@ -143,7 +143,7 @@ func (s *DocumentService) ProcessDocument(filePath, fileType string) (*ProcessRe
 
 		chunks, err = document.ParseTXT(content)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse TXT: %w", err)
+			return nil, fmt.Errorf("failed to parse file: %w", err)
 		}
 
 	case "pdf":
