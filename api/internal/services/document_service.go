@@ -103,7 +103,10 @@ func (s *DocumentService) ValidateUpload(filename string, size int64, reader io.
 	}
 
 	// Verify extension matches detected type
-	if detectedType != fileType {
+	// Treat "md" as equivalent to "txt" since markdown is plain text
+	isValid := detectedType == fileType ||
+		(fileType == "md" && detectedType == "txt")
+	if !isValid {
 		os.Remove(filePath) // Clean up on error
 		return nil, fmt.Errorf("file extension (%s) doesn't match detected type (%s)", fileType, detectedType)
 	}
