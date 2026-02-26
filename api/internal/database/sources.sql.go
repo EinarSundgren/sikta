@@ -14,7 +14,7 @@ import (
 const createSource = `-- name: CreateSource :one
 INSERT INTO sources (title, filename, file_path, file_type, upload_status, is_demo)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason
+RETURNING id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason, project_id
 `
 
 type CreateSourceParams struct {
@@ -51,12 +51,22 @@ func (q *Queries) CreateSource(ctx context.Context, arg CreateSourceParams) (*So
 		&i.UpdatedAt,
 		&i.SourceTrust,
 		&i.TrustReason,
+		&i.ProjectID,
 	)
 	return &i, err
 }
 
+const deleteSource = `-- name: DeleteSource :exec
+DELETE FROM sources WHERE id = $1
+`
+
+func (q *Queries) DeleteSource(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSource, id)
+	return err
+}
+
 const getSource = `-- name: GetSource :one
-SELECT id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason FROM sources WHERE id = $1
+SELECT id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason, project_id FROM sources WHERE id = $1
 `
 
 func (q *Queries) GetSource(ctx context.Context, id pgtype.UUID) (*Source, error) {
@@ -77,12 +87,13 @@ func (q *Queries) GetSource(ctx context.Context, id pgtype.UUID) (*Source, error
 		&i.UpdatedAt,
 		&i.SourceTrust,
 		&i.TrustReason,
+		&i.ProjectID,
 	)
 	return &i, err
 }
 
 const listSources = `-- name: ListSources :many
-SELECT id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason FROM sources ORDER BY created_at DESC
+SELECT id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason, project_id FROM sources ORDER BY created_at DESC
 `
 
 func (q *Queries) ListSources(ctx context.Context) ([]*Source, error) {
@@ -109,6 +120,7 @@ func (q *Queries) ListSources(ctx context.Context) ([]*Source, error) {
 			&i.UpdatedAt,
 			&i.SourceTrust,
 			&i.TrustReason,
+			&i.ProjectID,
 		); err != nil {
 			return nil, err
 		}
@@ -126,7 +138,7 @@ SET upload_status = $2,
     error_message = $3,
     updated_at    = NOW()
 WHERE id = $1
-RETURNING id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason
+RETURNING id, title, filename, file_path, file_type, total_pages, upload_status, error_message, is_demo, metadata, created_at, updated_at, source_trust, trust_reason, project_id
 `
 
 type UpdateSourceStatusParams struct {
@@ -153,6 +165,7 @@ func (q *Queries) UpdateSourceStatus(ctx context.Context, arg UpdateSourceStatus
 		&i.UpdatedAt,
 		&i.SourceTrust,
 		&i.TrustReason,
+		&i.ProjectID,
 	)
 	return &i, err
 }

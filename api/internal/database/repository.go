@@ -98,3 +98,8 @@ func (r *Repository) GetChunks(sourceID uuid.UUID) ([]*Chunk, error) {
 func (r *Repository) GetChunkCount(sourceID uuid.UUID) (int64, error) {
 	return r.queries.CountChunksBySource(r.ctx, PgUUID(sourceID))
 }
+
+// DeleteSource deletes a source by ID.
+func (r *Repository) DeleteSource(id uuid.UUID) error {
+	return r.queries.DeleteSource(r.ctx, PgUUID(id))
+}

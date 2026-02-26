@@ -42,11 +42,10 @@ export default function App() {
     );
   }
 
-  // Landing page
+  // Landing page (project-centric)
   return (
     <LandingPage
-      onNavigate={(docId) => setView({ screen: 'timeline', docId })}
-      onNavigateToProjects={() => setView({ screen: 'projects' })}
+      onNavigateToProject={(projectId) => setView({ screen: 'project', projectId })}
     />
   );
 }

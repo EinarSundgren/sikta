@@ -225,6 +225,13 @@ func (h *DocumentHandler) DeleteDocument(w http.ResponseWriter, r *http.Request)
 		h.logger.Error("failed to cleanup file", "error", err)
 	}
 
+	// Delete from database
+	if err := h.repo.DeleteSource(srcID); err != nil {
+		h.logger.Error("failed to delete source from database", "error", err)
+		http.Error(w, "Failed to delete document", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"status": "deleted",

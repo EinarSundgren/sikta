@@ -22,3 +22,6 @@ UPDATE sources
 SET total_pages = $2,
     updated_at  = NOW()
 WHERE id = $1;
+
+-- name: DeleteSource :exec
+DELETE FROM sources WHERE id = $1;

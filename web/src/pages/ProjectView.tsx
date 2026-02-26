@@ -12,13 +12,14 @@ import {
   Document,
   Graph,
 } from '../api/projects';
+import SwimlaneTimeline from '../components/swimlane/SwimlaneTimeline';
 
 interface Props {
   projectId: string;
   onNavigateBack: () => void;
 }
 
-type Tab = 'documents' | 'entities' | 'events' | 'relationships';
+type Tab = 'swimlane' | 'documents' | 'entities' | 'events' | 'relationships';
 
 export default function ProjectView({ projectId, onNavigateBack }: Props) {
   const [project, setProject] = useState<Project | null>(null);
@@ -26,7 +27,7 @@ export default function ProjectView({ projectId, onNavigateBack }: Props) {
   const [graph, setGraph] = useState<Graph | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('documents');
+  const [activeTab, setActiveTab] = useState<Tab>('swimlane');
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [availableDocs, setAvailableDocs] = useState<Document[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -198,6 +199,7 @@ export default function ProjectView({ projectId, onNavigateBack }: Props) {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-1">
             {[
+              { id: 'swimlane' as Tab, label: 'Swimlane', count: 0 },
               { id: 'documents' as Tab, label: 'Documents', count: documents.length },
               { id: 'entities' as Tab, label: 'Entities', count: entities.length },
               { id: 'events' as Tab, label: 'Events', count: events.length },
@@ -293,6 +295,17 @@ export default function ProjectView({ projectId, onNavigateBack }: Props) {
         )}
 
         {/* Tab content */}
+        {activeTab === 'swimlane' && (
+          <div className="relative" style={{ minHeight: 500 }}>
+            <SwimlaneTimeline
+              nodes={graph?.nodes || []}
+              edges={graph?.edges || []}
+              documents={documents}
+              onEventClick={(event) => console.log('Event clicked:', event)}
+            />
+          </div>
+        )}
+
         {activeTab === 'documents' && (
           <div className="space-y-3">
             {documents.length === 0 ? (
